@@ -1,22 +1,21 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║         EVALON WINNERS — TELEGRAM SUPPORT BOT v6.0          ║
+║         EVALON WINNERS — TELEGRAM SUPPORT BOT v6.1          ║
 ║                                                              ║
-║  ✅ Multi-step menu (hatua kwa hatua)                        ║
-║  ✅ Melt effect kamili (user + bot messages)                 ║
-║  ✅ Support mwishoni (fallback tu)                           ║
-║  ✅ Admin anapata messages za active sessions tu             ║
-║  ✅ Broadcast + button ya menu                               ║
-║  ✅ Referral min 5 + progress bar                            ║
-║  ✅ Fake leaderboard (user) / Real (admin)                   ║
-║  ✅ Welcome video kwa mtumiaji mpya                          ║
-║  ✅ Rating baada ya support                                  ║
-║  ✅ Comeback message wiki 2                                  ║
-║  ✅ Typing indicator kila wakati                             ║
-║  ✅ Huduma kwa lugha ya mteja                                ║
-║  ✅ Poll — Quotex vs Pocket Option                           ║
-║  ✅ Free Manual Bot sehemu mpya                              ║
-║  ✅ Picha 20 mpya + video                                    ║
+║  ✅ Multi-step menu                                          ║
+║  ✅ Melt effect (broadcast messages STAY)                    ║
+║  ✅ Auto-clean chat every 12 hours + restart button          ║
+║  ✅ Support in Services menu only                            ║
+║  ✅ Admin messages for active sessions only                  ║
+║  ✅ Keywords working                                         ║
+║  ✅ Welcome image + new service images                       ║
+║  ✅ Referral min 5 + progress bar + fake leaderboard         ║
+║  ✅ Welcome video for new users                              ║
+║  ✅ Rating after support                                     ║
+║  ✅ Comeback message week 2                                  ║
+║  ✅ Poll for new users                                       ║
+║  ✅ Free Manual Bot section                                  ║
+║  ✅ Broadcast + menu button                                  ║
 ║  ✅ PostgreSQL database                                      ║
 ║  ✅ 12 languages                                             ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -27,11 +26,8 @@ import asyncio
 import random
 import os
 import psycopg2
-import psycopg2.extras
-from datetime import datetime, timedelta
-from telegram import (
-    Update, InlineKeyboardButton, InlineKeyboardMarkup,
-)
+from datetime import datetime
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
     CallbackQueryHandler, ChatJoinRequestHandler,
@@ -53,11 +49,10 @@ MAIN_CHANNEL_LINK = "https://t.me/+mRNfGaNhz3RkZGRk"
 INDICATOR_CHANNEL = "https://t.me/+Px5zPQnChsE2OTg0"
 DATABASE_URL      = os.environ.get("DATABASE_URL", "")
 BOT_USERNAME      = os.environ.get("BOT_USERNAME", "EvalonwinnersBot")
-COOLDOWN_HOURS    = 24
 REFERRAL_MIN      = 5
 COMEBACK_DAYS     = 14
+CLEAN_HOURS       = 12  # Auto-clean chat every 12 hours
 
-# Free Manual Bot Links
 FREE_BOT_LINKS = {
     "all_brokers": "https://allbrokersbotpro.netlify.app/",
     "evalon":      "https://evalonwinners.netlify.app/",
@@ -82,7 +77,51 @@ logger = logging.getLogger(__name__)
 pending_requests: dict = {}
 reply_map: dict        = {}
 active_support: dict   = {}
-rating_pending: dict   = {}
+# Track bot message ids per chat for melt effect (excluding broadcast)
+bot_msg_ids: dict      = {}  # {chat_id: [msg_id1, msg_id2, ...]}
+
+# ══════════════════════════════════════════════════════════════
+#  IMAGES
+# ══════════════════════════════════════════════════════════════
+
+# Welcome image (shown on /start)
+WELCOME_IMAGE = "AgACAgQAAxkBAAIBd2oImM1v4VXOsEHovz0kYR_VeucQAAJ2D2sbgzNJUBaZvafv1UR1AQADAgADeQADOwQ"
+
+# Welcome video for new users
+WELCOME_VIDEO = "AgACAgQAAxkBAANxaggFfxWFFyYzo0XSq9_y6KHx4fMAAsEMaxv560FQMZWpi18Og3oBAAMCAAN5AAM7BA"
+
+# Service images (16 new photos)
+SERVICE_PHOTOS = [
+    "AgACAgQAAxkBAAIBh2oInvA51r1Qv_mxkOz4qBxl3KXxAALkDWsb-etBUAzHrk3a0q_xAQADAgADeAADOwQ",
+    "AgACAgQAAxkBAAIBiGoInvA_hAHaJVMi7klgnYsEUEGuAALmDWsb-etBUAs0gjpeqAGGAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBiWoInvAkvZ--Fcqj16f55tPVPO3GAALoDWsb-etBUChBiWPZ1OX6AQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBimoInvDznDq8cWKZINEofhpxH3whAALqDWsb-etBUFMPgupad-jfAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBi2oInvD4dhSTnKVpqNDXkBEnEyhsAALtDWsb-etBUEhXwklgWQ82AQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBjGoInvBkoCz09uVc_3XgD1j0GRWlAALuDWsb-etBUN0rznzdM5sCAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBk2oInvuVyGpoJNsae8VSZ5HnpOS7AALiDWsb-etBUJShk0Rr26IUAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBlGoInvv26Z5f5z52SppjSoe2XQktAALlDWsb-etBUL864S1h4nn0AQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBlWoInvtMhQdS83nMudTAVAVU60L6AALnDWsb-etBULjYJVuU9osDAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBlmoInvsqyjwqUMi9gTeOQydcWn8gAALpDWsb-etBUBLBIZ5STt12AQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBl2oInvvMWqtL8S7E4ALWwPMzdFqHAALsDWsb-etBUNy_zowkOI4eAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBmGoInvtYiPBTrDY_htbcaTWDRYHgAALjDWsb-etBUAdXqL-_DLb0AQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBiGoInvA_hAHaJVMi7klgnYsEUEGuAALmDWsb-etBUAs0gjpeqAGGAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBmmoInvttk-uihK65lzzVupjjFgUSAALvDWsb-etBUIQxNCKveqfhAQADAgADeQADOwQ",
+    "AgACAgQAAxkBAAIBm2oInvvIboauia90Qf_LWc27kA8wAALwDWsb-etBUAv73VfWq-qmAQADAgADeAADOwQ",
+    "AgACAgQAAxkBAAIBnGoInvuQ08hV7TQGJeySrRh2nshlAALxDWsb-etBUPLZF1S8gatiAQADAgADeQADOwQ",
+]
+
+IMGS_SIGNALS   = SERVICE_PHOTOS[:4]
+IMGS_SOCIAL    = SERVICE_PHOTOS[4:8]
+IMGS_INDICATOR = SERVICE_PHOTOS[8:12]
+IMGS_AUTOBOT   = SERVICE_PHOTOS[12:16]
+IMGS_FREEBOT   = SERVICE_PHOTOS[:8]
+
+def rand_img(pool, user_data, key):
+    last = user_data.get(key)
+    available = [x for x in pool if x != last] or pool
+    chosen = random.choice(available)
+    user_data[key] = chosen
+    return chosen
 
 # ══════════════════════════════════════════════════════════════
 #  DATABASE
@@ -108,6 +147,10 @@ def init_db():
             referrals   INTEGER DEFAULT 0,
             lang        TEXT DEFAULT 'en'
         )
+    """)
+    # Add lang column if missing (migration)
+    c.execute("""
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT DEFAULT 'en'
     """)
     conn.commit()
     conn.close()
@@ -199,7 +242,7 @@ def get_new_users_today():
     conn.close()
     return count
 
-def get_top_referrers(limit=10):
+def get_top_referrers(limit=5):
     conn = get_conn()
     c = conn.cursor()
     c.execute("SELECT name, referrals FROM users ORDER BY referrals DESC LIMIT %s", (limit,))
@@ -211,55 +254,12 @@ def is_admin(uid):
     return uid in ADMIN_IDS
 
 # ══════════════════════════════════════════════════════════════
-#  IMAGES & VIDEO
-# ══════════════════════════════════════════════════════════════
-
-PHOTOS = [
-    "AgACAgQAAxkBAAMnaggB5l0bCsMvkLuueCRcoGSCwVEAArMMaxv560FQpawQqgrrx7gBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMpaggDiWaF5dMVPQR0FM6t_8ibbzIAArwMaxv560FQyhyX-XP7LFoBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMqaggDiV3MYFpMQthHVg0nAAF5jyvDAAK1DGsb-etBUAum4TNrBc8-AQADAgADeQADOwQ",
-    "AgACAgQAAxkBAAMraggDiWeDjghtGVXsDmcr2-D606QAArYMaxv560FQ2iSNdhCuyjEBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMtaggDiZ7OG8OZE2eW7LIaOxq8EZYAArcMaxv560FQrStRqY7q3XIBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMuaggDiTCG8_G7V2svduS4I7b3KzIAArgMaxv560FQ6FqDZTu8gOwBAAMCAAN4AAM7BA",
-    "AgACAgQAAxkBAAMvaggDiVYeHZJlwNU6qk6VvRbzIaIAArkMaxv560FQtn18F3kXgTUBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMwaggDiWshNzi2g9PoUbOV0b7XTfYAAroMaxv560FQ3o-OLdO4CAgBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMxaggDidNR7nq_PpX19yiU1XrdP_YAAtAOaxsPChlQFnw5nZhK2DoBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAM9aggDjgfGthIJy4h6zElqCMSJHS0AAnYdaxsnKLhTCIHcaYu54G0BAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAM-aggDjrisUHqolWu5a8qwoRXLhhQAArsMaxv560FQlaIVJByHca4BAAMCAAN4AAM7BA",
-    "AgACAgQAAxkBAAM_aggDjn2F27JeF0sAAfVgajTK3C2_AAJ4HWsbJyi4UxWkuvL_885KAQADAgADeQADOwQ",
-    "AgACAgQAAxkBAANAaggDjlQHRqJk6x6jugc2x8CKy3YAAr0Maxv560FQR4LivvWhp1MBAAMCAAN4AAM7BA",
-    "AgACAgQAAxkBAANBaggDjnUpvzi6mrOinw8zQJsfufEAAnodaxsnKLhTVBiBjx-M5kwBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAANCaggDjiO2ui8NDKrw-fMetL1LCQ0AAr4Maxv560FQi68bTJ9U9pYBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAANDaggDjiJen8rfdCiZFnWDdFFMOeUAAn0daxsnKLhT2BuMOSWvOigBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAANEaggDjs44Pk6-L06xSUsx7Mcrd_YAAr8Maxv560FQjbUKQ0wqHqkBAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAANFaggDjhdsdwyHM1POHO6Ig63hlO0AAn4daxsnKLhTHJ9ZO9bzfaABAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAANGaggDjtR2NlOqh2rNMQ8unC_9LlsAArQMaxv560FQh9YHZN6N8B8BAAMCAAN5AAM7BA",
-    "AgACAgQAAxkBAAMnaggB5l0bCsMvkLuueCRcoGSCwVEAArMMaxv560FQpawQqgrrx7gBAAMCAAN5AAM7BA",
-]
-
-WELCOME_VIDEO = "AgACAgQAAxkBAANxaggFfxWFFyYzo0XSq9_y6KHx4fMAAsEMaxv560FQMZWpi18Og3oBAAMCAAN5AAM7BA"
-
-IMGS_SIGNALS   = PHOTOS[:5]
-IMGS_SOCIAL    = PHOTOS[5:10]
-IMGS_INDICATOR = PHOTOS[10:15]
-IMGS_AUTOBOT   = PHOTOS[15:20]
-IMGS_FREEBOT   = PHOTOS[:10]
-
-def rand_img(pool, user_data, key):
-    last = user_data.get(key)
-    available = [x for x in pool if x != last] or pool
-    chosen = random.choice(available)
-    user_data[key] = chosen
-    return chosen
-
-# ══════════════════════════════════════════════════════════════
 #  FAKE LEADERBOARD
 # ══════════════════════════════════════════════════════════════
 
 FAKE_NAMES = [
     "Trader_254", "VIP_Master", "Signals_Pro", "Alpha_Trader",
     "Gold_Winner", "FX_Champion", "Binary_King", "Profit_Hunter",
-    "Smart_Trader", "Market_Guru"
 ]
 
 def get_fake_leaderboard(user_real_count):
@@ -273,10 +273,6 @@ def get_fake_leaderboard(user_real_count):
     if user_real_count < fake_scores[-1]:
         text += f"\n💪 Alika {fake_scores[-1] - user_real_count} zaidi kuingia top 3!"
     return text
-
-# ══════════════════════════════════════════════════════════════
-#  PROGRESS BAR
-# ══════════════════════════════════════════════════════════════
 
 def make_progress_bar(count, total):
     filled = int((count / total) * 10)
@@ -315,23 +311,23 @@ def get_urgency(lang):
 SIGNALS_REPLIES = {
     "en": [
         "📊 *VIP SIGNALS — EVALON WINNERS* 🎯\n\n✅ 80–95% Win Rate\n✅ 3–10 signals daily\n✅ Real Forex pairs (EUR/USD, GBP/USD, USD/JPY, XAU/USD & more)\n✅ Entry, TP & SL included\n✅ Works on Quotex & Pocket Option\n✅ 24/7 active team\n\n👇 Visit our website:",
-        "🎯 *PRECISION SIGNALS* ⚡\n\n🔑 Each signal includes:\n• Pair name (Real Forex)\n• Direction (BUY/SELL)\n• Entry price, TP & SL\n• Confidence level\n\n📊 Quotex | Pocket Option | All brokers\n\n👇 Get access now:",
-        "💎 *EVALON VIP SIGNALS* 🚀\n\n📈 Real price action based\n📊 EUR/USD | GBP/USD | USD/JPY | XAU/USD & more\n⚡ Instant Telegram delivery\n💯 1,000+ traders trust us!\n\n👇 Ready to start winning?",
+        "🎯 *PRECISION SIGNALS* ⚡\n\n🔑 Each signal includes:\n• Real Forex pair\n• Direction (BUY/SELL)\n• Entry price, TP & SL\n• Confidence level\n\n📊 Quotex | Pocket Option | All brokers\n\n👇 Get access now:",
+        "💎 *EVALON VIP SIGNALS* 🚀\n\n📈 Real price action\n📊 EUR/USD | GBP/USD | USD/JPY | XAU/USD & more\n⚡ Instant delivery\n💯 1,000+ traders trust us!\n\n👇 Start winning:",
     ],
     "sw": [
-        "📊 *VIP SIGNALS — EVALON WINNERS* 🎯\n\n✅ Usahihi 80–95%\n✅ Signals 3–10 kila siku\n✅ Forex ya kweli (EUR/USD, GBP/USD, XAU/USD & zaidi)\n✅ Entry, TP & SL\n✅ Quotex & Pocket Option\n✅ Timu 24/7\n\n👇 Tembelea website:",
-        "🎯 *SIGNALS ZA USAHIHI* ⚡\n\n🔑 Kila signal inajumuisha:\n• Jina la pair ya forex\n• Mwelekeo (BUY/SELL)\n• Bei ya kuingia, TP & SL\n\n📊 Quotex | Pocket Option | Mawakala wote\n\n👇 Pata ufikiaji:",
+        "📊 *VIP SIGNALS — EVALON WINNERS* 🎯\n\n✅ Usahihi 80–95%\n✅ Signals 3–10 kila siku\n✅ Forex ya kweli (EUR/USD, GBP/USD, XAU/USD & zaidi)\n✅ Entry, TP & SL\n✅ Quotex & Pocket Option\n\n👇 Tembelea website:",
+        "🎯 *SIGNALS ZA USAHIHI* ⚡\n\n🔑 Kila signal:\n• Pair ya forex ya kweli\n• Mwelekeo (BUY/SELL)\n• Bei ya kuingia, TP & SL\n\n👇 Pata ufikiaji:",
     ],
     "ar": ["📊 *إشارات VIP — EVALON* 🎯\n\n✅ دقة 80–95%\n✅ فوركس حقيقي\n✅ Quotex | Pocket Option\n\n👇 زر موقعنا:"],
-    "zh": ["📊 *VIP信号 — EVALON* 🎯\n\n✅ 80–95%胜率\n✅ 真实外汇\n✅ Quotex | Pocket Option\n\n👇 访问网站:"],
-    "hi": ["📊 *VIP सिग्नल — EVALON* 🎯\n\n✅ 80–95% जीत दर\n✅ असली फॉरेक्स\n✅ Quotex | Pocket Option\n\n👇 वेबसाइट:"],
-    "ru": ["📊 *VIP СИГНАЛЫ — EVALON* 🎯\n\n✅ Точность 80–95%\n✅ Реальный форекс\n✅ Quotex | Pocket Option\n\n👇 Сайт:"],
-    "es": ["📊 *SEÑALES VIP — EVALON* 🎯\n\n✅ 80–95% precisión\n✅ Forex real\n✅ Quotex | Pocket Option\n\n👇 Web:"],
-    "fr": ["📊 *SIGNAUX VIP — EVALON* 🎯\n\n✅ Précision 80–95%\n✅ Forex réel\n✅ Quotex | Pocket Option\n\n👇 Site:"],
-    "pt": ["📊 *SINAIS VIP — EVALON* 🎯\n\n✅ 80–95% precisão\n✅ Forex real\n✅ Quotex | Pocket Option\n\n👇 Site:"],
-    "de": ["📊 *VIP-SIGNALE — EVALON* 🎯\n\n✅ 80–95% Genauigkeit\n✅ Echter Forex\n✅ Quotex | Pocket Option\n\n👇 Website:"],
-    "ur": ["📊 *VIP سگنلز — EVALON* 🎯\n\n✅ 80–95% درستگی\n✅ حقیقی فاریکس\n✅ Quotex | Pocket Option\n\n👇 ویب سائٹ:"],
-    "ja": ["📊 *VIPシグナル — EVALON* 🎯\n\n✅ 80–95%勝率\n✅ リアルFX\n✅ Quotex | Pocket Option\n\n👇 ウェブサイト:"],
+    "zh": ["📊 *VIP信号 — EVALON* 🎯\n\n✅ 80–95%胜率\n✅ 真实外汇\n\n👇 访问网站:"],
+    "hi": ["📊 *VIP सिग्नल — EVALON* 🎯\n\n✅ 80–95% जीत दर\n✅ असली फॉरेक्स\n\n👇 वेबसाइट:"],
+    "ru": ["📊 *VIP СИГНАЛЫ — EVALON* 🎯\n\n✅ Точность 80–95%\n✅ Реальный форекс\n\n👇 Сайт:"],
+    "es": ["📊 *SEÑALES VIP — EVALON* 🎯\n\n✅ 80–95% precisión\n✅ Forex real\n\n👇 Web:"],
+    "fr": ["📊 *SIGNAUX VIP — EVALON* 🎯\n\n✅ Précision 80–95%\n✅ Forex réel\n\n👇 Site:"],
+    "pt": ["📊 *SINAIS VIP — EVALON* 🎯\n\n✅ 80–95% precisão\n✅ Forex real\n\n👇 Site:"],
+    "de": ["📊 *VIP-SIGNALE — EVALON* 🎯\n\n✅ 80–95% Genauigkeit\n✅ Echter Forex\n\n👇 Website:"],
+    "ur": ["📊 *VIP سگنلز — EVALON* 🎯\n\n✅ 80–95% درستگی\n✅ حقیقی فاریکس\n\n👇 ویب سائٹ:"],
+    "ja": ["📊 *VIPシグナル — EVALON* 🎯\n\n✅ 80–95%勝率\n✅ リアルFX\n\n👇 ウェブサイト:"],
 }
 
 SOCIAL_REPLIES = {
@@ -343,8 +339,8 @@ SOCIAL_REPLIES = {
         "👥 *POCKET SOCIAL TRADING* 🔄\n\nNakili wafanyabiashara bora!\n\n✅ Nakili otomatiki\n✅ Pocket Option\n✅ Huhitaji uzoefu\n\n👇 Jifunze zaidi:",
         "🔄 *NAKILI & PATA FAIDA* 💰\n\n1️⃣ Unganisha Pocket Option\n2️⃣ Chagua trader bora\n3️⃣ Biashara zinakiliwa\n4️⃣ Pata faida!\n\n👇 Anza:",
     ],
-    "ar": ["👥 *التداول الاجتماعي — EVALON* 🔄\n\n✅ نسخ تلقائي\n✅ Pocket Option\n\n👇 زر موقعنا:"],
-    "zh": ["👥 *社交交易 — EVALON* 🔄\n\n✅ 自动复制\n✅ Pocket Option\n\n👇 访问网站:"],
+    "ar": ["👥 *التداول الاجتماعي* 🔄\n\n✅ نسخ تلقائي\n✅ Pocket Option\n\n👇 زر موقعنا:"],
+    "zh": ["👥 *社交交易* 🔄\n\n✅ 自动复制\n✅ Pocket Option\n\n👇 访问网站:"],
     "hi": ["👥 *सोशल ट्रेडिंग* 🔄\n\n✅ ऑटो-कॉपी\n✅ Pocket Option\n\n👇 वेबसाइट:"],
     "ru": ["👥 *СОЦИАЛЬНЫЙ ТРЕЙДИНГ* 🔄\n\n✅ Авто-копирование\n✅ Pocket Option\n\n👇 Сайт:"],
     "es": ["👥 *TRADING SOCIAL* 🔄\n\n✅ Auto-copia\n✅ Pocket Option\n\n👇 Web:"],
@@ -361,7 +357,7 @@ INDICATOR_REPLIES = {
         "🆓 *FREE INDICATOR — NO PAYMENT* 💎\n\n🔧 Non-repainting\n📊 20+ pairs\n⚡ OTC weekend trading\n\n👇 Get FREE:",
     ],
     "sw": [
-        "📈 *INDICATOR YA BURE* 🎁\n\nBURE KABISA!\n\n✅ Mishale ya BUY/SELL\n✅ Vipindi vyote (1m–1h)\n✅ Rahisi kusakinisha\n\n📲 Jiunge na channel ya BURE:",
+        "📈 *INDICATOR YA BURE* 🎁\n\nBURE KABISA!\n\n✅ Mishale ya BUY/SELL\n✅ Vipindi vyote\n✅ Rahisi kusakinisha\n\n📲 Jiunge na channel ya BURE:",
         "🆓 *INDICATOR BURE* 💎\n\n🔧 Haibadilishi\n📊 Jozi 20+\n\n👇 Ipate BURE:",
     ],
     "ar": ["📈 *مؤشر مجاني* 🎁\n\n✅ 100% مجاني\n\n📲 القناة المجانية:"],
@@ -378,14 +374,14 @@ INDICATOR_REPLIES = {
 
 AUTOBOT_REPLIES = {
     "en": [
-        "🤖 *AUTO TRADING BOT — EVALON* 💎\n\nTrade automatically 24/7!\n\n✅ All brokers supported\n✅ Runs 24/7\n✅ No experience needed\n✅ Beginner-friendly\n\n🏦 Quotex | Pocket Option | IQ Option | Deriv & more\n\n👇 Get it now:",
+        "🤖 *AUTO TRADING BOT — EVALON* 💎\n\nTrade automatically 24/7!\n\n✅ All brokers supported\n✅ Runs 24/7\n✅ No experience needed\n\n🏦 Quotex | Pocket Option | IQ Option | Deriv & more\n\n👇 Get it now:",
         "⚡ *EVALON AUTO BOT — 24/7* 🚀\n\nYou focus on life — bot focuses on profits!\n\n🔧 AI entry detection\n📱 Mobile notifications\n🔐 Funds stay in YOUR account\n\n👇 Website:",
     ],
     "sw": [
-        "🤖 *AUTO TRADING BOT — EVALON* 💎\n\nBiashara otomatiki 24/7!\n\n✅ Mawakala WOTE\n✅ Inafanya kazi 24/7\n✅ Huhitaji uzoefu\n\n🏦 Quotex | Pocket Option | IQ Option | Deriv\n\n👇 Ipate sasa:",
-        "⚡ *EVALON AUTO BOT — 24/7* 🚀\n\nWewe zingatia maisha — bot izingatie faida!\n\n🔧 AI detection\n📱 Notifications\n\n👇 Website:",
+        "🤖 *AUTO TRADING BOT — EVALON* 💎\n\nBiashara otomatiki 24/7!\n\n✅ Mawakala WOTE\n✅ Inafanya kazi 24/7\n\n🏦 Quotex | Pocket Option | IQ Option | Deriv\n\n👇 Ipate sasa:",
+        "⚡ *EVALON AUTO BOT — 24/7* 🚀\n\nWewe zingatia maisha — bot izingatie faida!\n\n👇 Website:",
     ],
-    "ar": ["🤖 *بوت التداول* 💎\n\n✅ جميع الوسطاء\n✅ 24/7\n\n🏦 Quotex | Pocket Option\n\n👇 احصل عليه:"],
+    "ar": ["🤖 *بوت التداول* 💎\n\n✅ جميع الوسطاء\n✅ 24/7\n\n👇 احصل عليه:"],
     "zh": ["🤖 *自动机器人* 💎\n\n✅ 所有经纪商\n✅ 24/7\n\n👇 立即获取:"],
     "hi": ["🤖 *ऑटो बॉट* 💎\n\n✅ सभी ब्रोकर\n✅ 24/7\n\n👇 अभी पाएं:"],
     "ru": ["🤖 *АВТО БОТ* 💎\n\n✅ Все брокеры\n✅ 24/7\n\n👇 Получить:"],
@@ -398,12 +394,8 @@ AUTOBOT_REPLIES = {
 }
 
 FREEBOT_REPLIES = {
-    "en": [
-        "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot — no subscription needed!\n\n✅ Works on ALL brokers\n✅ Easy to use — just follow steps\n✅ Proven strategy included\n✅ Step-by-step guide\n\nChoose your broker below 👇",
-    ],
-    "sw": [
-        "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE — bila ada!\n\n✅ Inafanya kazi kwa mawakala WOTE\n✅ Rahisi kutumia\n✅ Mkakati uliothibitishwa\n✅ Mwongozo wa hatua kwa hatua\n\nChagua broker yako hapa chini 👇",
-    ],
+    "en": ["🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot!\n\n✅ Works on ALL brokers\n✅ Easy to use\n✅ Step-by-step guide\n\nChoose your broker 👇"],
+    "sw": ["🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE!\n\n✅ Mawakala WOTE\n✅ Rahisi kutumia\n✅ Mwongozo wa hatua kwa hatua\n\nChagua broker yako 👇"],
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -425,7 +417,7 @@ UI = {
         "btn_website": "🌐 Website & Pricing",
         "btn_support": "💬 Contact Support",
         "btn_back": "⬅️ Back",
-        "btn_start": "🚀 Explore Services",
+        "btn_restart": "🚀 Tap to Start",
         "btn_free_indicator": "📲 Get FREE Indicator",
         "btn_join": "📢 Join Our Channel",
         "btn_poll_quotex": "📊 Quotex",
@@ -438,14 +430,14 @@ UI = {
         "referral_msg": "🎁 *YOUR REFERRAL LINK*\n\n🔗 `https://t.me/{bot}?start=ref{uid}`\n\n📊 Your referrals: *{count}/{min}*\n{bar}\n\n🎯 Refer *{needed}* more to unlock your reward!\n{leaderboard}",
         "comeback_msg": "👋 Hey *{name}!* We missed you! 😊\n\n🔥 New signals & opportunities waiting!\n\n💎 *EVALON WINNERS* has exciting updates for you!\n\n👇 Come back and explore:",
         "rating_msg": "⭐ *How was your support experience?*\n\nPlease rate our service:",
-        "rating_thanks": "🙏 Thank you for your rating, *{name}!* ⭐\n\nYour feedback helps us improve!",
+        "rating_thanks": "🙏 Thank you for your rating, *{name}!* ⭐",
         "poll_msg": "📊 *Quick Question!*\n\nWhich platform do you mainly use?",
         "welcome_video": "🎬 *Welcome to EVALON WINNERS!*\n\nWatch this intro to see how we help traders win! 🏆",
         "services_msg": "🏆 *OUR SERVICES*\n\nChoose a service to learn more 👇",
         "freebot_msg": "🆓 *FREE MANUAL BOT*\n\nChoose your broker 👇",
         "price_msg": "💰 *Pricing & Plans*\n\nVisit our website for latest pricing 👇",
         "join_pending": "⏳ *Request received!*\n\nAdmin will approve shortly. 🙏",
-        "cooldown_msg": "👋 *Still there, {name}?*\n\nTap below to continue! 🚀",
+        "auto_clean_msg": "🔄 *Chat refreshed!*\n\nTap below to continue 👇",
     },
     "sw": {
         "welcome": "👋 Karibu, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Mahali pa washindi!\n\nUnataka kuchunguza nini? 👇",
@@ -461,7 +453,7 @@ UI = {
         "btn_website": "🌐 Website & Bei",
         "btn_support": "💬 Wasiliana na Support",
         "btn_back": "⬅️ Rudi",
-        "btn_start": "🚀 Chunguza Huduma",
+        "btn_restart": "🚀 Bonyeza Kuanza",
         "btn_free_indicator": "📲 Pata Indicator BURE",
         "btn_join": "📢 Jiunge na Channel",
         "btn_poll_quotex": "📊 Quotex",
@@ -481,11 +473,10 @@ UI = {
         "freebot_msg": "🆓 *FREE MANUAL BOT*\n\nChagua broker yako 👇",
         "price_msg": "💰 *Bei na Mipango*\n\nTembelea website 👇",
         "join_pending": "⏳ *Ombi limepokelewa!*\n\nAdmin atakuidhibitisha. 🙏",
-        "cooldown_msg": "👋 *Bado uko hapo, {name}?*\n\nBonyeza hapa chini! 🚀",
+        "auto_clean_msg": "🔄 *Chat imesafishwa!*\n\nBonyeza hapa chini kuendelea 👇",
     },
 }
 
-# Minimal for other languages
 for _lc in ["ar","zh","hi","ru","es","fr","pt","de","ur","ja"]:
     UI[_lc] = {k: UI["en"][k] for k in UI["en"]}
 
@@ -497,6 +488,19 @@ def get_lang(context):
 
 def get_replies(pool, lang):
     return pool.get(lang) or pool.get("en", ["Coming soon!"])
+
+# ══════════════════════════════════════════════════════════════
+#  MESSAGE TRACKING (for melt effect, excludes broadcast)
+# ══════════════════════════════════════════════════════════════
+
+def track_msg(chat_id, msg_id):
+    """Track bot message id for later deletion"""
+    if chat_id not in bot_msg_ids:
+        bot_msg_ids[chat_id] = []
+    bot_msg_ids[chat_id].append(msg_id)
+    # Keep only last 50 message ids per chat
+    if len(bot_msg_ids[chat_id]) > 50:
+        bot_msg_ids[chat_id] = bot_msg_ids[chat_id][-50:]
 
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
@@ -520,7 +524,8 @@ async def typing_action(chat_id, context, seconds=1.5):
 
 async def is_member(context, user_id):
     try:
-        member = await context.bot.get_chat_member(chat_id=MAIN_CHANNEL_ID, user_id=user_id)
+        member = await context.bot.get_chat_member(
+            chat_id=MAIN_CHANNEL_ID, user_id=user_id)
         if member.status in ("member", "administrator", "creator", "restricted"):
             return True
         if member.status == "left" and user_id in pending_requests:
@@ -535,7 +540,8 @@ async def notify_new_user(context, user):
     text = f"🆕 *New User!*\n\n👤 {user.full_name}\n🔗 @{user.username or 'N/A'}\n🆔 `{user.id}`\n🕐 {now}"
     for aid in ADMIN_IDS:
         try:
-            await context.bot.send_message(chat_id=aid, text=text, parse_mode="Markdown")
+            await context.bot.send_message(
+                chat_id=aid, text=text, parse_mode="Markdown")
         except Exception as e:
             logger.warning(f"Notify failed: {e}")
 
@@ -553,9 +559,109 @@ async def notify_support_request(context, user, lang):
     for aid in ADMIN_IDS:
         try:
             await context.bot.send_message(
-                chat_id=aid, text=text, parse_mode="Markdown", reply_markup=btns)
+                chat_id=aid, text=text,
+                parse_mode="Markdown", reply_markup=btns)
         except Exception as e:
             logger.warning(f"Support notify failed: {e}")
+
+# ══════════════════════════════════════════════════════════════
+#  AUTO CLEAN JOB (every 12 hours)
+# ══════════════════════════════════════════════════════════════
+
+async def auto_clean_chat(context: ContextTypes.DEFAULT_TYPE):
+    """Delete all tracked bot messages and send restart button"""
+    job_data = context.job.data
+    chat_id = job_data["chat_id"]
+    lang    = job_data.get("lang", "en")
+    name    = job_data.get("name", "")
+
+    # Delete all tracked messages
+    if chat_id in bot_msg_ids:
+        for msg_id in bot_msg_ids[chat_id]:
+            await safe_delete(context, chat_id, msg_id)
+        bot_msg_ids[chat_id] = []
+
+    # Send restart button
+    try:
+        await context.bot.send_chat_action(
+            chat_id=chat_id, action=ChatAction.TYPING)
+        await asyncio.sleep(1.0)
+        msg = await context.bot.send_message(
+            chat_id=chat_id,
+            text=ui("auto_clean_msg", lang),
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    ui("btn_restart", lang),
+                    callback_data="main_menu")
+            ]]))
+        track_msg(chat_id, msg.message_id)
+    except Exception as e:
+        logger.warning(f"Auto clean failed for {chat_id}: {e}")
+
+    # Reschedule next clean
+    schedule_auto_clean(context, chat_id, lang, name)
+
+def schedule_auto_clean(context, chat_id, lang, name):
+    if not context.job_queue:
+        return
+    job_name = f"clean_{chat_id}"
+    for job in context.job_queue.get_jobs_by_name(job_name):
+        job.schedule_removal()
+    context.job_queue.run_once(
+        auto_clean_chat,
+        when=CLEAN_HOURS * 3600,
+        data={"chat_id": chat_id, "lang": lang, "name": name},
+        name=job_name)
+
+# ══════════════════════════════════════════════════════════════
+#  COMEBACK JOB
+# ══════════════════════════════════════════════════════════════
+
+async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
+    job_data = context.job.data
+    chat_id = job_data["chat_id"]
+    name    = job_data["name"]
+    lang    = job_data.get("lang", "en")
+    try:
+        img = random.choice(SERVICE_PHOTOS)
+        text = ui("comeback_msg", lang).format(name=name)
+        try:
+            msg = await context.bot.send_photo(
+                chat_id=chat_id, photo=img, caption=text,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(
+                        ui("btn_services", lang),
+                        callback_data="menu_services")],
+                    [InlineKeyboardButton(
+                        ui("btn_support", lang),
+                        callback_data="do_support")],
+                ]))
+        except:
+            msg = await context.bot.send_message(
+                chat_id=chat_id, text=text,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(
+                        ui("btn_services", lang),
+                        callback_data="menu_services")],
+                ]))
+        track_msg(chat_id, msg.message_id)
+    except Exception as e:
+        logger.warning(f"Comeback failed: {e}")
+
+def schedule_comeback(context, chat_id, name, lang):
+    if not context.job_queue:
+        return
+    job_name = f"comeback_{chat_id}"
+    for job in context.job_queue.get_jobs_by_name(job_name):
+        job.schedule_removal()
+    context.job_queue.run_once(
+        send_comeback_reminder,
+        when=COMEBACK_DAYS * 24 * 3600,
+        data={"chat_id": chat_id, "name": name, "lang": lang},
+        name=job_name)
 
 # ══════════════════════════════════════════════════════════════
 #  KEYBOARDS
@@ -593,6 +699,7 @@ def services_menu(lang):
          InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
         [InlineKeyboardButton(ui("btn_freebot", lang), callback_data="svc_freebot")],
         [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
+        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
         [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
     ])
 
@@ -608,6 +715,7 @@ def freebot_menu(lang):
 def svc_keyboard(lang, indicator=False):
     rows = [
         [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
+        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
         [InlineKeyboardButton(ui("btn_back", lang), callback_data="menu_services")],
     ]
     if indicator:
@@ -629,7 +737,7 @@ def support_keyboard(lang):
 
 def broadcast_keyboard(lang):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(ui("btn_start", lang), callback_data="menu_services")],
+        [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
     ])
 
 def rating_keyboard():
@@ -641,55 +749,12 @@ def rating_keyboard():
         InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data="rate_5"),
     ]])
 
-def comeback_keyboard(lang):
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(ui("btn_start", lang), callback_data="menu_services")],
-        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
-    ])
-
 def poll_keyboard(lang):
     return InlineKeyboardMarkup([[
         InlineKeyboardButton(ui("btn_poll_quotex", lang), callback_data="poll_quotex"),
         InlineKeyboardButton(ui("btn_poll_pocket", lang), callback_data="poll_pocket"),
         InlineKeyboardButton(ui("btn_poll_both", lang), callback_data="poll_both"),
     ]])
-
-# ══════════════════════════════════════════════════════════════
-#  COMEBACK JOB
-# ══════════════════════════════════════════════════════════════
-
-async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
-    job_data = context.job.data
-    chat_id = job_data["chat_id"]
-    name    = job_data["name"]
-    lang    = job_data.get("lang", "en")
-    try:
-        await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        await asyncio.sleep(1.0)
-        img = random.choice(PHOTOS)
-        text = ui("comeback_msg", lang).format(name=name)
-        try:
-            await context.bot.send_photo(
-                chat_id=chat_id, photo=img, caption=text,
-                parse_mode="Markdown", reply_markup=comeback_keyboard(lang))
-        except:
-            await context.bot.send_message(
-                chat_id=chat_id, text=text,
-                parse_mode="Markdown", reply_markup=comeback_keyboard(lang))
-    except Exception as e:
-        logger.warning(f"Comeback failed: {e}")
-
-def schedule_comeback(context, chat_id, name, lang):
-    if not context.job_queue:
-        return
-    job_name = f"comeback_{chat_id}"
-    for job in context.job_queue.get_jobs_by_name(job_name):
-        job.schedule_removal()
-    context.job_queue.run_once(
-        send_comeback_reminder,
-        when=COMEBACK_DAYS * 24 * 3600,
-        data={"chat_id": chat_id, "name": name, "lang": lang},
-        name=job_name)
 
 # ══════════════════════════════════════════════════════════════
 #  JOIN REQUEST
@@ -722,7 +787,9 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     lang = context.user_data.get("lang", "en")
     try:
         await context.bot.send_message(
-            chat_id=user.id, text=ui("join_pending", lang), parse_mode="Markdown")
+            chat_id=user.id,
+            text=ui("join_pending", lang),
+            parse_mode="Markdown")
     except:
         pass
 
@@ -762,12 +829,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     except:
                         pass
 
+    # Delete previous bot messages (melt effect)
     old_id = context.user_data.get("last_bot_msg_id")
     if old_id:
         await safe_delete(context, cid, old_id)
 
     await typing_action(cid, context, 1.2)
 
+    # Language selection for first time
     if not context.user_data.get("lang"):
         msg = await context.bot.send_message(
             chat_id=cid,
@@ -775,13 +844,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=lang_keyboard())
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         return
 
+    # Channel check
     if not await is_member(context, user.id):
         msg = await context.bot.send_message(
             chat_id=cid, text=ui("join_msg", lang),
             parse_mode="Markdown", reply_markup=join_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         return
 
     # Welcome video + poll for new users
@@ -792,6 +864,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, video=WELCOME_VIDEO,
                 caption=ui("welcome_video", lang),
                 parse_mode="Markdown")
+            track_msg(cid, vid_msg.message_id)
             await asyncio.sleep(4)
             await safe_delete(context, cid, vid_msg.message_id)
         except:
@@ -802,17 +875,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=cid, text=ui("poll_msg", lang),
             parse_mode="Markdown", reply_markup=poll_keyboard(lang))
         context.user_data["last_bot_msg_id"] = poll_msg.message_id
+        track_msg(cid, poll_msg.message_id)
         return
 
+    # Send welcome with image
     urgency = get_urgency(lang)
     welcome_text = ui("welcome", lang).format(
         name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
 
-    msg = await context.bot.send_message(
-        chat_id=cid, text=welcome_text,
-        parse_mode="Markdown", reply_markup=main_menu(lang))
+    try:
+        msg = await context.bot.send_photo(
+            chat_id=cid,
+            photo=WELCOME_IMAGE,
+            caption=welcome_text,
+            parse_mode="Markdown",
+            reply_markup=main_menu(lang))
+    except:
+        msg = await context.bot.send_message(
+            chat_id=cid, text=welcome_text,
+            parse_mode="Markdown", reply_markup=main_menu(lang))
+
     context.user_data["last_bot_msg_id"] = msg.message_id
+    track_msg(cid, msg.message_id)
     schedule_comeback(context, cid, user.first_name, lang)
+    schedule_auto_clean(context, cid, lang, user.first_name)
 
 # ══════════════════════════════════════════════════════════════
 #  BROADCAST
@@ -847,7 +933,8 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     caption=replied_msg.caption or "",
                     parse_mode="Markdown", reply_markup=btn)
             elif replied_msg and replied_msg.voice:
-                await context.bot.send_voice(chat_id=uid, voice=replied_msg.voice.file_id)
+                await context.bot.send_voice(
+                    chat_id=uid, voice=replied_msg.voice.file_id)
             elif replied_msg and replied_msg.document:
                 await context.bot.send_document(
                     chat_id=uid, document=replied_msg.document.file_id,
@@ -957,16 +1044,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=ui("join_msg", lang),
                 parse_mode="Markdown", reply_markup=join_keyboard(lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
+            track_msg(cid, msg.message_id)
             return
 
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
             name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
-        msg = await context.bot.send_message(
-            chat_id=cid, text=welcome_text,
-            parse_mode="Markdown", reply_markup=main_menu(lang))
+        try:
+            msg = await context.bot.send_photo(
+                chat_id=cid, photo=WELCOME_IMAGE,
+                caption=welcome_text, parse_mode="Markdown",
+                reply_markup=main_menu(lang))
+        except:
+            msg = await context.bot.send_message(
+                chat_id=cid, text=welcome_text,
+                parse_mode="Markdown", reply_markup=main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
+        schedule_auto_clean(context, cid, lang, user.first_name)
         return
 
     lang = get_lang(context)
@@ -979,10 +1075,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             urgency = get_urgency(lang)
             welcome_text = ui("welcome", lang).format(
                 name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
-            msg = await context.bot.send_message(
-                chat_id=cid, text=welcome_text,
-                parse_mode="Markdown", reply_markup=main_menu(lang))
+            try:
+                msg = await context.bot.send_photo(
+                    chat_id=cid, photo=WELCOME_IMAGE,
+                    caption=welcome_text, parse_mode="Markdown",
+                    reply_markup=main_menu(lang))
+            except:
+                msg = await context.bot.send_message(
+                    chat_id=cid, text=welcome_text,
+                    parse_mode="Markdown", reply_markup=main_menu(lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
+            track_msg(cid, msg.message_id)
         else:
             await query.answer("❌ Please join first!", show_alert=True)
         return
@@ -994,12 +1097,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
             name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
-        msg = await context.bot.send_message(
-            chat_id=cid,
-            text=f"✅ Got it!\n\n{welcome_text}",
-            parse_mode="Markdown", reply_markup=main_menu(lang))
+        try:
+            msg = await context.bot.send_photo(
+                chat_id=cid, photo=WELCOME_IMAGE,
+                caption=f"✅ Got it!\n\n{welcome_text}",
+                parse_mode="Markdown", reply_markup=main_menu(lang))
+        except:
+            msg = await context.bot.send_message(
+                chat_id=cid, text=f"✅ Got it!\n\n{welcome_text}",
+                parse_mode="Markdown", reply_markup=main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
+        schedule_auto_clean(context, cid, lang, user.first_name)
         return
 
     # Rating
@@ -1016,11 +1126,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="Markdown")
             except:
                 pass
-        msg = await context.bot.send_message(
-            chat_id=cid,
-            text=ui("rating_thanks", lang).format(name=user.first_name),
-            parse_mode="Markdown", reply_markup=main_menu(lang))
+        try:
+            msg = await context.bot.send_photo(
+                chat_id=cid, photo=WELCOME_IMAGE,
+                caption=f"{ui('rating_thanks', lang).format(name=user.first_name)}\n\n{ui('welcome', lang).format(name=user.first_name, urgency=get_urgency(lang), business=BUSINESS_NAME)}",
+                parse_mode="Markdown", reply_markup=main_menu(lang))
+        except:
+            msg = await context.bot.send_message(
+                chat_id=cid,
+                text=ui("rating_thanks", lang).format(name=user.first_name),
+                parse_mode="Markdown", reply_markup=main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         return
 
     # Melt effect for all others
@@ -1031,17 +1148,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
             name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
-        msg = await context.bot.send_message(
-            chat_id=cid, text=welcome_text,
-            parse_mode="Markdown", reply_markup=main_menu(lang))
+        try:
+            msg = await context.bot.send_photo(
+                chat_id=cid, photo=WELCOME_IMAGE,
+                caption=welcome_text, parse_mode="Markdown",
+                reply_markup=main_menu(lang))
+        except:
+            msg = await context.bot.send_message(
+                chat_id=cid, text=welcome_text,
+                parse_mode="Markdown", reply_markup=main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
+        schedule_auto_clean(context, cid, lang, user.first_name)
 
     elif data == "menu_services":
         msg = await context.bot.send_message(
             chat_id=cid, text=ui("services_msg", lang),
             parse_mode="Markdown", reply_markup=services_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "change_lang":
         msg = await context.bot.send_message(
@@ -1049,6 +1175,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="🌍 Choose your language / Chagua lugha:",
             reply_markup=lang_keyboard())
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "svc_signals":
         replies = get_replies(SIGNALS_REPLIES, lang)
@@ -1062,6 +1189,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=random.choice(replies),
                 parse_mode="Markdown", reply_markup=svc_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "svc_social":
         replies = get_replies(SOCIAL_REPLIES, lang)
@@ -1075,6 +1203,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=random.choice(replies),
                 parse_mode="Markdown", reply_markup=svc_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "svc_indicator":
         replies = get_replies(INDICATOR_REPLIES, lang)
@@ -1088,6 +1217,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=random.choice(replies),
                 parse_mode="Markdown", reply_markup=svc_keyboard(lang, indicator=True))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "svc_autobot":
         replies = get_replies(AUTOBOT_REPLIES, lang)
@@ -1101,6 +1231,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=random.choice(replies),
                 parse_mode="Markdown", reply_markup=svc_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "svc_freebot":
         replies = get_replies(FREEBOT_REPLIES, lang)
@@ -1114,6 +1245,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, text=random.choice(replies),
                 parse_mode="Markdown", reply_markup=freebot_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "do_support":
         await notify_support_request(context, user, lang)
@@ -1124,6 +1256,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "do_referral":
         ref_count = get_referral_count(user.id)
@@ -1142,6 +1275,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif data == "do_stories":
         stories = [
@@ -1151,7 +1285,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⭐⭐⭐⭐⭐ *\"Copy trading gave me +47% this month!\"* — Linda T., Kenya",
             "⭐⭐⭐⭐⭐ *\"Finally a bot that actually works!\"* — James O., Ghana",
         ]
-        img = rand_img(PHOTOS, context.user_data, "last_img_stories")
+        img = rand_img(SERVICE_PHOTOS, context.user_data, "last_img_stories")
         story_text = f"⭐ *SUCCESS STORIES*\n\n{random.choice(stories)}\n\n🔥 Join thousands of winning traders!"
         try:
             msg = await context.bot.send_photo(
@@ -1168,6 +1302,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
                 ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     # Admin: Connect
     elif data.startswith("con:"):
@@ -1209,7 +1344,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text="👋 *Support chat has ended.*\n\nThank you! Tap below if you need more help.",
                 parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(ui("btn_support", ulang), callback_data="do_support")
+                    InlineKeyboardButton(
+                        ui("btn_support", ulang), callback_data="do_support")
                 ]]))
             await asyncio.sleep(2)
             await context.bot.send_message(
@@ -1235,7 +1371,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     chat_id=req["chat_id"], user_id=uid)
                 pending_requests.pop(uid, None)
                 await query.message.edit_text(
-                    f"✅ *Approved!*\n👤 {req['user'].full_name}", parse_mode="Markdown")
+                    f"✅ *Approved!*\n👤 {req['user'].full_name}",
+                    parse_mode="Markdown")
                 try:
                     await context.bot.send_message(
                         chat_id=uid,
@@ -1272,7 +1409,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def forward_to_admin(context, user, message):
     """Forward to admin ONLY if user is in active support session"""
     if not active_support.get(user.id):
-        return  # ← Sio active session, usitume kwa admin
+        return
 
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     header = (
@@ -1342,7 +1479,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = get_lang(context)
     cid  = message.chat_id
 
-    # Admin
+    # Admin handler
     if is_admin(user.id):
         if message.reply_to_message:
             target = reply_map.get(message.reply_to_message.message_id)
@@ -1361,15 +1498,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     register_user(user, lang=lang)
 
-    # Melt effect — delete user message
+    # Delete user message (melt effect)
     await delete_user_msg(message)
 
-    # If in active support — forward to admin
+    # Active support — forward to admin
     if active_support.get(user.id):
         await forward_to_admin(context, user, message)
         return
 
-    # Media from non-support users — just acknowledge
+    # Media from non-support users
     if message.photo or message.video or message.voice or message.document or message.sticker:
         await typing_action(cid, context, 1.0)
         old_id = context.user_data.get("last_bot_msg_id")
@@ -1379,6 +1516,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=cid, text=ui("msg_received", lang),
             parse_mode="Markdown", reply_markup=support_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
         return
 
     if not message.text:
@@ -1392,6 +1530,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if old_id:
         await safe_delete(context, cid, old_id)
 
+    async def send_photo_or_text(img, caption, keyboard):
+        try:
+            m = await context.bot.send_photo(
+                chat_id=cid, photo=img, caption=caption,
+                parse_mode="Markdown", reply_markup=keyboard)
+        except:
+            m = await context.bot.send_message(
+                chat_id=cid, text=caption,
+                parse_mode="Markdown", reply_markup=keyboard)
+        context.user_data["last_bot_msg_id"] = m.message_id
+        track_msg(cid, m.message_id)
+
     # Keyword routing
     if any(w in low for w in [
         "hi","hello","hey","hujambo","habari","salaam","bonjour","hola",
@@ -1403,87 +1553,54 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
             name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
-        msg = await context.bot.send_message(
-            chat_id=cid, text=welcome_text,
-            parse_mode="Markdown", reply_markup=main_menu(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
-
-    elif any(w in low for w in [
-        "signal","signals","vip","alert","ishara",
-        "forex signal","binary signal","win rate"
-    ]):
-        img = rand_img(IMGS_SIGNALS, context.user_data, "last_img_signals")
-        replies = get_replies(SIGNALS_REPLIES, lang)
         try:
             msg = await context.bot.send_photo(
-                chat_id=cid, photo=img, caption=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
+                chat_id=cid, photo=WELCOME_IMAGE,
+                caption=welcome_text, parse_mode="Markdown",
+                reply_markup=main_menu(lang))
         except:
             msg = await context.bot.send_message(
-                chat_id=cid, text=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
+                chat_id=cid, text=welcome_text,
+                parse_mode="Markdown", reply_markup=main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
+
+    elif any(w in low for w in [
+        "signal","signals","vip","alert","ishara","forex signal","win rate","binary signal"
+    ]):
+        img = rand_img(IMGS_SIGNALS, context.user_data, "last_img_signals")
+        await send_photo_or_text(
+            img, random.choice(get_replies(SIGNALS_REPLIES, lang)), svc_keyboard(lang))
 
     elif any(w in low for w in [
         "social","copy","pocket","copy trade","copy trading","nakili"
     ]):
         img = rand_img(IMGS_SOCIAL, context.user_data, "last_img_social")
-        replies = get_replies(SOCIAL_REPLIES, lang)
-        try:
-            msg = await context.bot.send_photo(
-                chat_id=cid, photo=img, caption=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
-        except:
-            msg = await context.bot.send_message(
-                chat_id=cid, text=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
+        await send_photo_or_text(
+            img, random.choice(get_replies(SOCIAL_REPLIES, lang)), svc_keyboard(lang))
 
     elif any(w in low for w in [
         "indicator","chart","mt4","mt5","free indicator","kiashiria","arrow","technical"
     ]):
         img = rand_img(IMGS_INDICATOR, context.user_data, "last_img_indicator")
-        replies = get_replies(INDICATOR_REPLIES, lang)
-        try:
-            msg = await context.bot.send_photo(
-                chat_id=cid, photo=img, caption=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang, indicator=True))
-        except:
-            msg = await context.bot.send_message(
-                chat_id=cid, text=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang, indicator=True))
-        context.user_data["last_bot_msg_id"] = msg.message_id
+        await send_photo_or_text(
+            img, random.choice(get_replies(INDICATOR_REPLIES, lang)),
+            svc_keyboard(lang, indicator=True))
 
     elif any(w in low for w in [
-        "free bot","manual bot","freebot","free manual","bot ya bure","bure bot"
+        "free bot","manual bot","freebot","bot ya bure","free manual"
     ]):
         img = rand_img(IMGS_FREEBOT, context.user_data, "last_img_freebot")
-        replies = get_replies(FREEBOT_REPLIES, lang)
-        try:
-            msg = await context.bot.send_photo(
-                chat_id=cid, photo=img, caption=random.choice(replies),
-                parse_mode="Markdown", reply_markup=freebot_menu(lang))
-        except:
-            msg = await context.bot.send_message(
-                chat_id=cid, text=random.choice(replies),
-                parse_mode="Markdown", reply_markup=freebot_menu(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
+        await send_photo_or_text(
+            img, random.choice(get_replies(FREEBOT_REPLIES, lang)), freebot_menu(lang))
 
     elif any(w in low for w in [
         "auto","robot","automatic","autobot","trading bot",
         "quotex","deriv","olymp","binomo","iq option","broker","leseni"
     ]):
         img = rand_img(IMGS_AUTOBOT, context.user_data, "last_img_autobot")
-        replies = get_replies(AUTOBOT_REPLIES, lang)
-        try:
-            msg = await context.bot.send_photo(
-                chat_id=cid, photo=img, caption=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
-        except:
-            msg = await context.bot.send_message(
-                chat_id=cid, text=random.choice(replies),
-                parse_mode="Markdown", reply_markup=svc_keyboard(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
+        await send_photo_or_text(
+            img, random.choice(get_replies(AUTOBOT_REPLIES, lang)), svc_keyboard(lang))
 
     elif any(w in low for w in [
         "referral","refer","invite","earn","reward","kiungo","zawadi","alika"
@@ -1495,14 +1612,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ref_text = ui("referral_msg", lang).format(
             bot=BOT_USERNAME, uid=user.id,
             count=ref_count, min=REFERRAL_MIN,
-            needed=needed, bar=bar,
-            leaderboard=leaderboard)
+            needed=needed, bar=bar, leaderboard=leaderboard)
         msg = await context.bot.send_message(
             chat_id=cid, text=ref_text, parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif any(w in low for w in [
         "price","cost","bei","pesa","pay","payment","subscribe","plan","nunua","ngapi"
@@ -1516,6 +1633,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif any(w in low for w in [
         "support","help","assist","contact","agent","admin","msaada","wasiliana"
@@ -1528,6 +1646,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     elif any(w in low for w in [
         "thank","thanks","asante","merci","gracias","спасибо","شكرا","danke"
@@ -1537,6 +1656,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text=f"😊 Thank you, *{user.first_name}!* Always here for you. 🚀",
             parse_mode="Markdown")
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
     else:
         # Fallback — offer support
@@ -1544,6 +1664,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=cid, text=ui("fallback_msg", lang),
             parse_mode="Markdown", reply_markup=support_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
 
 # ══════════════════════════════════════════════════════════════
 #  MAIN
@@ -1562,7 +1683,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
 
-    print(f"✅ {BUSINESS_NAME} Bot v6.0 is LIVE!")
+    print(f"✅ {BUSINESS_NAME} Bot v6.1 is LIVE!")
     print("📋 Commands: /broadcast  /stats  /getid  /sessions")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
