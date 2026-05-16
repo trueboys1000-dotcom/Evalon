@@ -1566,10 +1566,11 @@ def main():
     init_db()
     app = Application.builder().token(BOT_TOKEN).build()
 
-    app.job_queue.run_daily(
-        daily_stats_job,
-        time=datetime.strptime("08:00", "%H:%M").time(),
-    )
+    if app.job_queue:
+        app.job_queue.run_daily(
+            daily_stats_job,
+            time=datetime.strptime("08:00", "%H:%M").time(),
+        )
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("broadcast", broadcast_command))
