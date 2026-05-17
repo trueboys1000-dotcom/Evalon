@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║         EVALON WINNERS — TELEGRAM SUPPORT BOT v6.2          ║
+║         EVALON WINNERS — TELEGRAM SUPPORT BOT v6.3          ║
 ║                                                              ║
 ║  ✅ Multi-step menu                                          ║
 ║  ✅ Melt effect (broadcast messages STAY)                    ║
@@ -21,6 +21,12 @@
 ║  ✅ Protect content (no forward/save)                        ║
 ║  ✅ PostgreSQL database                                      ║
 ║  ✅ 12 languages                                             ║
+║  ✅ FIXED: Markdown parse errors (escape_md)                 ║
+║  ✅ FIXED: Forward → Copy (no more "message not found")      ║
+║  ✅ FIXED: Conflict error (drop_pending_updates)             ║
+║  ✅ FIXED: Support messages arrive correctly                 ║
+║  ✅ FIXED: Lang loaded from DB on restart                    ║
+║  ✅ FIXED: Referral progress bar backtick crash              ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -80,10 +86,8 @@ logger = logging.getLogger(__name__)
 pending_requests: dict = {}
 reply_map: dict        = {}
 active_support: dict   = {}
-# Track ALL message ids per chat {chat_id: [msg_id, ...]}
-# support_msg_ids tracks messages during support sessions
-bot_msg_ids: dict      = {}   # regular bot messages
-support_msg_ids: dict  = {}   # support session messages (both sides)
+bot_msg_ids: dict      = {}
+support_msg_ids: dict  = {}
 
 # ══════════════════════════════════════════════════════════════
 #  IMAGES
@@ -125,6 +129,19 @@ def rand_img(pool, user_data, key):
     chosen = random.choice(available)
     user_data[key] = chosen
     return chosen
+
+# ══════════════════════════════════════════════════════════════
+#  MARKDOWN ESCAPE — FIX #1
+# ══════════════════════════════════════════════════════════════
+
+def escape_md(text):
+    """Escape Markdown special characters to prevent parse errors"""
+    if not text:
+        return ""
+    chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for c in chars:
+        text = text.replace(c, f'\\{c}')
+    return text
 
 # ══════════════════════════════════════════════════════════════
 #  DATABASE
@@ -275,9 +292,10 @@ def get_fake_leaderboard(user_real_count):
     return text
 
 def make_progress_bar(count, total):
+    """FIX #2: Removed backticks that caused .format() crashes"""
     filled = int((count / total) * 10)
     bar = "█" * filled + "░" * (10 - filled)
-    return f"`[{bar}]` {count}/{total}"
+    return f"[{bar}] {count}/{total}"
 
 # ══════════════════════════════════════════════════════════════
 #  URGENCY
@@ -477,14 +495,24 @@ UI = {
     },
 }
 
-for _lc in ["ar","zh","hi","ru","es","fr","pt","de","ur","ja"]:
+# Copy EN keys for other languages (buttons & system messages)
+for _lc in ["ar", "zh", "hi", "ru", "es", "fr", "pt", "de", "ur", "ja"]:
     UI[_lc] = {k: UI["en"][k] for k in UI["en"]}
 
 def ui(key, lang):
     return UI.get(lang, UI["en"]).get(key, UI["en"].get(key, key))
 
-def get_lang(context):
-    return context.user_data.get("lang", "en")
+def get_lang(context, user_id=None):
+    """FIX #3: Load lang from DB if not in memory (survives restarts)"""
+    lang = context.user_data.get("lang")
+    if not lang and user_id:
+        try:
+            info = get_user_info(user_id)
+            lang = info.get("lang", "en") or "en"
+            context.user_data["lang"] = lang
+        except:
+            lang = "en"
+    return lang or "en"
 
 def get_replies(pool, lang):
     return pool.get(lang) or pool.get("en", ["Coming soon!"])
@@ -494,7 +522,6 @@ def get_replies(pool, lang):
 # ══════════════════════════════════════════════════════════════
 
 def track_msg(chat_id, msg_id):
-    """Track regular bot message for melt effect"""
     if chat_id not in bot_msg_ids:
         bot_msg_ids[chat_id] = []
     bot_msg_ids[chat_id].append(msg_id)
@@ -502,7 +529,6 @@ def track_msg(chat_id, msg_id):
         bot_msg_ids[chat_id] = bot_msg_ids[chat_id][-100:]
 
 def track_support_msg(chat_id, msg_id):
-    """Track support session message — stays until session ends"""
     if chat_id not in support_msg_ids:
         support_msg_ids[chat_id] = []
     support_msg_ids[chat_id].append(msg_id)
@@ -524,14 +550,12 @@ async def delete_user_msg(message):
         pass
 
 async def delete_all_bot_msgs(context, chat_id):
-    """Delete all tracked regular bot messages"""
     if chat_id in bot_msg_ids:
         for msg_id in bot_msg_ids[chat_id]:
             await safe_delete(context, chat_id, msg_id)
         bot_msg_ids[chat_id] = []
 
 async def delete_support_msgs(context, chat_id):
-    """Delete all support session messages"""
     if chat_id in support_msg_ids:
         for msg_id in support_msg_ids[chat_id]:
             await safe_delete(context, chat_id, msg_id)
@@ -555,8 +579,11 @@ async def is_member(context, user_id):
     return user_id in pending_requests
 
 async def notify_new_user(context, user):
+    """FIX #4: escape_md prevents Markdown parse crashes"""
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
-    text = f"🆕 *New User!*\n\n👤 {user.full_name}\n🔗 @{user.username or 'N/A'}\n🆔 `{user.id}`\n🕐 {now}"
+    name = escape_md(user.full_name)
+    username = escape_md(user.username or "NA")
+    text = f"🆕 *New User!*\n\n👤 {name}\n🔗 @{username}\n🆔 `{user.id}`\n🕐 {now}"
     for aid in ADMIN_IDS:
         try:
             await context.bot.send_message(chat_id=aid, text=text, parse_mode="Markdown")
@@ -564,10 +591,13 @@ async def notify_new_user(context, user):
             logger.warning(f"Notify failed: {e}")
 
 async def notify_support_request(context, user, lang):
+    """FIX #4: escape_md prevents Markdown parse crashes"""
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
+    name = escape_md(user.full_name)
+    username = escape_md(user.username or "NA")
     text = (
         f"🆘 *Support Request*\n\n"
-        f"👤 {user.full_name}\n🔗 @{user.username or 'N/A'}\n"
+        f"👤 {name}\n🔗 @{username}\n"
         f"🆔 `{user.id}`\n🕐 {now}\n🌍 Lang: {lang}"
     )
     btns = InlineKeyboardMarkup([[
@@ -583,7 +613,7 @@ async def notify_support_request(context, user, lang):
             logger.warning(f"Support notify failed: {e}")
 
 # ══════════════════════════════════════════════════════════════
-#  AUTO CLEAN JOB (every 12 hours)
+#  AUTO CLEAN JOB
 # ══════════════════════════════════════════════════════════════
 
 async def auto_clean_chat(context: ContextTypes.DEFAULT_TYPE):
@@ -591,9 +621,8 @@ async def auto_clean_chat(context: ContextTypes.DEFAULT_TYPE):
     chat_id = job_data["chat_id"]
     lang    = job_data.get("lang", "en")
     name    = job_data.get("name", "")
+    uid     = job_data.get("uid")
 
-    # Skip if in active support session
-    uid = job_data.get("uid")
     if uid and active_support.get(uid):
         schedule_auto_clean(context, chat_id, lang, name, uid)
         return
@@ -640,7 +669,7 @@ async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
     lang    = job_data.get("lang", "en")
     try:
         img = random.choice(SERVICE_PHOTOS)
-        text = ui("comeback_msg", lang).format(name=name)
+        text = ui("comeback_msg", lang).format(name=escape_md(name))
         try:
             msg = await context.bot.send_photo(
                 chat_id=chat_id, photo=img, caption=text,
@@ -747,7 +776,6 @@ def support_keyboard(lang):
     ])
 
 def broadcast_keyboard(lang):
-    """Button for broadcast TEXT messages only"""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
     ])
@@ -805,6 +833,9 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         "user": user, "time": now,
     }
 
+    name = escape_md(user.full_name)
+    username = escape_md(user.username or "NA")
+
     btns = InlineKeyboardMarkup([[
         InlineKeyboardButton("✅ Approve", callback_data=f"approve_{user.id}"),
         InlineKeyboardButton("❌ Decline", callback_data=f"decline_{user.id}"),
@@ -813,7 +844,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         try:
             await context.bot.send_message(
                 chat_id=aid,
-                text=f"📨 *New Join Request*\n\n👤 {user.full_name}\n🔗 @{user.username or 'N/A'}\n🆔 `{user.id}`\n📢 {chat.title}\n🕐 {now}",
+                text=f"📨 *New Join Request*\n\n👤 {name}\n🔗 @{username}\n🆔 `{user.id}`\n📢 {chat.title}\n🕐 {now}",
                 parse_mode="Markdown", reply_markup=btns)
         except:
             pass
@@ -846,7 +877,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
     new_user = is_new_user(user.id)
-    lang = context.user_data.get("lang", "en")
+    lang = get_lang(context, user.id)
     register_user(user, referred_by=referred_by, lang=lang)
 
     if new_user:
@@ -855,18 +886,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ref_count = get_referral_count(referred_by)
             if ref_count >= REFERRAL_MIN:
                 ref_info = get_user_info(referred_by)
+                ref_name = escape_md(ref_info['name'])
                 for aid in ADMIN_IDS:
                     try:
                         await context.bot.send_message(
                             chat_id=aid,
-                            text=f"🏆 *REFERRAL REWARD!*\n\n👤 {ref_info['name']} amefika {ref_count} referrals!\n🎁 Mpe zawadi!",
+                            text=f"🏆 *REFERRAL REWARD!*\n\n👤 {ref_name} amefika {ref_count} referrals!\n🎁 Mpe zawadi!",
                             parse_mode="Markdown")
                     except:
                         pass
 
-    # Delete all previous bot messages
     await delete_all_bot_msgs(context, cid)
-
     await typing_action(cid, context, 1.2)
 
     if not context.user_data.get("lang"):
@@ -908,7 +938,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     urgency = get_urgency(lang)
     welcome_text = ui("welcome", lang).format(
-        name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+        name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
 
     msg = await send_protected_photo(
         context, cid, WELCOME_IMAGE, welcome_text, main_menu(lang))
@@ -939,13 +969,11 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_lang = u_info.get("lang", "en") or "en"
 
             if replied_msg and replied_msg.photo:
-                # Photo/video — NO button
                 await context.bot.send_photo(
                     chat_id=uid, photo=replied_msg.photo[-1].file_id,
                     caption=replied_msg.caption or "",
                     parse_mode="Markdown")
             elif replied_msg and replied_msg.video:
-                # Video — NO button
                 await context.bot.send_video(
                     chat_id=uid, video=replied_msg.video.file_id,
                     caption=replied_msg.caption or "",
@@ -959,13 +987,11 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     caption=replied_msg.caption or "",
                     parse_mode="Markdown")
             elif replied_msg and replied_msg.text:
-                # Text — WITH button
                 await context.bot.send_message(
                     chat_id=uid, text=replied_msg.text,
                     parse_mode="Markdown",
                     reply_markup=broadcast_keyboard(user_lang))
             elif context.args:
-                # Text command — WITH button
                 await context.bot.send_message(
                     chat_id=uid, text=" ".join(context.args),
                     parse_mode="Markdown",
@@ -999,7 +1025,8 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     top = get_top_referrers(5)
     top_text = ""
     for i, (name, refs) in enumerate(top, 1):
-        top_text += f"{i}. {name} — {refs} referrals\n"
+        safe_name = escape_md(name)  # FIX #4: escape names
+        top_text += f"{i}. {safe_name} — {refs} referrals\n"
 
     await update.message.reply_text(
         f"📊 *EVALON WINNERS — STATS*\n\n"
@@ -1008,7 +1035,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🟢 Active 7d: *{active7}*\n"
         f"📅 Active 30d: *{active30}*\n"
         f"🆘 Active support: *{len(active_support)}*\n\n"
-        f"🏆 *TOP REFERRERS (Real):*\n{top_text or 'None yet'}\n\n"
+        f"🏆 *TOP REFERRERS:*\n{top_text or 'None yet'}\n\n"
         f"🕐 {datetime.now().strftime('%d/%m/%Y %H:%M')}",
         parse_mode="Markdown")
 
@@ -1035,7 +1062,8 @@ async def sessions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = []
     for uid in list(active_support.keys()):
         u = get_user_info(uid)
-        text += f"👤 {u['name']} | `{uid}`\n"
+        safe_name = escape_md(u['name'])
+        text += f"👤 {safe_name} | `{uid}`\n"
         kb.append([InlineKeyboardButton(
             f"🔴 End: {u['name'][:20]}", callback_data=f"dis:{uid}:en")])
     kb.append([InlineKeyboardButton("🔴 End ALL", callback_data="end_all_support")])
@@ -1053,14 +1081,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = query.from_user
     cid  = query.message.chat_id
 
-    lang = get_lang(context)
+    lang = get_lang(context, user.id)
 
     # Language select
     if data.startswith("lang_"):
         new_lang = data[5:]
         context.user_data["lang"] = new_lang
         register_user(user, lang=new_lang)
-        # Delete ALL messages on language change
         await safe_delete(context, cid, query.message.message_id)
         await delete_all_bot_msgs(context, cid)
         await typing_action(cid, context, 1.5)
@@ -1074,7 +1101,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         urgency = get_urgency(new_lang)
         welcome_text = ui("welcome", new_lang).format(
-            name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+            name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
         msg = await send_protected_photo(
             context, cid, WELCOME_IMAGE, welcome_text, main_menu(new_lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
@@ -1091,7 +1118,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await delete_all_bot_msgs(context, cid)
             urgency = get_urgency(lang)
             welcome_text = ui("welcome", lang).format(
-                name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+                name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
             msg = await send_protected_photo(
                 context, cid, WELCOME_IMAGE, welcome_text, main_menu(lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
@@ -1107,7 +1134,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await typing_action(cid, context, 1.0)
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
-            name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+            name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
         msg = await send_protected_photo(
             context, cid, WELCOME_IMAGE,
             f"✅ Got it!\n\n{welcome_text}", main_menu(lang))
@@ -1124,26 +1151,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_delete(context, cid, query.message.message_id)
         await delete_all_bot_msgs(context, cid)
         await typing_action(cid, context, 1.0)
+        name = escape_md(user.full_name)
         for aid in ADMIN_IDS:
             try:
                 await context.bot.send_message(
                     chat_id=aid,
-                    text=f"⭐ *Rating*\n\n👤 {user.full_name}\n🆔 `{user.id}`\n{star_display} ({stars}/5)",
+                    text=f"⭐ *Rating*\n\n👤 {name}\n🆔 `{user.id}`\n{star_display} ({stars}/5)",
                     parse_mode="Markdown")
             except:
                 pass
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
-            name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+            name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
         msg = await send_protected_photo(
             context, cid, WELCOME_IMAGE,
-            f"{ui('rating_thanks', lang).format(name=user.first_name)}\n\n{welcome_text}",
+            f"{ui('rating_thanks', lang).format(name=escape_md(user.first_name))}\n\n{welcome_text}",
             main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
 
-    # For all navigation buttons — delete previous and show new
+    # Navigation buttons
     await safe_delete(context, cid, query.message.message_id)
     await delete_all_bot_msgs(context, cid)
     await typing_action(cid, context, 1.5)
@@ -1151,7 +1179,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "main_menu":
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
-            name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+            name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
         msg = await send_protected_photo(
             context, cid, WELCOME_IMAGE, welcome_text, main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
@@ -1285,7 +1313,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-    # Admin: Disconnect — delete all support messages
+    # Admin: Disconnect
     elif data.startswith("dis:"):
         parts = data.split(":")
         uid   = int(parts[1])
@@ -1299,11 +1327,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-        # Delete ALL support messages from both sides
         await delete_support_msgs(context, uid)
 
         try:
-            # Send session ended message
             msg = await context.bot.send_message(
                 chat_id=uid,
                 text=ui("session_ended", ulang),
@@ -1315,7 +1341,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ]]))
             track_msg(uid, msg.message_id)
             await asyncio.sleep(2)
-            # Send rating
             rating_msg = await context.bot.send_message(
                 chat_id=uid,
                 text=ui("rating_msg", ulang),
@@ -1343,8 +1368,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.approve_chat_join_request(
                     chat_id=req["chat_id"], user_id=uid)
                 pending_requests.pop(uid, None)
+                safe_name = escape_md(req['user'].full_name)
                 await query.message.edit_text(
-                    f"✅ *Approved!*\n👤 {req['user'].full_name}",
+                    f"✅ *Approved!*\n👤 {safe_name}",
                     parse_mode="Markdown")
                 try:
                     await context.bot.send_message(
@@ -1377,32 +1403,73 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
 
 # ══════════════════════════════════════════════════════════════
-#  TWO-WAY MESSAGING
+#  TWO-WAY MESSAGING — FIX #5: Copy instead of Forward
 # ══════════════════════════════════════════════════════════════
 
 async def forward_to_admin(context, user, message):
-    """Forward to admin ONLY if user is in active support session"""
+    """
+    FIX: Send copy instead of forward_message.
+    Forward fails if user deletes message before bot forwards it.
+    Copy sends the content directly — never fails for that reason.
+    """
     if not active_support.get(user.id):
         return
 
-    now = datetime.now().strftime("%d/%m/%Y %H:%M")
-    header = (
-        f"💬 *Message from user*\n"
-        f"👤 {user.full_name} | @{user.username or 'N/A'}\n"
-        f"🆔 `{user.id}` | 🕐 {now}\n"
-        f"_(Reply to respond)_"
-    )
+    name = escape_md(user.full_name)
+
     for aid in ADMIN_IDS:
         try:
-            hdr = await context.bot.send_message(
-                chat_id=aid, text=header, parse_mode="Markdown")
-            fwd = await context.bot.forward_message(
-                chat_id=aid, from_chat_id=message.chat_id,
-                message_id=message.message_id)
-            reply_map[fwd.message_id] = user.id
-            reply_map[hdr.message_id] = user.id
+            sent = None
+            if message.text:
+                sent = await context.bot.send_message(
+                    chat_id=aid,
+                    text=f"💬 *{name}* \\(`{user.id}`\\):\n\n{message.text}",
+                    parse_mode="MarkdownV2")
+            elif message.photo:
+                caption = f"📸 *{name}*"
+                if message.caption:
+                    caption += f"\n{message.caption}"
+                sent = await context.bot.send_photo(
+                    chat_id=aid,
+                    photo=message.photo[-1].file_id,
+                    caption=caption,
+                    parse_mode="Markdown")
+            elif message.video:
+                caption = f"🎥 *{name}*"
+                if message.caption:
+                    caption += f"\n{message.caption}"
+                sent = await context.bot.send_video(
+                    chat_id=aid,
+                    video=message.video.file_id,
+                    caption=caption,
+                    parse_mode="Markdown")
+            elif message.voice:
+                sent = await context.bot.send_voice(
+                    chat_id=aid,
+                    voice=message.voice.file_id)
+            elif message.document:
+                caption = f"📄 *{name}*"
+                if message.caption:
+                    caption += f"\n{message.caption}"
+                sent = await context.bot.send_document(
+                    chat_id=aid,
+                    document=message.document.file_id,
+                    caption=caption,
+                    parse_mode="Markdown")
+            elif message.sticker:
+                sent = await context.bot.send_sticker(
+                    chat_id=aid,
+                    sticker=message.sticker.file_id)
+            elif message.audio:
+                sent = await context.bot.send_audio(
+                    chat_id=aid,
+                    audio=message.audio.file_id)
+
+            if sent:
+                reply_map[sent.message_id] = user.id
+
         except Exception as e:
-            logger.warning(f"Forward failed: {e}")
+            logger.warning(f"Forward to admin failed: {e}")
 
 async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
@@ -1448,14 +1515,13 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 protect_content=True)
         else:
             return
-        # Track support message for later deletion
         track_support_msg(target_uid, sent.message_id)
         await message.reply_text("✅ Delivered!")
     except Exception as e:
         await message.reply_text(f"❌ Failed: {e}")
 
 # ══════════════════════════════════════════════════════════════
-#  MAIN MESSAGE HANDLER
+#  MAIN MESSAGE HANDLER — FIX #6: Check support BEFORE deleting
 # ══════════════════════════════════════════════════════════════
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1463,7 +1529,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not message:
         return
     user = message.from_user
-    lang = get_lang(context)
     cid  = message.chat_id
 
     # Admin handler
@@ -1483,17 +1548,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         return
 
+    lang = get_lang(context, user.id)
     register_user(user, lang=lang)
 
-    # Delete user message (melt effect)
-    await delete_user_msg(message)
-
-    # Active support session — forward to admin, DON'T delete user messages
+    # ✅ FIX: Check support session FIRST — before deleting anything
     if active_support.get(user.id):
-        # Track user message id in support_msg_ids
         track_support_msg(cid, message.message_id)
         await forward_to_admin(context, user, message)
         return
+
+    # Only delete for non-support users (melt effect)
+    await delete_user_msg(message)
 
     # Media from non-support users
     if message.photo or message.video or message.voice or message.document or message.sticker:
@@ -1534,7 +1599,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]):
         urgency = get_urgency(lang)
         welcome_text = ui("welcome", lang).format(
-            name=user.first_name, urgency=urgency, business=BUSINESS_NAME)
+            name=escape_md(user.first_name), urgency=urgency, business=BUSINESS_NAME)
         await reply_with_photo(WELCOME_IMAGE, welcome_text, main_menu(lang))
 
     elif any(w in low for w in [
@@ -1605,7 +1670,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "thank","thanks","asante","merci","gracias","спасибо","شكرا","danke"
     ]):
         await reply_with_text(
-            f"😊 Thank you, *{user.first_name}!* Always here for you. 🚀",
+            f"😊 Thank you, *{escape_md(user.first_name)}!* Always here for you. 🚀",
             InlineKeyboardMarkup([
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
             ]))
@@ -1614,7 +1679,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await reply_with_text(ui("fallback_msg", lang), support_keyboard(lang))
 
 # ══════════════════════════════════════════════════════════════
-#  MAIN
+#  MAIN — FIX #7: drop_pending_updates stops Conflict error
 # ══════════════════════════════════════════════════════════════
 
 def main():
@@ -1630,9 +1695,12 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
 
-    print(f"✅ {BUSINESS_NAME} Bot v6.2 is LIVE!")
+    print(f"✅ {BUSINESS_NAME} Bot v6.3 is LIVE!")
     print("📋 Commands: /broadcast  /stats  /getid  /sessions")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,  # FIX: prevents Conflict error on restart
+    )
 
 if __name__ == "__main__":
     main()
