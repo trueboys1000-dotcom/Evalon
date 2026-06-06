@@ -7412,85 +7412,12 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await asyncio.sleep(0.3)
 
 
-def main():
-    init_db()
-    app = Application.builder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("broadcast", broadcast_command))
-    app.add_handler(CommandHandler("stats", stats_command))
-    app.add_handler(CommandHandler("getid", getid_command))
-    app.add_handler(CommandHandler("sessions", sessions_command))
-    app.add_handler(CommandHandler("preview", preview_command))
-    app.add_handler(CommandHandler("spinners", spinners_command))
-    app.add_handler(CommandHandler("givespin", givespin_command))
-    app.add_handler(CommandHandler("setnews", setnews_command))
-    app.add_handler(CommandHandler("setvip", setvip_command))
-    app.add_handler(CommandHandler("clearnews", clearnews_command))
-    app.add_handler(CommandHandler("clearvip", clearnews_command))
-    app.add_handler(CommandHandler("results", results_command))
-    app.add_handler(CommandHandler("feedback", feedback_command))
-    app.add_handler(CommandHandler("feedbackadd", feedbackadd_command))
-    app.add_handler(CommandHandler("feedbackdlt", feedbackdlt_command))
-    app.add_handler(CommandHandler("feedbacklist", feedbacklist_command))
-    app.add_handler(CommandHandler("addphoto", addphoto_command))
-    app.add_handler(CommandHandler("addstory", addstory_command))
-    app.add_handler(CommandHandler("liststories", liststories_command))
-    app.add_handler(CommandHandler("deletestory", deletestory_command))
-    app.add_handler(CommandHandler("addbot", addbot_command))
-    app.add_handler(CommandHandler("delbot", delbot_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("blockedusers", blockedusers_command))
-    app.add_handler(CommandHandler("setpocketlink", setpocketlink_command))
-    app.add_handler(CommandHandler("setwelcome", setwelcome_command))
-    app.add_handler(CommandHandler("history", history_command))
-    app.add_handler(CommandHandler("setresult", setresult_command))
-    app.add_handler(CommandHandler("users", users_command))
-    app.add_handler(CommandHandler("userchart", userchart_command))
-    app.add_handler(ChatJoinRequestHandler(handle_join_request))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
-
-    # Health server for Render + Self-ping every 5 minutes
-    import threading
-    import urllib.request
-    from http.server import HTTPServer, BaseHTTPRequestHandler
-    class H(BaseHTTPRequestHandler):
-        def do_GET(self):
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'OK - EVALON BOT RUNNING')
-        def log_message(self, *a): pass
-    _port = int(os.environ.get('PORT', 8080))
-    threading.Thread(target=lambda: HTTPServer(('0.0.0.0', _port), H).serve_forever(), daemon=True).start()
-
-    # Self-ping every 5 minutes to prevent Render from sleeping
-    def self_ping():
-        import time
-        url = os.environ.get('RENDER_EXTERNAL_URL', f'http://0.0.0.0:{_port}')
-        while True:
-            time.sleep(300)  # 5 minutes
-            try:
-                urllib.request.urlopen(url, timeout=10)
-                logger.info("✅ Self-ping OK")
-            except Exception as e:
-                logger.warning(f"Self-ping failed: {e}")
-    threading.Thread(target=self_ping, daemon=True).start()
-
-    print(f"✅ {BUSINESS_NAME} Bot v6.9 is LIVE!")
-    print("📋 Type /help in bot for all admin commands")
-    app.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True,
-    )
-
-if __name__ == "__main__":
-    main()
-
 
 # ══════════════════════════════════════════════════════════════
 #  /userchart USER_ID — Visual chat activity chart for a user
 # ══════════════════════════════════════════════════════════════
+
+
 
 def get_chat_stats_for_user(uid):
     """
@@ -7640,3 +7567,81 @@ async def userchart_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         # Fallback without markdown if parse fails
         await update.message.reply_text(chart_text)
+
+
+
+def main():
+    init_db()
+    app = Application.builder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("broadcast", broadcast_command))
+    app.add_handler(CommandHandler("stats", stats_command))
+    app.add_handler(CommandHandler("getid", getid_command))
+    app.add_handler(CommandHandler("sessions", sessions_command))
+    app.add_handler(CommandHandler("preview", preview_command))
+    app.add_handler(CommandHandler("spinners", spinners_command))
+    app.add_handler(CommandHandler("givespin", givespin_command))
+    app.add_handler(CommandHandler("setnews", setnews_command))
+    app.add_handler(CommandHandler("setvip", setvip_command))
+    app.add_handler(CommandHandler("clearnews", clearnews_command))
+    app.add_handler(CommandHandler("clearvip", clearnews_command))
+    app.add_handler(CommandHandler("results", results_command))
+    app.add_handler(CommandHandler("feedback", feedback_command))
+    app.add_handler(CommandHandler("feedbackadd", feedbackadd_command))
+    app.add_handler(CommandHandler("feedbackdlt", feedbackdlt_command))
+    app.add_handler(CommandHandler("feedbacklist", feedbacklist_command))
+    app.add_handler(CommandHandler("addphoto", addphoto_command))
+    app.add_handler(CommandHandler("addstory", addstory_command))
+    app.add_handler(CommandHandler("liststories", liststories_command))
+    app.add_handler(CommandHandler("deletestory", deletestory_command))
+    app.add_handler(CommandHandler("addbot", addbot_command))
+    app.add_handler(CommandHandler("delbot", delbot_command))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("blockedusers", blockedusers_command))
+    app.add_handler(CommandHandler("setpocketlink", setpocketlink_command))
+    app.add_handler(CommandHandler("setwelcome", setwelcome_command))
+    app.add_handler(CommandHandler("history", history_command))
+    app.add_handler(CommandHandler("setresult", setresult_command))
+    app.add_handler(CommandHandler("users", users_command))
+    app.add_handler(CommandHandler("userchart", userchart_command))
+    app.add_handler(ChatJoinRequestHandler(handle_join_request))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
+
+    # Health server for Render + Self-ping every 5 minutes
+    import threading
+    import urllib.request
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'OK - EVALON BOT RUNNING')
+        def log_message(self, *a): pass
+    _port = int(os.environ.get('PORT', 8080))
+    threading.Thread(target=lambda: HTTPServer(('0.0.0.0', _port), H).serve_forever(), daemon=True).start()
+
+    # Self-ping every 5 minutes to prevent Render from sleeping
+    def self_ping():
+        import time
+        url = os.environ.get('RENDER_EXTERNAL_URL', f'http://0.0.0.0:{_port}')
+        while True:
+            time.sleep(300)  # 5 minutes
+            try:
+                urllib.request.urlopen(url, timeout=10)
+                logger.info("✅ Self-ping OK")
+            except Exception as e:
+                logger.warning(f"Self-ping failed: {e}")
+    threading.Thread(target=self_ping, daemon=True).start()
+
+    print(f"✅ {BUSINESS_NAME} Bot v6.9 is LIVE!")
+    print("📋 Type /help in bot for all admin commands")
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+    )
+
+if __name__ == "__main__":
+    main()
+
