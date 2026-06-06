@@ -816,15 +816,7 @@ SPIN_FRAMES = [
     "🎰 ▶️ 🤖 🎯 🌟 ⚡ 🏆 🎁 🔄 💎 📊",
 ]
 
-def do_spin():
-    """Run weighted random spin — returns (prize_key, emoji, is_win)"""
-    weights = [p[0] for p in SPIN_PRIZES]
-    chosen  = random.choices(SPIN_PRIZES, weights=weights, k=1)[0]
-    return chosen[1], chosen[2], chosen[3]
-
-def get_prize_text(prize_key, lang):
-    texts = SPIN_PRIZE_TEXT.get(prize_key, {})
-    return texts.get(lang) or texts.get("en", "🎁 Prize!")
+# do_spin and get_prize_text defined above (lines ~742+) — no duplicate needed
 
 SPIN_WHEEL_VISUAL = (
     "✨ ━━━━━━━━━━━━━━━━━━━━━━ ✨\n"
@@ -842,31 +834,31 @@ SPIN_WHEEL_VISUAL = (
 
 AUTO_CLEAN_MESSAGES = {
     "en": [
-        "💎 *{name}*, want VIP access or a free bot?\n\n🎰 Tap below — *spin your free access now!*\nNew signals dropping today! Don't miss out! 🔥",
+        "💎 *{name}*, want VIP access or a free bot?\n\n🎁 Invite friends & unlock exclusive rewards!\n📊 New signals dropping today! Don't miss out! 🔥",
         "👋 *{name}!* Still here? Great!\n\n📊 Today's VIP signals are live!\n🎯 Tap Start — your next win is one click away! 💪",
         "🚀 *{name}*, the market is moving!\n\n⚡ Active traders are winning right now.\n🏆 Join them — tap Start and explore! 🔥",
-        "🔥 *{name}!* Don't let the market pass you by!\n\n🎁 Spin your free access & discover what's waiting for you!\n💰 Winners are made daily here at EVALON! 🏆",
-        "💡 *{name}*, smart traders don't wait!\n\n📈 Our auto bot is running 24/7 — are you?\n🎰 Tap Start and spin to unlock your free access! ⚡",
+        "🔥 *{name}!* Don't let the market pass you by!\n\n🎁 Invite a friend & both of you get rewards!\n💰 Winners are made daily here at EVALON! 🏆",
+        "💡 *{name}*, smart traders don't wait!\n\n📈 Our auto bot is running 24/7 — are you?\n👥 Invite friends to unlock your free access! ⚡",
         "🌟 *{name}!* Your trading journey continues!\n\n🏆 New winners announced this week!\n🔥 Tap Start — could YOU be next? 💎",
         "⚡ *{name}*, the VIP channel is buzzing!\n\n📊 Signals are being sent right now!\n🚀 Tap Start to catch today's opportunities! 🎯",
     ],
     "sw": [
-        "💎 *{name}*, unataka VIP au bot ya bure?\n\n🎰 Bonyeza hapa chini — *spin ufikiaji wako wa bure sasa!*\nSignals mpya zinatoka leo! Usikose! 🔥",
+        "💎 *{name}*, unataka VIP au bot ya bure?\n\n🎁 Alika marafiki na fungua zawadi za kipekee!\nSignals mpya zinatoka leo! Usikose! 🔥",
         "👋 *{name}!* Bado uko? Vizuri!\n\n📊 Signals za VIP za leo ziko live!\n🎯 Bonyeza Start — ushindi wako upo tap moja mbele! 💪",
         "🚀 *{name}*, soko linasogea!\n\n⚡ Wafanyabiashara wanaoshinda sasa hivi.\n🏆 Jiunge nao — bonyeza Start na uchunguze! 🔥",
-        "🔥 *{name}!* Usikubali soko lipite!\n\n🎁 Spin ufikiaji wako wa bure na ugundua kinachokungoja!\n💰 Washindi hufanywa kila siku hapa EVALON! 🏆",
-        "💡 *{name}*, wafanyabiashara hodari hawasubiri!\n\n📈 Auto bot yetu inafanya kazi 24/7 — wewe je?\n🎰 Bonyeza Start na spin kufungua ufikiaji wako wa bure! ⚡",
+        "🔥 *{name}!* Usikubali soko lipite!\n\n🎁 Alika rafiki na nyote mwawili mnapata zawadi!\n💰 Washindi hufanywa kila siku hapa EVALON! 🏆",
+        "💡 *{name}*, wafanyabiashara hodari hawasubiri!\n\n📈 Auto bot yetu inafanya kazi 24/7 — wewe je?\n👥 Alika marafiki kufungua ufikiaji wako wa bure! ⚡",
     ],
     "ar": [
-        "💎 *{name}*، هل تريد VIP أو بوت مجاني؟\n\n🎰 اضغط أدناه — *أدر عجلتك المجانية الآن!*\nإشارات جديدة اليوم! لا تفوت الفرصة! 🔥",
+        "💎 *{name}*، هل تريد VIP أو بوت مجاني؟\n\n🎁 ادعُ أصدقاء واحصل على مكافآت حصرية!\nإشارات جديدة اليوم! لا تفوت الفرصة! 🔥",
         "👋 *{name}!* لا تدع السوق يمر!\n\n📊 إشارات VIP اليوم متاحة الآن!\n🎯 اضغط Start — فوزك بنقرة واحدة! 💪",
     ],
     "ru": [
-        "💎 *{name}*, хотите VIP или бесплатного бота?\n\n🎰 Нажмите — *крутите бесплатный доступ сейчас!*\nСегодня новые сигналы! Не пропустите! 🔥",
+        "💎 *{name}*, хотите VIP или бесплатного бота?\n\n🎁 Пригласите друзей и получите эксклюзивные награды!\nСегодня новые сигналы! Не пропустите! 🔥",
         "🚀 *{name}*, рынок движется!\n\n⚡ Активные трейдеры побеждают прямо сейчас.\n🏆 Присоединяйтесь — нажмите Start! 🔥",
     ],
     "zh": [
-        "💎 *{name}*，想要VIP还是免费机器人？\n\n🎰 点击下方 — *立即旋转您的免费访问！*\n今天有新信号！不要错过！ 🔥",
+        "💎 *{name}*，想要VIP还是免费机器人？\n\n🎁 邀请朋友，解锁专属奖励！\n今天有新信号！不要错过！ 🔥",
         "🚀 *{name}*，市场在移动！\n\n⚡ 活跃的交易者现在正在获胜。\n🏆 加入他们 — 点击Start！ 🔥",
     ],
 }
@@ -1935,7 +1927,7 @@ UI = {
         "btn_indicator": "📈 Free Indicator",
         "btn_autobot": "🤖 Auto Bot",
         "btn_freebot": "🆓 Free Manual Bot",
-        "btn_website": "🌐 Website & Pricing",
+        "btn_website": "🌐 Website",
         "btn_support": "💬 Contact Support",
         "btn_back": "⬅️ Back",
         "btn_restart": "🚀 Tap to Start",
@@ -2053,7 +2045,7 @@ UI = {
         "btn_indicator": "📈 مؤشر مجاني",
         "btn_autobot": "🤖 بوت تلقائي",
         "btn_freebot": "🆓 بوت يدوي مجاني",
-        "btn_website": "🌐 الموقع والأسعار",
+        "btn_website": "🌐 الموقع",
         "btn_support": "💬 التواصل مع الدعم",
         "btn_back": "⬅️ رجوع",
         "btn_restart": "🚀 اضغط للبدء",
@@ -2083,6 +2075,16 @@ UI = {
         "price_msg": "💰 *الأسعار والخطط*\n\nزر موقعنا لأحدث الأسعار 👇",
         "join_pending": "⏳ *تم استلام الطلب!*\n\nسيوافق المشرف قريباً. 🙏",
         "auto_clean_msg": "🔄 *تم تحديث المحادثة!*\n\nاضغط أدناه للمتابعة 👇",
+        "btn_tip": "💡 نصيحة اليوم",
+        "btn_quiz": "🧠 اختبار",
+        "btn_profile": "👤 ملفي الشخصي",
+        "btn_goal": "🎯 تحديد الهدف",
+        "btn_results_history": "📅 النتائج السابقة",
+        "btn_challenge": "💪 تحدي",
+        "btn_mood": "😊 مزاجي",
+        "btn_why_evalon": "🤔 لماذا EVALON؟",
+        "btn_win_alert": "🔔 تنبيه الفوز",
+        "no_results_history": "📅 *لا توجد نتائج سابقة بعد!*\n\nسيقوم المشرف بنشر نتائج الجلسات هنا. تحقق لاحقاً! ⚡",
         "session_ended": "👋 *انتهت جلسة الدعم.*\n\nشكراً للتواصل معنا! 🙏",
     },
     "zh": {
@@ -2099,7 +2101,7 @@ UI = {
         "btn_indicator": "📈 免费指标",
         "btn_autobot": "🤖 自动机器人",
         "btn_freebot": "🆓 免费手动机器人",
-        "btn_website": "🌐 网站和价格",
+        "btn_website": "🌐 网站",
         "btn_support": "💬 联系支持",
         "btn_back": "⬅️ 返回",
         "btn_restart": "🚀 点击开始",
@@ -2129,6 +2131,16 @@ UI = {
         "price_msg": "💰 *价格和计划*\n\n访问我们的网站查看最新价格 👇",
         "join_pending": "⏳ *请求已收到！*\n\n管理员将很快批准。 🙏",
         "auto_clean_msg": "🔄 *聊天已刷新！*\n\n点击下方继续 👇",
+        "btn_tip": "💡 每日提示",
+        "btn_quiz": "🧠 测验",
+        "btn_profile": "👤 我的资料",
+        "btn_goal": "🎯 设定目标",
+        "btn_results_history": "📅 历史结果",
+        "btn_challenge": "💪 挑战",
+        "btn_mood": "😊 我的心情",
+        "btn_why_evalon": "🤔 为什么选EVALON？",
+        "btn_win_alert": "🔔 获胜提醒",
+        "no_results_history": "📅 *暂无历史结果！*\n\n管理员将在此发布会话结果。稍后再来！ ⚡",
         "session_ended": "👋 *支持聊天已结束。*\n\n感谢您联系我们！ 🙏",
     },
     "hi": {
@@ -2145,7 +2157,7 @@ UI = {
         "btn_indicator": "📈 मुफ्त इंडिकेटर",
         "btn_autobot": "🤖 ऑटो बॉट",
         "btn_freebot": "🆓 मुफ्त मैनुअल बॉट",
-        "btn_website": "🌐 वेबसाइट और मूल्य",
+        "btn_website": "🌐 वेबसाइट",
         "btn_support": "💬 सहायता से संपर्क करें",
         "btn_back": "⬅️ वापस",
         "btn_restart": "🚀 शुरू करने के लिए टैप करें",
@@ -2175,6 +2187,16 @@ UI = {
         "price_msg": "💰 *मूल्य और योजनाएं*\n\nनवीनतम मूल्य के लिए हमारी वेबसाइट पर जाएं 👇",
         "join_pending": "⏳ *अनुरोध प्राप्त हुआ!*\n\nएडमिन जल्द ही अनुमोदन करेगा। 🙏",
         "auto_clean_msg": "🔄 *चैट रिफ्रेश हुई!*\n\nजारी रखने के लिए नीचे टैप करें 👇",
+        "btn_tip": "💡 दैनिक टिप",
+        "btn_quiz": "🧠 क्विज़",
+        "btn_profile": "👤 मेरी प्रोफ़ाइल",
+        "btn_goal": "🎯 लक्ष्य निर्धारित करें",
+        "btn_results_history": "📅 पुराने परिणाम",
+        "btn_challenge": "💪 चुनौती",
+        "btn_mood": "😊 मेरा मूड",
+        "btn_why_evalon": "🤔 EVALON क्यों?",
+        "btn_win_alert": "🔔 जीत अलर्ट",
+        "no_results_history": "📅 *अभी तक कोई पुराना परिणाम नहीं!*\n\nAdmin यहाँ सत्र परिणाम पोस्ट करेगा। बाद में देखें! ⚡",
         "session_ended": "👋 *सहायता चैट समाप्त हो गई।*\n\nहमसे संपर्क करने के लिए धन्यवाद! 🙏",
     },
     "ru": {
@@ -2191,7 +2213,7 @@ UI = {
         "btn_indicator": "📈 Бесплатный индикатор",
         "btn_autobot": "🤖 Авто бот",
         "btn_freebot": "🆓 Бесплатный ручной бот",
-        "btn_website": "🌐 Сайт и цены",
+        "btn_website": "🌐 Сайт",
         "btn_support": "💬 Связаться с поддержкой",
         "btn_back": "⬅️ Назад",
         "btn_restart": "🚀 Нажмите для начала",
@@ -2221,6 +2243,16 @@ UI = {
         "price_msg": "💰 *Цены и планы*\n\nПосетите наш сайт для актуальных цен 👇",
         "join_pending": "⏳ *Запрос получен!*\n\nАдмин одобрит скоро. 🙏",
         "auto_clean_msg": "🔄 *Чат обновлен!*\n\nНажмите ниже для продолжения 👇",
+        "btn_tip": "💡 Совет дня",
+        "btn_quiz": "🧠 Викторина",
+        "btn_profile": "👤 Мой профиль",
+        "btn_goal": "🎯 Установить цель",
+        "btn_results_history": "📅 История результатов",
+        "btn_challenge": "💪 Вызов",
+        "btn_mood": "😊 Моё настроение",
+        "btn_why_evalon": "🤔 Почему EVALON?",
+        "btn_win_alert": "🔔 Уведомление о победе",
+        "no_results_history": "📅 *Нет прошлых результатов!*\n\nАдмин опубликует результаты сессий здесь. Загляните позже! ⚡",
         "session_ended": "👋 *Чат поддержки завершен.*\n\nСпасибо за обращение! 🙏",
     },
     "es": {
@@ -2234,7 +2266,7 @@ UI = {
         "btn_indicator": "📈 Indicador Gratis",
         "btn_autobot": "🤖 Bot Automático",
         "btn_freebot": "🆓 Bot Manual Gratis",
-        "btn_website": "🌐 Sitio Web y Precios",
+        "btn_website": "🌐 Sitio Web",
         "btn_support": "💬 Contactar Soporte",
         "btn_back": "⬅️ Atrás",
         "btn_restart": "🚀 Toca para Comenzar",
@@ -2267,6 +2299,16 @@ UI = {
         "price_msg": "💰 *Precios y Planes*\n\nVisita nuestro sitio web para precios actuales 👇",
         "join_pending": "⏳ *¡Solicitud recibida!*\n\nEl admin aprobará pronto. 🙏",
         "auto_clean_msg": "🔄 *¡Chat actualizado!*\n\nToca abajo para continuar 👇",
+        "btn_tip": "💡 Consejo del día",
+        "btn_quiz": "🧠 Quiz",
+        "btn_profile": "👤 Mi perfil",
+        "btn_goal": "🎯 Establecer meta",
+        "btn_results_history": "📅 Resultados anteriores",
+        "btn_challenge": "💪 Desafío",
+        "btn_mood": "😊 Mi estado de ánimo",
+        "btn_why_evalon": "🤔 ¿Por qué EVALON?",
+        "btn_win_alert": "🔔 Alerta de victoria",
+        "no_results_history": "📅 *¡No hay resultados anteriores aún!*\n\nEl admin publicará resultados aquí. ¡Vuelve pronto! ⚡",
         "session_ended": "👋 *El chat de soporte ha finalizado.*\n\n¡Gracias por contactarnos! 🙏",
     },
     "fr": {
@@ -2280,7 +2322,7 @@ UI = {
         "btn_indicator": "📈 Indicateur Gratuit",
         "btn_autobot": "🤖 Bot Automatique",
         "btn_freebot": "🆓 Bot Manuel Gratuit",
-        "btn_website": "🌐 Site Web et Prix",
+        "btn_website": "🌐 Site Web",
         "btn_support": "💬 Contacter le Support",
         "btn_back": "⬅️ Retour",
         "btn_restart": "🚀 Appuyez pour Commencer",
@@ -2313,6 +2355,16 @@ UI = {
         "price_msg": "💰 *Prix et Plans*\n\nVisitez notre site pour les derniers prix 👇",
         "join_pending": "⏳ *Demande reçue!*\n\nL'admin approuvera bientôt. 🙏",
         "auto_clean_msg": "🔄 *Chat actualisé!*\n\nAppuyez ci-dessous pour continuer 👇",
+        "btn_tip": "💡 Conseil du jour",
+        "btn_quiz": "🧠 Quiz",
+        "btn_profile": "👤 Mon profil",
+        "btn_goal": "🎯 Fixer un objectif",
+        "btn_results_history": "📅 Résultats passés",
+        "btn_challenge": "💪 Défi",
+        "btn_mood": "😊 Mon humeur",
+        "btn_why_evalon": "🤔 Pourquoi EVALON?",
+        "btn_win_alert": "🔔 Alerte victoire",
+        "no_results_history": "📅 *Pas encore de résultats passés!*\n\nL'admin publiera les résultats ici. Revenez bientôt! ⚡",
         "session_ended": "👋 *Le chat de support est terminé.*\n\nMerci de nous avoir contactés! 🙏",
     },
     "pt": {
@@ -2326,7 +2378,7 @@ UI = {
         "btn_indicator": "📈 Indicador Grátis",
         "btn_autobot": "🤖 Bot Automático",
         "btn_freebot": "🆓 Bot Manual Grátis",
-        "btn_website": "🌐 Site e Preços",
+        "btn_website": "🌐 Site",
         "btn_support": "💬 Contatar Suporte",
         "btn_back": "⬅️ Voltar",
         "btn_restart": "🚀 Toque para Começar",
@@ -2359,6 +2411,16 @@ UI = {
         "price_msg": "💰 *Preços e Planos*\n\nVisite nosso site para os preços mais recentes 👇",
         "join_pending": "⏳ *Solicitação recebida!*\n\nO admin aprovará em breve. 🙏",
         "auto_clean_msg": "🔄 *Chat atualizado!*\n\nToque abaixo para continuar 👇",
+        "btn_tip": "💡 Dica do dia",
+        "btn_quiz": "🧠 Quiz",
+        "btn_profile": "👤 Meu perfil",
+        "btn_goal": "🎯 Definir meta",
+        "btn_results_history": "📅 Resultados anteriores",
+        "btn_challenge": "💪 Desafio",
+        "btn_mood": "😊 Meu humor",
+        "btn_why_evalon": "🤔 Por que EVALON?",
+        "btn_win_alert": "🔔 Alerta de vitória",
+        "no_results_history": "📅 *Sem resultados anteriores ainda!*\n\nO admin publicará resultados aqui. Volte em breve! ⚡",
         "session_ended": "👋 *O chat de suporte foi encerrado.*\n\nObrigado por entrar em contato! 🙏",
     },
     "de": {
@@ -2372,7 +2434,7 @@ UI = {
         "btn_indicator": "📈 Kostenloser Indikator",
         "btn_autobot": "🤖 Auto Bot",
         "btn_freebot": "🆓 Kostenloser manueller Bot",
-        "btn_website": "🌐 Website und Preise",
+        "btn_website": "🌐 Website",
         "btn_support": "💬 Support kontaktieren",
         "btn_back": "⬅️ Zurück",
         "btn_restart": "🚀 Tippen zum Starten",
@@ -2405,6 +2467,16 @@ UI = {
         "price_msg": "💰 *Preise und Pläne*\n\nBesuchen Sie unsere Website für aktuelle Preise 👇",
         "join_pending": "⏳ *Anfrage erhalten!*\n\nDer Admin wird bald genehmigen. 🙏",
         "auto_clean_msg": "🔄 *Chat aktualisiert!*\n\nTippen Sie unten, um fortzufahren 👇",
+        "btn_tip": "💡 Tipp des Tages",
+        "btn_quiz": "🧠 Quiz",
+        "btn_profile": "👤 Mein Profil",
+        "btn_goal": "🎯 Ziel setzen",
+        "btn_results_history": "📅 Vergangene Ergebnisse",
+        "btn_challenge": "💪 Herausforderung",
+        "btn_mood": "😊 Meine Stimmung",
+        "btn_why_evalon": "🤔 Warum EVALON?",
+        "btn_win_alert": "🔔 Gewinn-Benachrichtigung",
+        "no_results_history": "📅 *Noch keine vergangenen Ergebnisse!*\n\nDer Admin wird hier Sitzungsergebnisse posten. Schau später vorbei! ⚡",
         "session_ended": "👋 *Der Support-Chat wurde beendet.*\n\nDanke, dass Sie uns kontaktiert haben! 🙏",
     },
     "ur": {
@@ -2418,7 +2490,7 @@ UI = {
         "btn_indicator": "📈 مفت انڈیکیٹر",
         "btn_autobot": "🤖 آٹو بوٹ",
         "btn_freebot": "🆓 مفت مینوئل بوٹ",
-        "btn_website": "🌐 ویب سائٹ اور قیمتیں",
+        "btn_website": "🌐 ویب سائٹ",
         "btn_support": "💬 سپورٹ سے رابطہ",
         "btn_back": "⬅️ واپس",
         "btn_restart": "🚀 شروع کرنے کے لیے ٹیپ کریں",
@@ -2451,6 +2523,16 @@ UI = {
         "price_msg": "💰 *قیمتیں اور پلان*\n\nتازہ ترین قیمتوں کے لیے ہماری ویب سائٹ دیکھیں 👇",
         "join_pending": "⏳ *درخواست موصول ہوئی!*\n\nایڈمن جلد منظور کرے گا۔ 🙏",
         "auto_clean_msg": "🔄 *چیٹ ریفریش ہو گئی!*\n\nجاری رکھنے کے لیے نیچے ٹیپ کریں 👇",
+        "btn_tip": "💡 روزانہ ٹپ",
+        "btn_quiz": "🧠 کوئز",
+        "btn_profile": "👤 میری پروفائل",
+        "btn_goal": "🎯 ہدف مقرر کریں",
+        "btn_results_history": "📅 پچھلے نتائج",
+        "btn_challenge": "💪 چیلنج",
+        "btn_mood": "😊 میرا موڈ",
+        "btn_why_evalon": "🤔 EVALON کیوں؟",
+        "btn_win_alert": "🔔 جیت کا الرٹ",
+        "no_results_history": "📅 *ابھی تک کوئی پچھلے نتائج نہیں!*\n\nAdmin یہاں سیشن کے نتائج پوسٹ کرے گا۔ بعد میں دیکھیں! ⚡",
         "session_ended": "👋 *سپورٹ چیٹ ختم ہو گئی۔*\n\nہم سے رابطہ کرنے کا شکریہ! 🙏",
     },
     "ja": {
@@ -2464,7 +2546,7 @@ UI = {
         "btn_indicator": "📈 無料インジケーター",
         "btn_autobot": "🤖 自動ボット",
         "btn_freebot": "🆓 無料マニュアルボット",
-        "btn_website": "🌐 ウェブサイトと価格",
+        "btn_website": "🌐 ウェブサイト",
         "btn_support": "💬 サポートに連絡",
         "btn_back": "⬅️ 戻る",
         "btn_restart": "🚀 タップして開始",
@@ -2497,6 +2579,16 @@ UI = {
         "price_msg": "💰 *価格とプラン*\n\n最新の価格はウェブサイトをご覧ください 👇",
         "join_pending": "⏳ *リクエストを受信しました！*\n\n管理者がすぐに承認します。 🙏",
         "auto_clean_msg": "🔄 *チャットが更新されました！*\n\n続けるには下をタップ 👇",
+        "btn_tip": "💡 今日のヒント",
+        "btn_quiz": "🧠 クイズ",
+        "btn_profile": "👤 マイプロフィール",
+        "btn_goal": "🎯 目標設定",
+        "btn_results_history": "📅 過去の結果",
+        "btn_challenge": "💪 チャレンジ",
+        "btn_mood": "😊 マイムード",
+        "btn_why_evalon": "🤔 なぜEVALON？",
+        "btn_win_alert": "🔔 勝利アラート",
+        "no_results_history": "📅 *まだ過去の結果はありません！*\n\nAdminがここにセッション結果を投稿します。後で確認してください！ ⚡",
         "session_ended": "👋 *サポートチャットが終了しました。*\n\nご連絡ありがとうございました！ 🙏",
     },
 }
@@ -2636,26 +2728,26 @@ for _lc, _welcome, _btn_svc, _btn_ref, _btn_lang, _btn_spin, _spin_wait, _join, 
 
 # ── Update btn_website text for all languages to remove "Pricing" ──
 _website_texts = {
-    "en": "🌐 Visit Our Website",
-    "sw": "🌐 Tembelea Website Yetu",
-    "ar": "🌐 زيارة موقعنا",
-    "zh": "🌐 访问我们的网站",
-    "hi": "🌐 हमारी वेबसाइट देखें",
-    "ru": "🌐 Посетите наш сайт",
-    "es": "🌐 Visita Nuestro Sitio Web",
-    "fr": "🌐 Visitez Notre Site Web",
-    "pt": "🌐 Visite Nosso Site",
-    "de": "🌐 Besuchen Sie Unsere Website",
-    "ur": "🌐 ہماری ویب سائٹ دیکھیں",
-    "ja": "🌐 ウェブサイトを見る",
-    "it": "🌐 Visita il Nostro Sito",
-    "ko": "🌐 웹사이트 방문하기",
-    "tr": "🌐 Web Sitemizi Ziyaret Edin",
-    "fa": "🌐 از وب‌سایت ما بازدید کنید",
-    "pl": "🌐 Odwiedź Naszą Stronę",
-    "uk": "🌐 Відвідайте Наш Сайт",
-    "kk": "🌐 Сайтымызды Қараңыз",
-    "cs": "🌐 Navštivte Náš Web",
+    "en": "🌐 Website",
+    "sw": "🌐 Website",
+    "ar": "🌐 الموقع",
+    "zh": "🌐 网站",
+    "hi": "🌐 वेबसाइट",
+    "ru": "🌐 Сайт",
+    "es": "🌐 Sitio Web",
+    "fr": "🌐 Site Web",
+    "pt": "🌐 Site",
+    "de": "🌐 Website",
+    "ur": "🌐 ویب سائٹ",
+    "ja": "🌐 ウェブサイト",
+    "it": "🌐 Sito Web",
+    "ko": "🌐 웹사이트",
+    "tr": "🌐 Web Sitesi",
+    "fa": "🌐 وب سایت",
+    "pl": "🌐 Strona",
+    "uk": "🌐 Сайт",
+    "kk": "🌐 Сайт",
+    "cs": "🌐 Web",
 }
 for _lc, _txt in _website_texts.items():
     if _lc in UI:
@@ -2693,6 +2785,12 @@ _extra_ui = {
         "services_msg": "🏆 *I NOSTRI SERVIZI*\n\nScegli un servizio per saperne di più 👇",
         "join_msg": "⚠️ *Per favore unisciti prima al nostro canale!*\n\nUnisciti ora e torna! 👇",
         "support_msg": "💬 *Richiesta di supporto ricevuta!* ✅\n\nIl nostro team ti contatterà *entro 5 ore.* ⏳\n\nTieni aperto il bot! 🙏",
+        "btn_services": "🏆 I Nostri Servizi",
+        "btn_challenge": "💪 Sfida",
+        "btn_goal": "🎯 Imposta Obiettivo",
+        "btn_mood": "😊 Il Mio Umore",
+        "btn_why_evalon": "🤔 Perché EVALON?",
+        "btn_win_alert": "🔔 Avviso Vincita",
         "session_ended": "👋 *La chat di supporto è terminata.*\n\nGrazie per averci contattato! 🙏",
         "rating_msg": "⭐ *Come è stata la tua esperienza di supporto?*\n\nValuta il nostro servizio:",
         "rating_opinion_msg": "📝 *Grazie per la valutazione!*\n\nCondividi una breve opinione (o scrivi 'skip' per saltare):",
@@ -2737,12 +2835,18 @@ _extra_ui = {
         "btn_stories": "\u2b50 \uc131\uacf5 \uc0ac\ub840",
         "btn_referral": "🎁 초대 및 수익",
         "btn_language": "🌍 언어",
-        "btn_website": "🌐 웹사이트 및 가격",
+        "btn_website": "🌐 웹사이트",
         "btn_spin": "🎰 행운의 룰렛",
         "welcome": "👋 환영합니다, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — 승자들이 거래하는 곳!\n\n무엇을 탐색하시겠습니까? 👇",
         "services_msg": "🏆 *저희 서비스*\n\n더 알아보려면 서비스를 선택하세요 👇",
         "join_msg": "⚠️ *먼저 채널에 참가해주세요!*\n\n지금 참가하고 돌아오세요! 👇",
         "support_msg": "💬 *지원 요청이 접수되었습니다!* ✅\n\n저희 팀이 *5시간 이내에* 연락드리겠습니다. ⏳\n\n봇을 열어두세요! 🙏",
+        "btn_services": "🏆 우리 서비스",
+        "btn_challenge": "💪 챌린지",
+        "btn_goal": "🎯 목표 설정",
+        "btn_mood": "😊 내 기분",
+        "btn_why_evalon": "🤔 왜 EVALON?",
+        "btn_win_alert": "🔔 승리 알림",
         "session_ended": "👋 *지원 채팅이 종료되었습니다.*\n\n연락해 주셔서 감사합니다! 🙏",
         "rating_msg": "⭐ *지원 경험이 어떠셨나요?*\n\n서비스를 평가해 주세요:",
         "rating_opinion_msg": "📝 *평가해 주셔서 감사합니다!*\n\n경험에 대한 간단한 의견을 나눠주세요 (또는 '건너뛰기'라고 입력):",
@@ -2793,6 +2897,12 @@ _extra_ui = {
         "services_msg": "🏆 *HİZMETLERİMİZ*\n\nDaha fazla bilgi icin bir hizmet secin 👇",
         "join_msg": "⚠️ *Lutfen once kanalimiza katilın!*\n\nSimdi katilın ve geri gelin! 👇",
         "support_msg": "💬 *Destek talibiniz alindi!* ✅\n\nEkibimiz *5 saat icinde* sizinle iletisime gececek. ⏳\n\nBotu acik tutun! 🙏",
+        "btn_services": "🏆 Hizmetlerimiz",
+        "btn_challenge": "💪 Meydan Okuma",
+        "btn_goal": "🎯 Hedef Belirle",
+        "btn_mood": "😊 Ruh Halim",
+        "btn_why_evalon": "🤔 Neden EVALON?",
+        "btn_win_alert": "🔔 Kazanma Uyarısı",
         "session_ended": "👋 *Destek sohbeti sona erdi.*\n\nBize ulastiginiz icin tesekkurler! 🙏",
         "rating_msg": "⭐ *Destek deneyiminiz nasildı?*\n\nHizmetimizi derecelendirin:",
         "rating_opinion_msg": "📝 *Derecelendirme icin tesekkurler!*\n\nDeneyiminiz hakkinda kisa bir gorüs paylasin ('skip' yazabilirsiniz):",
@@ -2837,12 +2947,18 @@ _extra_ui = {
         "btn_stories": "\u2b50 \u062f\u0627\u0633\u062a\u0627\u0646\u200c\u0647\u0627\u06cc \u0645\u0648\u0641\u0642\u06cc\u062a",
         "btn_referral": "🎁 دعوت و کسب درآمد",
         "btn_language": "🌍 زبان",
-        "btn_website": "🌐 وب سایت و قیمت‌ها",
+        "btn_website": "🌐 وب سایت",
         "btn_spin": "🎰 چرخ شانس",
         "welcome": "👋 خوش آمدید, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — جایی که برندگان معامله می‌کنند!\n\nمی‌خواهید چه چیزی را کشف کنید؟ 👇",
         "services_msg": "🏆 *خدمات ما*\n\nبرای اطلاعات بیشتر یک سرویس انتخاب کنید 👇",
         "join_msg": "⚠️ *لطفاً ابتدا به کانال ما بپیوندید!*\n\nهم اکنون بپیوندید و بازگردید! 👇",
         "support_msg": "💬 *درخواست پشتیبانی دریافت شد!* ✅\n\nتیم ما *ظرف ۵ ساعت* با شما تماس خواهد گرفت. ⏳\n\nبات را باز نگه دارید! 🙏",
+        "btn_services": "🏆 خدمات ما",
+        "btn_challenge": "💪 چالش",
+        "btn_goal": "🎯 تعیین هدف",
+        "btn_mood": "😊 حال من",
+        "btn_why_evalon": "🤔 چرا EVALON؟",
+        "btn_win_alert": "🔔 هشدار برنده شدن",
         "session_ended": "👋 *چت پشتیبانی پایان یافت.*\n\nممنون که با ما تماس گرفتید! 🙏",
         "rating_msg": "⭐ *تجربه پشتیبانی شما چطور بود؟*\n\nسرویس ما را ارزیابی کنید:",
         "rating_opinion_msg": "📝 *ممنون از امتیازدهی!*\n\nنظر کوتاهی در مورد تجربه خود بنویسید (یا 'skip' بنویسید):",
@@ -3506,6 +3622,7 @@ def main_menu(lang):
         [InlineKeyboardButton(ui("btn_results_history", lang), callback_data="do_results_history"),
          InlineKeyboardButton(ui("btn_profile", lang), callback_data="do_profile")],
         [InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")],
+        [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
     ]
     # Referral row — add Stories button only if admin has posted stories
     ref_row = [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral")]
@@ -3961,6 +4078,9 @@ async def sessions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _show_results_history(context, cid, lang, page=0):
     """Show paginated past results — 1 per page, with prev/next navigation"""
+    # Delete old bot messages first (like addstory pattern)
+    await delete_all_bot_msgs(context, cid)
+
     results = get_results_history(50)  # get up to 50
     if not results:
         msg = await send_protected_text(
@@ -4697,6 +4817,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("results_page_"):
         page = int(data.split("_")[-1])
+        await safe_delete(context, cid, query.message.message_id)
         await _show_results_history(context, cid, lang, page=page)
 
     elif data == "do_quiz":
@@ -4816,7 +4937,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
             [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
         ])
-        # FIX: Wrap result sending in try/except — guaranteed something always shows
+        # Send spin result — 3 fallback layers to guarantee user always sees something
         msg = None
         try:
             img = random.choice(SERVICE_PHOTOS)
@@ -4824,8 +4945,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=cid, photo=img, caption=result_header,
                 parse_mode="Markdown", reply_markup=result_kb,
                 protect_content=True)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"spin photo failed: {e}")
 
         if msg is None:
             try:
@@ -4833,19 +4954,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     chat_id=cid, text=result_header,
                     parse_mode="Markdown", reply_markup=result_kb,
                     protect_content=True)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"spin markdown msg failed: {e}")
 
         if msg is None:
-            # Last resort — plain text, no Markdown, no photo
+            # Last resort — plain text, no Markdown, no photo, no protect
             try:
                 plain = f"🎰 LUCKY SPIN RESULT 🎰\n\n{prize_text}"
                 msg = await context.bot.send_message(
                     chat_id=cid, text=plain,
-                    reply_markup=result_kb,
-                    protect_content=True)
-            except Exception:
-                pass
+                    reply_markup=result_kb)
+            except Exception as e:
+                logger.error(f"spin last resort failed: {e}")
 
         if msg:
             track_msg(cid, msg.message_id)
