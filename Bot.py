@@ -3940,12 +3940,7 @@ def freebot_menu(lang):
         # ── Binary Brokers ─────────────────────────────────────────
         [InlineKeyboardButton("📊 Quotex Pro Bot", url=FREE_BOT_LINKS["quotex"])],
         [InlineKeyboardButton("💰 Pocket Option Bot 🆕", callback_data="show_pocket_bot")],
-        [InlineKeyboardButton("📈 IQ Option Bot", url="https://t.me/iqoptionprosignals")],
-        [InlineKeyboardButton("🌐 Deriv Bot", url="https://t.me/derivbinarybot")],
-        [InlineKeyboardButton("🏦 Olymp Trade Bot", url="https://t.me/olymptradebot")],
-        [InlineKeyboardButton("💎 Binomo Bot", url="https://t.me/binomobotpro")],
-        [InlineKeyboardButton("🔥 ExpertOption Bot", url="https://t.me/expertoption_signals")],
-        [InlineKeyboardButton("⚡ Binary.com / Deriv Bot", url="https://t.me/binaryoptionrobot")],
+
     ]
     # Dynamically add admin-added bots from DB
     try:
@@ -4066,6 +4061,9 @@ def poll_keyboard(lang):
         [
             InlineKeyboardButton("🔥 ExpertOption", callback_data="poll_expert"),
             InlineKeyboardButton("⚡ Binary.com", callback_data="poll_binary"),
+        ],
+        [
+            InlineKeyboardButton("🎯 Binolla", callback_data="poll_binolla"),
         ],
         [
             InlineKeyboardButton("✅ " + both_text, callback_data="poll_both"),
@@ -4242,6 +4240,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Go straight to welcome — no onboarding video/text/continue button
     visit_count = context.user_data.get("visit_count", 0) + 1
     context.user_data["visit_count"] = visit_count
+
+    # Show broker poll for first-time visitors
+    if new_user or visit_count == 1:
+        update_streak(user.id)
+        msg = await send_protected_text(
+            context, cid,
+            ui("poll_msg", lang),
+            poll_keyboard(lang))
+        context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
+        schedule_comeback(context, cid, user.first_name, lang)
+        schedule_smart_comebacks(context, cid, user.first_name, lang)
+        schedule_auto_clean(context, cid, lang, user.first_name, user.id)
+        return
+
     welcome_text = build_welcome_text(lang, user.first_name, visit_count)
     update_streak(user.id)
 
@@ -4551,9 +4564,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if await is_member(context, user.id):
             await safe_delete(context, cid, query.message.message_id)
             await delete_all_bot_msgs(context, cid)
-            welcome_text = build_welcome_text(lang, user.first_name)
-            msg = await send_welcome_media(
-        context, cid, welcome_text, main_menu(lang))
+            # Show broker poll before welcome screen
+            msg = await send_protected_text(
+                context, cid,
+                ui("poll_msg", lang),
+                poll_keyboard(lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
             track_msg(cid, msg.message_id)
         else:
@@ -4565,13 +4580,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_delete(context, cid, query.message.message_id)
         await delete_all_bot_msgs(context, cid)
         await typing_action(cid, context, 1.0)
-        welcome_text = build_welcome_text(lang, user.first_name)
+        visit_count = context.user_data.get("visit_count", 1)
+        welcome_text = build_welcome_text(lang, user.first_name, visit_count)
         msg = await send_welcome_media(
-        context, cid,
-            f"✅ Got it!\n\n{welcome_text}", main_menu(lang))
+            context, cid,
+            f"✅ Got it\\!\n\n{welcome_text}", main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
+        schedule_smart_comebacks(context, cid, user.first_name, lang)
         schedule_auto_clean(context, cid, lang, user.first_name, user.id)
         return
 
@@ -6630,7 +6647,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━\n"
         "`/setwelcome` _(reply to video/photo)_ — Badilisha welcome screen\n"
         "`/setwelcome reset` — Rudisha welcome video ya default\n"
-        "`/setpocketlink https://t.me/YourBot` — Weka link ya Pocket Option bot\n"
+        "`/setpocketlink` https://t.me/YourBot — Weka link ya Pocket Option bot\n"
         "`/addphoto` _(reply to photo)_ — Ongeza picha kwenye service images pool\n"
         "`/addbot Jina | Link | Maelezo` — Ongeza bot kwenye Free Bots menu\n"
         "`/addbot` — Ona bots zote zilizoongezwa\n"
