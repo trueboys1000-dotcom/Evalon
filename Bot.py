@@ -1849,14 +1849,16 @@ async def send_smart_comeback(context):
     week    = job_data.get("week", 1)
     week_msgs = COMEBACK_MSGS.get(week, COMEBACK_MSGS[1])
     text = week_msgs.get(lang, week_msgs["en"]).format(name=name)
+    btn_go  = ui("btn_services", lang)
+    btn_sup = ui("btn_support", lang)
     try:
         img = random.choice(SERVICE_PHOTOS)
         await context.bot.send_photo(
             chat_id=chat_id, photo=img, caption=text,
             parse_mode="Markdown", protect_content=True,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🚀 Let's Go!", callback_data="menu_services"),
-                InlineKeyboardButton("💬 Support", callback_data="do_support"),
+                InlineKeyboardButton(btn_go, callback_data="menu_services"),
+                InlineKeyboardButton(btn_sup, callback_data="do_support"),
             ]]))
     except:
         try:
@@ -1864,7 +1866,7 @@ async def send_smart_comeback(context):
                 chat_id=chat_id, text=text,
                 parse_mode="Markdown", protect_content=True,
                 reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("🚀 Let's Go!", callback_data="menu_services"),
+                    InlineKeyboardButton(btn_go, callback_data="menu_services"),
                 ]]))
         except:
             pass
@@ -1901,7 +1903,7 @@ async def send_fomo_message(context):
             text=fomo_msgs.get(lang, fomo_msgs["en"]),
             parse_mode="Markdown", protect_content=True,
             reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🚀 Explore Now", callback_data="menu_services")
+                InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")
             ]]))
     except:
         pass
@@ -4549,13 +4551,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             track_msg(cid, msg.message_id)
             return
 
-        welcome_text = build_welcome_text(new_lang, user.first_name)
-        msg = await send_welcome_media(
-        context, cid, welcome_text, main_menu(new_lang))
+        # Show broker poll in selected language
+        msg = await send_protected_text(
+            context, cid,
+            ui("poll_msg", new_lang),
+            poll_keyboard(new_lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_comeback(context, cid, user.first_name, new_lang)
-        schedule_auto_clean(context, cid, new_lang, user.first_name, user.id)
         return
 
     # Check join
@@ -4584,7 +4586,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_text = build_welcome_text(lang, user.first_name, visit_count)
         msg = await send_welcome_media(
             context, cid,
-            f"✅ Got it\\!\n\n{welcome_text}", main_menu(lang))
+            f"✅ Got it!\n\n{welcome_text}", main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
@@ -6090,13 +6092,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]))
 
     elif any(w in low for w in [
-        "thank","thanks","asante","merci","gracias","спасибо","شكرا","danke"
+        "thank","thanks","asante","merci","gracias","спасибо","شكرا","danke",
+        "شكراً","obrigado","arigato","감사","teşekkür","متشکرم"
     ]):
-        await reply_with_text(
-            f"😊 Thank you, *{escape_md(user.first_name)}!* Always here for you. 🚀",
-            InlineKeyboardMarkup([
-                [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
-            ]))
+        thank_msgs = {
+            "en": f"😊 Thank you, *{escape_md(user.first_name)}!* Always here for you. 🚀",
+            "sw": f"😊 Asante, *{escape_md(user.first_name)}!* Tuko hapa kwa ajili yako. 🚀",
+            "ar": f"😊 شكراً، *{escape_md(user.first_name)}!* نحن دائماً هنا لك. 🚀",
+            "zh": f"😊 谢谢你，*{escape_md(user.first_name)}!* 我们随时为你服务。 🚀",
+            "hi": f"😊 धन्यवाद, *{escape_md(user.first_name)}!* हम हमेशा आपके लिए यहाँ हैं। 🚀",
+            "ru": f"😊 Спасибо, *{escape_md(user.first_name)}!* Мы всегда здесь для вас. 🚀",
+            "es": f"😊 ¡Gracias, *{escape_md(user.first_name)}!* Siempre aquí para ti. 🚀",
+            "fr": f"😊 Merci, *{escape_md(user.first_name)}!* Toujours là pour vous. 🚀",
+            "pt": f"😊 Obrigado, *{escape_md(user.first_name)}!* Sempre aqui para você. 🚀",
+            "de": f"😊 Danke, *{escape_md(user.first_name)}!* Immer für dich da. 🚀",
+            "ur": f"😊 شکریہ، *{escape_md(user.first_name)}!* ہم ہمیشہ آپ کے لیے یہاں ہیں۔ 🚀",
+            "ja": f"😊 ありがとう、*{escape_md(user.first_name)}!* いつでもここにいます。 🚀",
+            "it": f"😊 Grazie, *{escape_md(user.first_name)}!* Sempre qui per te. 🚀",
+            "ko": f"😊 감사합니다, *{escape_md(user.first_name)}!* 항상 여기 있습니다. 🚀",
+            "tr": f"😊 Teşekkürler, *{escape_md(user.first_name)}!* Her zaman buradayız. 🚀",
+        }
+        thank_text = thank_msgs.get(lang, thank_msgs["en"])
+        await reply_with_text(thank_text, InlineKeyboardMarkup([
+            [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
+        ]))
 
     else:
         await reply_with_text(ui("fallback_msg", lang), support_keyboard(lang))
@@ -6128,8 +6147,8 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"👁 *PREVIEW MODE*\n\n"
         f"🌍 Language: `{lang}`\n"
-        f"📱 Showing current bot flow (8 steps)...\n\n"
-        f"_This is exactly what users see_",
+        f"📱 Showing current bot flow (7 steps)...\n\n"
+        f"_This is exactly what new users see_",
         parse_mode="Markdown")
 
     await asyncio.sleep(0.8)
@@ -6137,7 +6156,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── STEP 1: Language selector ──────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1: Language Selector* (first visit only)\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1: Language Selector*\n_(First visit only)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -6150,7 +6169,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── STEP 2: Join gate ──────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n_(User must join before continuing)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -6160,10 +6179,23 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=join_keyboard(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 3: Welcome screen — users land here directly after joining ──
+    # ── STEP 3: Broker poll ────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Welcome + Main Menu*\n_(Users go here directly after channel join)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Broker Poll*\n_(After joining — user picks their broker to continue)_\n━━━━━━━━━━━━━━━━━━",
+        parse_mode="Markdown")
+    await asyncio.sleep(0.4)
+    await context.bot.send_message(
+        chat_id=cid,
+        text=ui("poll_msg", lang),
+        parse_mode="Markdown",
+        reply_markup=poll_keyboard(lang))
+    await asyncio.sleep(1.2)
+
+    # ── STEP 4: Welcome screen ─────────────────────────────────
+    await context.bot.send_message(
+        chat_id=cid,
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Welcome + Main Menu*\n_(After broker selection)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     welcome_text = build_welcome_text(lang, user.first_name)
@@ -6175,10 +6207,10 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown", reply_markup=main_menu(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 4: Services menu ──────────────────────────────────
+    # ── STEP 5: Services menu ──────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Services Menu*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Services Menu*\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -6188,10 +6220,10 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=services_menu(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 5: Free Bot menu — all brokers ───────────────────
+    # ── STEP 6: Free Bot menu ──────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Free Bot Menu (All Brokers)*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Free Bot Menu*\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     _freebot_txt = {
@@ -6203,19 +6235,6 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=_freebot_txt.get(lang, _freebot_txt["en"]),
         parse_mode="Markdown",
         reply_markup=freebot_menu(lang))
-    await asyncio.sleep(1.2)
-
-    # ── STEP 6: Broker poll ────────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Broker Poll*\n_(Shown to new users)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=ui("poll_msg", lang),
-        parse_mode="Markdown",
-        reply_markup=poll_keyboard(lang))
     await asyncio.sleep(1.2)
 
     # ── STEP 7: Spin wheel ─────────────────────────────────────
@@ -6233,19 +6252,6 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]]))
     await asyncio.sleep(0.8)
 
-    # ── STEP 8: Broadcast sample ───────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 8: Broadcast Sample*\n_(How broadcast messages appear)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    await context.bot.send_message(
-        chat_id=cid,
-        text="🔥 *EVALON WINNERS — BROADCAST!*\n\n📊 Today signals: *9/10 won!* 💪\n\n_Bold, italic, emojis — all preserved exactly as admin sends_",
-        parse_mode="Markdown",
-        reply_markup=broadcast_keyboard(lang))
-    await asyncio.sleep(0.6)
-
     # ── DONE ───────────────────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
@@ -6253,7 +6259,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "━━━━━━━━━━━━━━━━━━\n"
             "✅ *PREVIEW COMPLETE!*\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-            f"🌍 Language: `{lang}` | 8 steps shown\n\n"
+            f"🌍 Language: `{lang}` | 7 steps shown\n\n"
             "📌 Other languages:\n"
             "• `/preview sw` — Swahili\n"
             "• `/preview ar` — Arabic\n"
@@ -6547,31 +6553,71 @@ async def results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         return
     msg = update.message
-    today = datetime.now().strftime("%d/%m/%Y")
+    today = datetime.now().strftime("%d/%m/%Y %H:%M")
     text = " ".join(context.args) if context.args else None
 
-    if msg.reply_to_message:
+    # Reply to photo
+    if msg.reply_to_message and msg.reply_to_message.photo:
         r = msg.reply_to_message
-        if r.photo:
-            fid = r.photo[-1].file_id
-            cap = r.caption or text or ""
-            save_result(today, cap, media_id=fid, media_type="photo")
-            await msg.reply_text("✅ *Results saved!* (photo)", parse_mode="Markdown")
-            return
-        elif r.video:
-            fid = r.video.file_id
-            cap = r.caption or text or ""
-            save_result(today, cap, media_id=fid, media_type="video")
-            await msg.reply_text("✅ *Results saved!* (video)", parse_mode="Markdown")
-            return
+        fid = r.photo[-1].file_id
+        cap = text or r.caption or today
+        ok = save_result(today, cap, media_id=fid, media_type="photo")
+        if ok:
+            await msg.reply_text(f"✅ *Result saved!* (photo)\n\n_{cap}_", parse_mode="Markdown")
+        else:
+            await msg.reply_text("❌ Failed to save. Try again.")
+        return
 
+    # Reply to video
+    if msg.reply_to_message and msg.reply_to_message.video:
+        r = msg.reply_to_message
+        fid = r.video.file_id
+        cap = text or r.caption or today
+        ok = save_result(today, cap, media_id=fid, media_type="video")
+        if ok:
+            await msg.reply_text(f"✅ *Result saved!* (video)\n\n_{cap}_", parse_mode="Markdown")
+        else:
+            await msg.reply_text("❌ Failed to save. Try again.")
+        return
+
+    # Direct photo sent with command
+    if msg.photo:
+        fid = msg.photo[-1].file_id
+        cap = text or msg.caption or today
+        ok = save_result(today, cap, media_id=fid, media_type="photo")
+        if ok:
+            await msg.reply_text(f"✅ *Result saved!* (photo)\n\n_{cap}_", parse_mode="Markdown")
+        else:
+            await msg.reply_text("❌ Failed to save. Try again.")
+        return
+
+    # Direct video sent with command
+    if msg.video:
+        fid = msg.video.file_id
+        cap = text or msg.caption or today
+        ok = save_result(today, cap, media_id=fid, media_type="video")
+        if ok:
+            await msg.reply_text(f"✅ *Result saved!* (video)\n\n_{cap}_", parse_mode="Markdown")
+        else:
+            await msg.reply_text("❌ Failed to save. Try again.")
+        return
+
+    # Text only
     if text:
-        save_result(today, text)
-        await msg.reply_text("✅ *Results saved!*", parse_mode="Markdown")
-    else:
-        await msg.reply_text(
-            "❌ Usage:\n`/results Today 8/10 won!`\nor reply to a photo/video with `/results`",
-            parse_mode="Markdown")
+        ok = save_result(today, text)
+        if ok:
+            await msg.reply_text(f"✅ *Result saved!*\n\n_{text}_", parse_mode="Markdown")
+        else:
+            await msg.reply_text("❌ Failed to save. Try again.")
+        return
+
+    await msg.reply_text(
+        "📊 *How to save results:*\n\n"
+        "• Text: `/results Today 8/10 won! 🔥`\n"
+        "• Photo: Reply to photo with `/results`\n"
+        "• Video: Reply to video with `/results`\n"
+        "• Photo + caption: Reply to photo with `/results Great session!`",
+        parse_mode="Markdown")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -6675,9 +6721,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• Broadcast: reply kwenye ujumbe wowote + `/broadcast` = inatumwa exactly"
     )
 
-    await update.message.reply_text(msg1, parse_mode="Markdown")
+    await update.message.reply_text(msg1, parse_mode=None)
     await asyncio.sleep(0.3)
-    await update.message.reply_text(msg2, parse_mode="Markdown")
+    await update.message.reply_text(msg2, parse_mode=None)
 
 
 async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
