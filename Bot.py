@@ -1111,11 +1111,37 @@ def get_urgency(lang):
     return pool[datetime.now().weekday() % len(pool)]
 
 # ══════════════════════════════════════════════════════════════
-#  SMART GREETING — changes by time of day
+#  SMART GREETING — changes by time of day (UTC+3 / EAT)
 # ══════════════════════════════════════════════════════════════
 
 def get_smart_greeting(lang):
-    hour = datetime.now().hour
+    # Use timezone that matches the language/region for accurate time-of-day
+    from datetime import timezone, timedelta
+    LANG_TZ_OFFSET = {
+        "sw": 3,    # Kenya/Tanzania UTC+3
+        "ar": 3,    # Arabic countries (average Gulf/Arab world)
+        "hi": 5,    # India UTC+5:30 → use 5 (close enough)
+        "ur": 5,    # Pakistan UTC+5
+        "zh": 8,    # China UTC+8
+        "ja": 9,    # Japan UTC+9
+        "ko": 9,    # Korea UTC+9
+        "ru": 3,    # Russia (Moscow) UTC+3
+        "uk": 3,    # Ukraine UTC+3
+        "kk": 5,    # Kazakhstan UTC+5
+        "fa": 3,    # Iran UTC+3:30 → use 3
+        "tr": 3,    # Turkey UTC+3
+        "de": 1,    # Germany UTC+1
+        "fr": 1,    # France UTC+1
+        "it": 1,    # Italy UTC+1
+        "es": 1,    # Spain UTC+1
+        "pl": 1,    # Poland UTC+1
+        "cs": 1,    # Czech UTC+1
+        "pt": 0,    # Portugal UTC+0 (Brazil is -3 but Portugal is bigger user base)
+        "en": 0,    # English default UTC+0
+    }
+    offset = LANG_TZ_OFFSET.get(lang, 0)
+    tz = timezone(timedelta(hours=offset))
+    hour = datetime.now(tz).hour
     greetings = {
         "en": {
             "morning":   "🌅 Good morning! Today is a great day to WIN!",
@@ -1128,6 +1154,102 @@ def get_smart_greeting(lang):
             "afternoon": "☀️ Habari za mchana! Masoko yanasogea — uko tayari?",
             "evening":   "🌆 Habari za jioni! Vikao vya jioni vinaweza kuwa na faida sana!",
             "night":     "🌙 Bado macho? Wafanyabiashara werevu hawakosi fursa!",
+        },
+        "ar": {
+            "morning":   "🌅 صباح الخير! اليوم يوم رائع للفوز!",
+            "afternoon": "☀️ مساء الخير! الأسواق تتحرك — هل أنت مستعد؟",
+            "evening":   "🌆 مساء الخير! جلسات المساء مربحة جداً!",
+            "night":     "🌙 لا تزال مستيقظاً؟ المتداولون الأذكياء لا يفوتون أي فرصة!",
+        },
+        "zh": {
+            "morning":   "🌅 早上好！今天是赢得胜利的好日子！",
+            "afternoon": "☀️ 下午好！市场正在波动 — 你准备好了吗？",
+            "evening":   "🌆 晚上好！晚间交易时段非常盈利！",
+            "night":     "🌙 还没睡？聪明的交易者绝不错过机会！",
+        },
+        "hi": {
+            "morning":   "🌅 सुप्रभात! आज जीतने का शानदार दिन है!",
+            "afternoon": "☀️ नमस्ते! बाजार चल रहे हैं — क्या आप तैयार हैं?",
+            "evening":   "🌆 शुभ संध्या! शाम के सत्र बहुत लाभदायक हो सकते हैं!",
+            "night":     "🌙 अभी भी जागे हैं? स्मार्ट ट्रेडर्स कभी मौका नहीं चूकते!",
+        },
+        "ru": {
+            "morning":   "🌅 Доброе утро! Сегодня отличный день для победы!",
+            "afternoon": "☀️ Добрый день! Рынки двигаются — вы готовы?",
+            "evening":   "🌆 Добрый вечер! Вечерние сессии могут быть очень прибыльными!",
+            "night":     "🌙 Ещё не спите? Умные трейдеры никогда не упускают возможности!",
+        },
+        "es": {
+            "morning":   "🌅 ¡Buenos días! ¡Hoy es un gran día para GANAR!",
+            "afternoon": "☀️ ¡Buenas tardes! Los mercados se mueven — ¿estás listo?",
+            "evening":   "🌆 ¡Buenas noches! ¡Las sesiones nocturnas pueden ser muy rentables!",
+            "night":     "🌙 ¿Todavía despierto? ¡Los traders inteligentes nunca pierden una oportunidad!",
+        },
+        "fr": {
+            "morning":   "🌅 Bonjour! Aujourd'hui est un excellent jour pour GAGNER!",
+            "afternoon": "☀️ Bon après-midi! Les marchés bougent — êtes-vous prêt?",
+            "evening":   "🌆 Bonsoir! Les sessions du soir peuvent être très rentables!",
+            "night":     "🌙 Encore éveillé? Les traders intelligents ne manquent jamais une opportunité!",
+        },
+        "pt": {
+            "morning":   "🌅 Bom dia! Hoje é um ótimo dia para VENCER!",
+            "afternoon": "☀️ Boa tarde! Os mercados estão se movendo — você está pronto?",
+            "evening":   "🌆 Boa noite! As sessões noturnas podem ser muito lucrativas!",
+            "night":     "🌙 Ainda acordado? Traders inteligentes nunca perdem uma oportunidade!",
+        },
+        "de": {
+            "morning":   "🌅 Guten Morgen! Heute ist ein großartiger Tag zum GEWINNEN!",
+            "afternoon": "☀️ Guten Tag! Die Märkte bewegen sich — bist du bereit?",
+            "evening":   "🌆 Guten Abend! Abendsitzungen können sehr profitabel sein!",
+            "night":     "🌙 Noch wach? Kluge Trader verpassen nie eine Chance!",
+        },
+        "ur": {
+            "morning":   "🌅 صبح بخیر! آج جیتنے کا شاندار دن ہے!",
+            "afternoon": "☀️ دوپہر بخیر! مارکیٹ حرکت میں ہے — کیا آپ تیار ہیں؟",
+            "evening":   "🌆 شام بخیر! شام کے سیشن بہت منافع بخش ہو سکتے ہیں!",
+            "night":     "🌙 ابھی بھی جاگ رہے ہیں؟ ہوشیار ٹریڈرز کبھی موقع نہیں چھوڑتے!",
+        },
+        "ja": {
+            "morning":   "🌅 おはようございます！今日は勝つ素晴らしい日です！",
+            "afternoon": "☀️ こんにちは！市場が動いています — 準備はできていますか？",
+            "evening":   "🌆 こんばんは！夜のセッションはとても利益になります！",
+            "night":     "🌙 まだ起きていますか？賢いトレーダーはチャンスを逃しません！",
+        },
+        "tr": {
+            "morning":   "🌅 Günaydın! Bugün kazanmak için harika bir gün!",
+            "afternoon": "☀️ İyi günler! Piyasalar hareket ediyor — hazır mısın?",
+            "evening":   "🌆 İyi akşamlar! Akşam seansları çok karlı olabilir!",
+            "night":     "🌙 Hala uyanık mısın? Akıllı yatırımcılar asla fırsat kaçırmaz!",
+        },
+        "fa": {
+            "morning":   "🌅 صبح بخیر! امروز روز فوق‌العاده‌ای برای بردن است!",
+            "afternoon": "☀️ بعدازظهر بخیر! بازارها در حرکت هستند — آماده‌اید؟",
+            "evening":   "🌆 عصر بخیر! جلسات عصرگاهی می‌توانند بسیار سودآور باشند!",
+            "night":     "🌙 هنوز بیدارید؟ معامله‌گران هوشمند هرگز فرصت را از دست نمی‌دهند!",
+        },
+        "ko": {
+            "morning":   "🌅 좋은 아침입니다! 오늘은 이길 수 있는 최고의 날입니다!",
+            "afternoon": "☀️ 안녕하세요! 시장이 움직이고 있습니다 — 준비됐나요?",
+            "evening":   "🌆 좋은 저녁입니다! 저녁 세션은 매우 수익성이 높을 수 있습니다!",
+            "night":     "🌙 아직 깨어 계신가요? 스마트한 트레이더는 기회를 놓치지 않습니다!",
+        },
+        "it": {
+            "morning":   "🌅 Buongiorno! Oggi è un ottimo giorno per VINCERE!",
+            "afternoon": "☀️ Buon pomeriggio! I mercati si stanno muovendo — sei pronto?",
+            "evening":   "🌆 Buonasera! Le sessioni serali possono essere molto redditizie!",
+            "night":     "🌙 Ancora sveglio? I trader intelligenti non perdono mai un'opportunità!",
+        },
+        "pl": {
+            "morning":   "🌅 Dzień dobry! Dziś jest świetny dzień, żeby WYGRAĆ!",
+            "afternoon": "☀️ Dzień dobry! Rynki się poruszają — jesteś gotowy?",
+            "evening":   "🌆 Dobry wieczór! Wieczorne sesje mogą być bardzo dochodowe!",
+            "night":     "🌙 Jeszcze nie śpisz? Mądrzy traderzy nigdy nie przepuszczają okazji!",
+        },
+        "uk": {
+            "morning":   "🌅 Доброго ранку! Сьогодні чудовий день для перемоги!",
+            "afternoon": "☀️ Добрий день! Ринки рухаються — ви готові?",
+            "evening":   "🌆 Добрий вечір! Вечірні сесії можуть бути дуже прибутковими!",
+            "night":     "🌙 Ще не спите? Розумні трейдери ніколи не пропускають можливостей!",
         },
     }
     period = "morning" if 5 <= hour < 12 else "afternoon" if 12 <= hour < 17 else "evening" if 17 <= hour < 21 else "night"
@@ -1243,6 +1365,86 @@ SCARCITY_MSGS = {
         "💥 *VIP inajaa haraka!*\n\nNafasi zinapatikana — lakini sio kwa muda mrefu.\n\nWafanyabiashara wanajiunga unaposoma hii... 👇",
         "🔥 *Jumuiya yetu inakua HARAKA!*\n\nWafanyabiashara duniani kote wamepata EVALON.\n\nUsiwe wa mwisho kuigundua. 👇",
         "⚡ *Ufikiaji wa VIP mdogo unapatikana!*\n\nTunaweka VIP yetu ndogo kwa ubora.\n\nIkijaa — imejaa. 👇",
+    ],
+    "ar": [
+        "💥 *VIP يمتلئ بسرعة!*\n\nمقاعد متاحة — لكن ليس لفترة طويلة.\n\nالمتداولون ينضمون وأنت تقرأ هذا... 👇",
+        "🔥 *مجتمعنا ينمو بسرعة!*\n\nمتداولون من جميع أنحاء العالم وجدوا EVALON.\n\nلا تكن آخر من يكتشف ذلك. 👇",
+        "⚡ *وصول VIP محدود متاح!*\n\nنحافظ على صغر حجم VIP من أجل الجودة.\n\nعندما يمتلئ — ينتهي الأمر. 👇",
+    ],
+    "zh": [
+        "💥 *VIP名额快满了！*\n\n名额有限 — 不会太久。\n\n正在有交易者加入... 👇",
+        "🔥 *我们的社区正在快速增长！*\n\n全球交易者都找到了EVALON。\n\n不要成为最后一个发现它的人。 👇",
+        "⚡ *VIP名额有限！*\n\n我们保持VIP小规模以确保质量。\n\n一旦满员 — 就关闭了。 👇",
+    ],
+    "hi": [
+        "💥 *VIP तेजी से भर रहा है!*\n\nस्थान उपलब्ध हैं — लेकिन लंबे समय के लिए नहीं।\n\nजैसे आप पढ़ रहे हैं, ट्रेडर्स जुड़ रहे हैं... 👇",
+        "🔥 *हमारा समुदाय तेजी से बढ़ रहा है!*\n\nदुनिया भर के ट्रेडर्स ने EVALON खोजा है।\n\nइसे खोजने वाले आखिरी मत बनो। 👇",
+        "⚡ *सीमित VIP एक्सेस उपलब्ध!*\n\nहम गुणवत्ता के लिए अपना VIP छोटा रखते हैं।\n\nएक बार भरा — तो भरा। 👇",
+    ],
+    "ru": [
+        "💥 *VIP быстро заполняется!*\n\nМеста доступны — но ненадолго.\n\nТрейдеры присоединяются прямо сейчас... 👇",
+        "🔥 *Наше сообщество растёт БЫСТРО!*\n\nТрейдеры со всего мира нашли EVALON.\n\nНе будь последним, кто его откроет. 👇",
+        "⚡ *Ограниченный доступ к VIP!*\n\nМы держим VIP небольшим для качества.\n\nКак заполнится — закроется. 👇",
+    ],
+    "es": [
+        "💥 *¡El VIP se llena rápido!*\n\nHay lugares disponibles — pero no por mucho tiempo.\n\nLos traders se están uniendo mientras lees esto... 👇",
+        "🔥 *¡Nuestra comunidad crece RÁPIDO!*\n\nTraders de todo el mundo han encontrado EVALON.\n\nNo seas el último en descubrirlo. 👇",
+        "⚡ *¡Acceso VIP limitado disponible!*\n\nMantenemos nuestro VIP pequeño por calidad.\n\nUna vez lleno — está lleno. 👇",
+    ],
+    "fr": [
+        "💥 *VIP se remplit vite!*\n\nPlaces disponibles — mais pas pour longtemps.\n\nDes traders rejoignent pendant que vous lisez... 👇",
+        "🔥 *Notre communauté grandit VITE!*\n\nDes traders du monde entier ont trouvé EVALON.\n\nNe soyez pas le dernier à le découvrir. 👇",
+        "⚡ *Accès VIP limité disponible!*\n\nNous gardons notre VIP petit pour la qualité.\n\nUne fois plein — c'est plein. 👇",
+    ],
+    "pt": [
+        "💥 *VIP está preenchendo rápido!*\n\nVagas disponíveis — mas não por muito tempo.\n\nTraders estão entrando enquanto você lê isso... 👇",
+        "🔥 *Nossa comunidade está crescendo RÁPIDO!*\n\nTraders do mundo todo encontraram EVALON.\n\nNão seja o último a descobrir. 👇",
+        "⚡ *Acesso VIP limitado disponível!*\n\nMantemos nosso VIP pequeno para qualidade.\n\nUma vez cheio — está cheio. 👇",
+    ],
+    "de": [
+        "💥 *VIP füllt sich schnell!*\n\nPlätze verfügbar — aber nicht lange.\n\nTrader treten bei, während Sie das lesen... 👇",
+        "🔥 *Unsere Community wächst SCHNELL!*\n\nTrader aus aller Welt haben EVALON gefunden.\n\nSei nicht der Letzte, der es entdeckt. 👇",
+        "⚡ *Begrenzter VIP-Zugang verfügbar!*\n\nWir halten unser VIP klein für Qualität.\n\nWenn es voll ist — ist es voll. 👇",
+    ],
+    "ur": [
+        "💥 *VIP تیزی سے بھر رہا ہے!*\n\nجگہیں دستیاب ہیں — لیکن زیادہ دیر کے لیے نہیں۔\n\nجیسے آپ پڑھ رہے ہیں ٹریڈرز شامل ہو رہے ہیں... 👇",
+        "🔥 *ہماری کمیونٹی تیزی سے بڑھ رہی ہے!*\n\nدنیا بھر کے ٹریڈرز نے EVALON دریافت کیا ہے۔\n\nاسے دریافت کرنے والے آخری مت بنیں۔ 👇",
+        "⚡ *محدود VIP رسائی دستیاب ہے!*\n\nہم معیار کے لیے VIP کو چھوٹا رکھتے ہیں۔\n\nایک بار بھر گیا — تو بس۔ 👇",
+    ],
+    "ja": [
+        "💥 *VIPはすぐに埋まります！*\n\nスポットあり — でも長くはありません。\n\nこれを読んでいる間にトレーダーが参加しています... 👇",
+        "🔥 *コミュニティが急成長中！*\n\n世界中のトレーダーがEVALONを見つけました。\n\n最後に発見する人にならないでください。 👇",
+        "⚡ *限定VIPアクセス！*\n\n品質のためにVIPは小さく保ちます。\n\n一杯になったら — 終わりです。 👇",
+    ],
+    "tr": [
+        "💥 *VIP hızla dolıyor!*\n\nYerler mevcut — ama çok sürmez.\n\nBunu okurken traderlar katılıyor... 👇",
+        "🔥 *Topluluğumuz HIZLA büyüyor!*\n\nDünyanın dört bir yanından traderlar EVALON'u buldu.\n\nKuşananların en son kişisi olmayın. 👇",
+        "⚡ *Sınırlı VIP erişimi mevcut!*\n\nKalite için VIP'imizi küçük tutuyoruz.\n\nDolunca — doldu. 👇",
+    ],
+    "fa": [
+        "💥 *VIP سریع پر می‌شود!*\n\nجاهایی موجود است — اما نه برای مدت طولانی.\n\nتریدرها همین الان که می‌خوانید دارند عضو می‌شوند... 👇",
+        "🔥 *جامعه ما سریع در حال رشد است!*\n\nتریدرهای سراسر جهان EVALON را پیدا کرده‌اند.\n\nآخرین کسی نباشید که آن را کشف می‌کند. 👇",
+        "⚡ *دسترسی محدود VIP موجود!*\n\nبرای کیفیت VIP را کوچک نگه می‌داریم.\n\nوقتی پر شد — تمام است. 👇",
+    ],
+    "ko": [
+        "💥 *VIP가 빠르게 채워지고 있습니다!*\n\n자리가 있지만 — 오래가지 않습니다.\n\n이걸 읽는 동안 트레이더들이 합류하고 있습니다... 👇",
+        "🔥 *우리 커뮤니티가 빠르게 성장하고 있습니다!*\n\n전 세계 트레이더들이 EVALON을 찾았습니다.\n\n마지막으로 발견하는 사람이 되지 마세요. 👇",
+        "⚡ *제한된 VIP 액세스 가능!*\n\n품질을 위해 VIP를 소규모로 유지합니다.\n\n한번 꽉 차면 — 끝입니다. 👇",
+    ],
+    "it": [
+        "💥 *Il VIP si sta riempiendo velocemente!*\n\nPosti disponibili — ma non per molto.\n\nI trader si stanno unendo mentre leggi questo... 👇",
+        "🔥 *La nostra community cresce VELOCEMENTE!*\n\nTrader da tutto il mondo hanno trovato EVALON.\n\nNon essere l'ultimo a scoprirlo. 👇",
+        "⚡ *Accesso VIP limitato disponibile!*\n\nManteniamo il VIP piccolo per la qualità.\n\nUna volta pieno — è pieno. 👇",
+    ],
+    "pl": [
+        "💥 *VIP wypełnia się szybko!*\n\nMiejsca dostępne — ale nie na długo.\n\nTraderzy dołączają, kiedy to czytasz... 👇",
+        "🔥 *Nasza społeczność rośnie SZYBKO!*\n\nTraderzy z całego świata znaleźli EVALON.\n\nNie bądź ostatnim, który go odkryje. 👇",
+        "⚡ *Ograniczony dostęp VIP!*\n\nUtrzymujemy VIP małym dla jakości.\n\nGdy się zapełni — koniec. 👇",
+    ],
+    "uk": [
+        "💥 *VIP швидко заповнюється!*\n\nМісця є — але ненадовго.\n\nТрейдери приєднуються поки ти читаєш... 👇",
+        "🔥 *Наша спільнота росте ШВИДКО!*\n\nТрейдери з усього світу знайшли EVALON.\n\nНе будь останнім, хто це відкриє. 👇",
+        "⚡ *Обмежений доступ до VIP!*\n\nМи тримаємо VIP маленьким для якості.\n\nЯк заповниться — закрито. 👇",
     ],
 }
 
@@ -1373,6 +1575,16 @@ def save_result(result_date, content_text, media_id=None, media_type=None):
     try:
         conn = get_conn()
         c = conn.cursor()
+        # Ensure table exists
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS results_history (
+                id         SERIAL PRIMARY KEY,
+                caption    TEXT DEFAULT NULL,
+                media_id   TEXT DEFAULT NULL,
+                media_type TEXT DEFAULT NULL,
+                saved_at   TEXT DEFAULT NULL
+            )
+        """)
         now = datetime.now().strftime("%d/%m/%Y %H:%M")
         c.execute("""
             INSERT INTO results_history (caption, media_id, media_type, saved_at)
@@ -1389,6 +1601,17 @@ def get_results_history(limit=10):
     try:
         conn = get_conn()
         c = conn.cursor()
+        # Ensure table exists in case migration did not run
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS results_history (
+                id         SERIAL PRIMARY KEY,
+                caption    TEXT DEFAULT NULL,
+                media_id   TEXT DEFAULT NULL,
+                media_type TEXT DEFAULT NULL,
+                saved_at   TEXT DEFAULT NULL
+            )
+        """)
+        conn.commit()
         c.execute("""
             SELECT id, caption, media_id, media_type, saved_at
             FROM results_history
@@ -1397,7 +1620,8 @@ def get_results_history(limit=10):
         rows = c.fetchall()
         conn.close()
         return rows
-    except:
+    except Exception as e:
+        logger.warning(f"get_results_history failed: {e}")
         return []
 
 def get_result_by_id(rid):
@@ -1731,6 +1955,67 @@ WIN_NOTIFICATIONS = {
     "sw": [
         "🔔 *ARIFA:* Mwanachama wa VIP amepata kikao KIZURI sana!\n\nMatokeo kama haya hutokea ukiwa na zana sahihi. 💪\n\nUnataka faida hiyo? 👇",
         "📱 *ARIFA YA VIP WIN:* Kikao kingine chenye faida kimekamilika!\n\nJumuiya yetu inashinda kwa uthabiti.\n\nUko tayari kujiunga? 👇",
+        "💰 *ARIFA YA TRADER:* Matokeo ya ajabu leo!\n\nHii ndivyo inavyotokea na mkakati na msaada sahihi. 🏆\n\nZamu yako? 👇",
+    ],
+    "ar": [
+        "🔔 *تنبيه:* عضو VIP للتو أجرى جلسة رائعة!\n\nهذه النتائج تحدث عندما تملك الأدوات المناسبة. 💪\n\nتريد نفس الميزة؟ 👇",
+        "📱 *تنبيه فوز VIP:* جلسة مربحة أخرى!\n\nمجتمعنا يفوز باستمرار.\n\nمستعد للانضمام؟ 👇",
+        "💰 *تنبيه المتداولين:* نتائج جلسة لا تصدق اليوم!\n\nهذا ما يحدث مع الاستراتيجية والدعم المناسبين. 🏆\n\nدورك؟ 👇",
+    ],
+    "zh": [
+        "🔔 *提醒:* 一位VIP会员刚刚有了很棒的交易时段！\n\n有了正确的工具就会有这样的结果。 💪\n\n想要同样的优势吗？ 👇",
+        "📱 *VIP获胜提醒:* 又一个盈利时段！\n\n我们的社区一直在盈利。\n\n准备好加入了吗？ 👇",
+        "💰 *交易者提醒:* 今天令人难以置信的结果！\n\n这就是正确策略和支持的效果。 🏆\n\n轮到你了？ 👇",
+    ],
+    "hi": [
+        "🔔 *अलर्ट:* एक VIP सदस्य का शानदार सत्र हुआ!\n\nसही टूल्स के साथ ऐसे परिणाम होते हैं। 💪\n\nवही फायदा चाहते हैं? 👇",
+        "📱 *VIP विन अलर्ट:* एक और लाभदायक सत्र!\n\nहमारी कम्युनिटी लगातार जीत रही है।\n\nशामिल होने के लिए तैयार? 👇",
+        "💰 *ट्रेडर अलर्ट:* आज अविश्वसनीय परिणाम!\n\nसही रणनीति और सहायता के साथ ऐसा होता है। 🏆\n\nआपकी बारी? 👇",
+    ],
+    "ru": [
+        "🔔 *ОПОВЕЩЕНИЕ:* Участник VIP только что провёл ОТЛИЧНУЮ сессию!\n\nТакие результаты бывают, когда есть правильные инструменты. 💪\n\nХотите то же преимущество? 👇",
+        "📱 *VIP ПОБЕДА:* Ещё одна прибыльная сессия!\n\nНаше сообщество стабильно выигрывает.\n\nГотовы присоединиться? 👇",
+        "💰 *СИГНАЛ ТРЕЙДЕРА:* Невероятные результаты сегодня!\n\nВот что бывает с правильной стратегией. 🏆\n\nВаша очередь? 👇",
+    ],
+    "es": [
+        "🔔 *ALERTA:* ¡Un miembro VIP acaba de tener una sesión INCREÍBLE!\n\nEstos resultados ocurren con las herramientas correctas. 💪\n\n¿Quieres la misma ventaja? 👇",
+        "📱 *ALERTA VIP:* ¡Otra sesión rentable!\n\nNuestra comunidad gana consistentemente.\n\n¿Listo para unirte? 👇",
+    ],
+    "fr": [
+        "🔔 *ALERTE:* Un membre VIP vient d'avoir une session incroyable!\n\nCes résultats arrivent avec les bons outils. 💪\n\nVous voulez le même avantage? 👇",
+        "📱 *ALERTE VIP:* Une autre session rentable!\n\nNotre communauté gagne régulièrement.\n\nPrêt à les rejoindre? 👇",
+    ],
+    "pt": [
+        "🔔 *ALERTA:* Um membro VIP acabou de ter uma sessão INCRÍVEL!\n\nEsses resultados acontecem com as ferramentas certas. 💪\n\nQuer a mesma vantagem? 👇",
+        "📱 *ALERTA VIP:* Mais uma sessão lucrativa!\n\nNossa comunidade vence consistentemente.\n\nPronto para se juntar? 👇",
+    ],
+    "de": [
+        "🔔 *ALARM:* Ein VIP-Mitglied hatte gerade eine TOLLE Sitzung!\n\nSolche Ergebnisse passieren mit den richtigen Tools. 💪\n\nWollen Sie denselben Vorteil? 👇",
+        "📱 *VIP-GEWINN:* Eine weitere profitable Sitzung!\n\nUnsere Community gewinnt konstant.\n\nBereit beizutreten? 👇",
+    ],
+    "ur": [
+        "🔔 *اطلاع:* ایک VIP رکن کا شاندار سیشن ہوا!\n\nصحیح ٹولز کے ساتھ ایسے نتائج آتے ہیں۔ 💪\n\nوہی فائدہ چاہتے ہیں؟ 👇",
+        "📱 *VIP جیت کی اطلاع:* ایک اور منافع بخش سیشن!\n\nہماری کمیونٹی مستقل جیت رہی ہے۔\n\nشامل ہونے کے لیے تیار؟ 👇",
+    ],
+    "ja": [
+        "🔔 *アラート:* VIPメンバーが素晴らしいセッションを行いました!\n\n正しいツールがあればこんな結果が出ます。 💪\n\n同じ優位性が欲しいですか? 👇",
+        "📱 *VIP勝利アラート:* また利益が出るセッション!\n\n私たちのコミュニティは安定して勝っています。\n\n参加する準備はできていますか? 👇",
+    ],
+    "tr": [
+        "🔔 *UYARI:* Bir VIP üye harika bir seans geçirdi!\n\nDoğru araçlarla bu sonuçlar olur. 💪\n\nAynı avantajı ister misiniz? 👇",
+        "📱 *VIP KAZANMA UYARISI:* Başka bir karlı seans!\n\nTopluluğumuz istikrarlı şekilde kazanıyor.\n\nKatılmaya hazır mısınız? 👇",
+    ],
+    "fa": [
+        "🔔 *هشدار:* یک عضو VIP یک جلسه عالی داشت!\n\nبا ابزارهای درست این نتایج اتفاق می‌افتد. 💪\n\nمی‌خواهید همان مزیت را داشته باشید؟ 👇",
+        "📱 *هشدار برنده VIP:* جلسه سودآور دیگری!\n\nجامعه ما به طور مداوم می‌برد.\n\nآماده عضویت هستید؟ 👇",
+    ],
+    "ko": [
+        "🔔 *알림:* VIP 회원이 방금 훌륭한 세션을 가졌습니다!\n\n올바른 도구가 있으면 이런 결과가 나옵니다. 💪\n\n같은 우위를 원하시나요? 👇",
+        "📱 *VIP 승리 알림:* 또 하나의 수익 세션!\n\n우리 커뮤니티는 꾸준히 이기고 있습니다.\n\n합류할 준비가 됐나요? 👇",
+    ],
+    "it": [
+        "🔔 *AVVISO:* Un membro VIP ha appena avuto una sessione FANTASTICA!\n\nQuesti risultati si ottengono con gli strumenti giusti. 💪\n\nVuoi lo stesso vantaggio? 👇",
+        "📱 *AVVISO VINCITA VIP:* Un'altra sessione redditizia!\n\nLa nostra community vince costantemente.\n\nPronto ad unirti? 👇",
     ],
 }
 
@@ -3652,8 +3937,15 @@ def freebot_menu(lang):
         [InlineKeyboardButton("🌐 All Brokers Bot", url=FREE_BOT_LINKS["all_brokers"])],
         [InlineKeyboardButton("💎 Evalon Winners Bot", url=FREE_BOT_LINKS["evalon"])],
         [InlineKeyboardButton("🤖 Evalon AI Bot", url=FREE_BOT_LINKS["evalon_ai"])],
+        # ── Binary Brokers ─────────────────────────────────────────
         [InlineKeyboardButton("📊 Quotex Pro Bot", url=FREE_BOT_LINKS["quotex"])],
         [InlineKeyboardButton("💰 Pocket Option Bot 🆕", callback_data="show_pocket_bot")],
+        [InlineKeyboardButton("📈 IQ Option Bot", url="https://t.me/iqoptionprosignals")],
+        [InlineKeyboardButton("🌐 Deriv Bot", url="https://t.me/derivbinarybot")],
+        [InlineKeyboardButton("🏦 Olymp Trade Bot", url="https://t.me/olymptradebot")],
+        [InlineKeyboardButton("💎 Binomo Bot", url="https://t.me/binomobotpro")],
+        [InlineKeyboardButton("🔥 ExpertOption Bot", url="https://t.me/expertoption_signals")],
+        [InlineKeyboardButton("⚡ Binary.com / Deriv Bot", url="https://t.me/binaryoptionrobot")],
     ]
     # Dynamically add admin-added bots from DB
     try:
@@ -3707,9 +3999,18 @@ def svc_keyboard(lang, indicator=False, signals=False, autobot=False, social=Fal
     return InlineKeyboardMarkup(rows)
 
 def join_keyboard(lang):
+    _joined_btn = {
+        "en": "✅ I've Joined!", "sw": "✅ Nimejiunga!", "ar": "✅ لقد انضممت!",
+        "zh": "✅ 我已加入!", "hi": "✅ मैं जुड़ गया!", "ru": "✅ Я вступил!",
+        "es": "✅ ¡Me uní!", "fr": "✅ J'ai rejoint!", "pt": "✅ Já entrei!",
+        "de": "✅ Ich bin beigetreten!", "ur": "✅ میں شامل ہو گیا!", "ja": "✅ 参加しました!",
+        "it": "✅ Mi sono unito!", "ko": "✅ 참가했습니다!", "tr": "✅ Katıldım!",
+        "fa": "✅ پیوستم!", "pl": "✅ Dołączyłem!", "uk": "✅ Я приєднався!",
+        "kk": "✅ Мен қосылдым!", "cs": "✅ Připojil jsem se!",
+    }
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(ui("btn_join", lang), url=MAIN_CHANNEL_LINK)],
-        [InlineKeyboardButton("✅ I've Joined!", callback_data="check_join")],
+        [InlineKeyboardButton(_joined_btn.get(lang, "✅ I've Joined!"), callback_data="check_join")],
     ])
 
 def support_keyboard(lang):
@@ -3748,11 +4049,28 @@ def rating_keyboard():
     ]])
 
 def poll_keyboard(lang):
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton(ui("btn_poll_quotex", lang), callback_data="poll_quotex"),
-        InlineKeyboardButton(ui("btn_poll_pocket", lang), callback_data="poll_pocket"),
-        InlineKeyboardButton(ui("btn_poll_both", lang), callback_data="poll_both"),
-    ]])
+    both_text = ui("btn_poll_both", lang)
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("📊 Quotex", callback_data="poll_quotex"),
+            InlineKeyboardButton("💰 Pocket Option", callback_data="poll_pocket"),
+        ],
+        [
+            InlineKeyboardButton("📈 IQ Option", callback_data="poll_iqoption"),
+            InlineKeyboardButton("🌐 Deriv", callback_data="poll_deriv"),
+        ],
+        [
+            InlineKeyboardButton("🏦 Olymp Trade", callback_data="poll_olymp"),
+            InlineKeyboardButton("💎 Binomo", callback_data="poll_binomo"),
+        ],
+        [
+            InlineKeyboardButton("🔥 ExpertOption", callback_data="poll_expert"),
+            InlineKeyboardButton("⚡ Binary.com", callback_data="poll_binary"),
+        ],
+        [
+            InlineKeyboardButton("✅ " + both_text, callback_data="poll_both"),
+        ],
+    ])
 
 def start_reply_keyboard():
     """Single persistent keyboard button shown at all times"""
@@ -3949,53 +4267,80 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sent = failed = 0
     replied_msg = update.message.reply_to_message
 
-    await update.message.reply_text(
-        f"📢 Broadcasting to *{total}* users...", parse_mode="Markdown")
+    # Validate content first
+    has_content = (
+        replied_msg and (replied_msg.photo or replied_msg.video or replied_msg.voice
+                         or replied_msg.document or replied_msg.audio
+                         or replied_msg.animation or replied_msg.sticker
+                         or replied_msg.text)
+    ) or bool(context.args)
 
-    for uid in all_users:
+    if not has_content:
+        await update.message.reply_text(
+            "⚠️ *No content.*\n\n"
+            "• `/broadcast Your message here`\n"
+            "• Reply to any message/photo/video/file + `/broadcast`",
+            parse_mode="Markdown")
+        return
+
+    progress_msg = await update.message.reply_text(
+        f"📢 *Broadcasting to {total} users...*\n\n⏳ Please wait...",
+        parse_mode="Markdown")
+
+    src_chat = update.effective_chat.id
+
+    for i, uid in enumerate(all_users):
         try:
             u_info = get_user_info(uid)
             user_lang = u_info.get("lang", "en") or "en"
+            kb = broadcast_keyboard(user_lang)
 
-            if replied_msg and replied_msg.photo:
-                await context.bot.send_photo(
-                    chat_id=uid, photo=replied_msg.photo[-1].file_id,
-                    caption=replied_msg.caption or "",
-                    parse_mode=None)
-            elif replied_msg and replied_msg.video:
-                await context.bot.send_video(
-                    chat_id=uid, video=replied_msg.video.file_id,
-                    caption=replied_msg.caption or "",
-                    parse_mode=None)
-            elif replied_msg and replied_msg.voice:
-                await context.bot.send_voice(
-                    chat_id=uid, voice=replied_msg.voice.file_id)
-            elif replied_msg and replied_msg.document:
-                await context.bot.send_document(
-                    chat_id=uid, document=replied_msg.document.file_id,
-                    caption=replied_msg.caption or "",
-                    parse_mode=None)
-            elif replied_msg and replied_msg.text:
-                await context.bot.send_message(
-                    chat_id=uid, text=replied_msg.text,
-                    parse_mode=None,
-                    reply_markup=broadcast_keyboard(user_lang))
+            if replied_msg:
+                # Use copy_message to PRESERVE exact formatting, entities, bold etc.
+                if replied_msg.photo or replied_msg.video or replied_msg.document \
+                        or replied_msg.audio or replied_msg.animation or replied_msg.voice \
+                        or replied_msg.sticker:
+                    # Media: copy preserves caption + formatting exactly
+                    await context.bot.copy_message(
+                        chat_id=uid,
+                        from_chat_id=src_chat,
+                        message_id=replied_msg.message_id,
+                        reply_markup=kb if not replied_msg.sticker else None)
+                elif replied_msg.text:
+                    # Text: copy_message preserves bold/italic/links exactly
+                    await context.bot.copy_message(
+                        chat_id=uid,
+                        from_chat_id=src_chat,
+                        message_id=replied_msg.message_id,
+                        reply_markup=kb)
             elif context.args:
+                # Plain text from command args — send as-is
                 await context.bot.send_message(
-                    chat_id=uid, text=" ".join(context.args),
+                    chat_id=uid,
+                    text=" ".join(context.args),
                     parse_mode=None,
-                    reply_markup=broadcast_keyboard(user_lang))
-            else:
-                await update.message.reply_text(
-                    "⚠️ No content.\n\n• `/broadcast message`\n• Reply to media + `/broadcast`",
-                    parse_mode="Markdown")
-                return
+                    reply_markup=kb)
+
             sent += 1
-            await asyncio.sleep(0.05)
+
+            # Rate limiting: Telegram allows ~30 msgs/sec to different chats
+            # Sleep 0.04s = ~25/sec — safe and fast
+            await asyncio.sleep(0.04)
+
+            # Update progress every 50 users
+            if (i + 1) % 50 == 0:
+                try:
+                    await progress_msg.edit_text(
+                        f"📢 *Broadcasting...*\n\n"
+                        f"✅ Sent: {sent} / {total}\n"
+                        f"❌ Failed: {failed}",
+                        parse_mode="Markdown")
+                except:
+                    pass
+
         except TelegramError as e:
             failed += 1
             err_str = str(e).lower()
-            # Track users who blocked the bot
             if "bot was blocked" in err_str or "user is deactivated" in err_str or "chat not found" in err_str:
                 try:
                     mark_blocked_user(uid)
@@ -4009,9 +4354,17 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if blocked_list:
         blocked_info = f"\n🚫 Blocked bot: *{len(blocked_list)}*\nUse /blockedusers to see who"
 
-    await update.message.reply_text(
-        f"✅ *Done!*\n\n📤 Sent: {sent}\n❌ Failed: {failed}\n👥 Total: {total}{blocked_info}",
-        parse_mode="Markdown")
+    try:
+        await progress_msg.edit_text(
+            f"✅ *Broadcast Complete!*\n\n"
+            f"📤 Sent: *{sent}*\n"
+            f"❌ Failed: *{failed}*\n"
+            f"👥 Total: *{total}*{blocked_info}",
+            parse_mode="Markdown")
+    except:
+        await update.message.reply_text(
+            f"✅ *Done!*\n\n📤 Sent: {sent}\n❌ Failed: {failed}\n👥 Total: {total}{blocked_info}",
+            parse_mode="Markdown")
 
 # ══════════════════════════════════════════════════════════════
 #  ADMIN COMMANDS
@@ -4111,16 +4464,24 @@ async def _show_results_history(context, cid, lang, page=0):
     header = header_texts.get(lang, header_texts["en"])
 
     # Navigation buttons
+    _vip_join = {
+        "en": "🚀 Join VIP Now", "sw": "🚀 Jiunge na VIP Sasa",
+        "ar": "🚀 انضم لـ VIP الآن", "zh": "🚀 立即加入VIP",
+        "hi": "🚀 अभी VIP जुड़ें", "ru": "🚀 Вступить в VIP",
+        "es": "🚀 Unirse al VIP Ahora", "fr": "🚀 Rejoindre VIP Maintenant",
+        "pt": "🚀 Entrar no VIP Agora", "de": "🚀 VIP jetzt beitreten",
+        "ur": "🚀 ابھی VIP میں شامل ہوں", "ja": "🚀 今すぐVIPに参加",
+    }
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Nyuma", callback_data=f"results_page_{page-1}"))
+        nav_row.append(InlineKeyboardButton("⬅️ " + ("Nyuma" if lang == "sw" else "Back"), callback_data=f"results_page_{page-1}"))
     if page < total - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Mbele", callback_data=f"results_page_{page+1}"))
+        nav_row.append(InlineKeyboardButton("➡️ " + ("Mbele" if lang == "sw" else "Next"), callback_data=f"results_page_{page+1}"))
 
     back_kb_rows = []
     if nav_row:
         back_kb_rows.append(nav_row)
-    back_kb_rows.append([InlineKeyboardButton("🚀 Join VIP Now", url=VIP_BOT_LINK)])
+    back_kb_rows.append([InlineKeyboardButton(_vip_join.get(lang, "🚀 Join VIP Now"), url=VIP_BOT_LINK)])
     back_kb_rows.append([InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")])
     back_kb = InlineKeyboardMarkup(back_kb_rows)
 
@@ -4586,8 +4947,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
         ])
         if not all_stories:
+            _no_stories = {
+                "en": "⭐ *SUCCESS STORIES*\n\nNo stories posted yet. Check back soon!",
+                "sw": "⭐ *HADITHI ZA MAFANIKIO*\n\nHadithi hazijawekwa bado. Angalia hivi karibuni!",
+                "ar": "⭐ *قصص النجاح*\n\nلم تُنشر قصص بعد. تحقق قريباً!",
+                "zh": "⭐ *成功故事*\n\n尚未发布故事。请稍后再查看！",
+                "hi": "⭐ *सफलता की कहानियां*\n\nअभी तक कोई कहानी नहीं। जल्द वापस देखें!",
+                "ru": "⭐ *ИСТОРИИ УСПЕХА*\n\nИстории ещё не опубликованы. Зайдите позже!",
+                "es": "⭐ *HISTORIAS DE ÉXITO*\n\nAún no hay historias. ¡Vuelve pronto!",
+                "fr": "⭐ *HISTOIRES DE SUCCÈS*\n\nPas encore d'histoires. Revenez bientôt!",
+                "pt": "⭐ *HISTÓRIAS DE SUCESSO*\n\nNenhuma história ainda. Volte em breve!",
+                "de": "⭐ *ERFOLGSGESCHICHTEN*\n\nNoch keine Geschichten. Schau bald wieder vorbei!",
+                "ur": "⭐ *کامیابی کی کہانیاں*\n\nابھی تک کوئی کہانی نہیں۔ جلد واپس دیکھیں!",
+                "ja": "⭐ *サクセスストーリー*\n\nまだストーリーはありません。すぐに確認してください！",
+            }
             msg = await send_protected_text(context, cid,
-                "⭐ *SUCCESS STORIES*\n\nNo stories posted yet. Check back soon!", back_kb)
+                _no_stories.get(lang, _no_stories["en"]), back_kb)
             track_msg(cid, msg.message_id)
         else:
             # Pick random story, different from last shown
@@ -4596,11 +4971,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             story = random.choice(available)
             context.user_data["last_story_id"] = story["id"]
             caption = story.get("caption") or "⭐ Success Story"
-            header = f"⭐ *SUCCESS STORIES*\n\n{caption}"
+            _story_title = {
+                "en": "⭐ *SUCCESS STORIES*", "sw": "⭐ *HADITHI ZA MAFANIKIO*",
+                "ar": "⭐ *قصص النجاح*", "zh": "⭐ *成功故事*",
+                "hi": "⭐ *सफलता की कहानियां*", "ru": "⭐ *ИСТОРИИ УСПЕХА*",
+                "es": "⭐ *HISTORIAS DE ÉXITO*", "fr": "⭐ *HISTOIRES DE SUCCÈS*",
+                "pt": "⭐ *HISTÓRIAS DE SUCESSO*", "de": "⭐ *ERFOLGSGESCHICHTEN*",
+                "ur": "⭐ *کامیابی کی کہانیاں*", "ja": "⭐ *サクセスストーリー*",
+            }
+            header = f"{_story_title.get(lang, '⭐ *SUCCESS STORIES*')}\n\n{caption}"
             # Navigation if multiple stories
             nav_row = []
             if len(all_stories) > 1:
-                nav_row.append(InlineKeyboardButton("🔄 Next Story", callback_data="do_stories"))
+                _next_story = {
+                    "en": "🔄 Next Story", "sw": "🔄 Hadithi Inayofuata",
+                    "ar": "🔄 القصة التالية", "zh": "🔄 下一个故事",
+                    "hi": "🔄 अगली कहानी", "ru": "🔄 Следующая история",
+                    "es": "🔄 Siguiente Historia", "fr": "🔄 Histoire Suivante",
+                    "pt": "🔄 Próxima História", "de": "🔄 Nächste Geschichte",
+                    "ur": "🔄 اگلی کہانی", "ja": "🔄 次のストーリー",
+                }
+                nav_row.append(InlineKeyboardButton(_next_story.get(lang, "🔄 Next Story"), callback_data="do_stories"))
             kb = InlineKeyboardMarkup([nav_row] + [
                 [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
                 [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
@@ -4635,7 +5026,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg = await send_protected_text(context, cid, ui("no_news", lang), back_kb)
         else:
             updated = content.get("updated_at", "")
-            header = f"🆕 WHAT'S NEW\n\n{updated}\n\n" if updated else "🆕 WHAT'S NEW\n\n"
+            _news_hdr = {
+                "en": "🆕 WHAT'S NEW", "sw": "🆕 HABARI MPYA", "ar": "🆕 ما الجديد",
+                "zh": "🆕 最新消息", "hi": "🆕 नया क्या है", "ru": "🆕 ЧТО НОВОГО",
+                "es": "🆕 QUÉ HAY DE NUEVO", "fr": "🆕 QUOI DE NEUF",
+                "pt": "🆕 O QUE HÁ DE NOVO", "de": "🆕 WAS GIBT'S NEUES",
+                "ur": "🆕 کیا نیا ہے", "ja": "🆕 新着情報",
+            }.get(lang, "🆕 WHAT'S NEW")
+            header = f"{_news_hdr}\n\n{updated}\n\n" if updated else f"{_news_hdr}\n\n"
             body = content.get("text") or ""
             full_text = header + body
             if content.get("file_id") and content.get("file_type") == "photo":
@@ -4667,15 +5065,31 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── TODAY'S VIP RESULTS ────────────────────────────────────
     elif data == "do_vip_results":
         content = get_dynamic_content("vip")
+        _vip_join2 = {
+            "en": "🚀 Join VIP Now", "sw": "🚀 Jiunge na VIP Sasa",
+            "ar": "🚀 انضم لـ VIP الآن", "zh": "🚀 立即加入VIP",
+            "hi": "🚀 अभी VIP जुड़ें", "ru": "🚀 Вступить в VIP",
+            "es": "🚀 Unirse al VIP Ahora", "fr": "🚀 Rejoindre VIP",
+            "pt": "🚀 Entrar no VIP", "de": "🚀 VIP beitreten",
+            "ur": "🚀 ابھی VIP میں شامل ہوں", "ja": "🚀 VIPに参加",
+        }
         back_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🚀 Join VIP Now", url=VIP_BOT_LINK)],
+            [InlineKeyboardButton(_vip_join2.get(lang, "🚀 Join VIP Now"), url=VIP_BOT_LINK)],
             [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]
         ])
         if not content:
             msg = await send_protected_text(context, cid, ui("no_vip", lang), back_kb)
         else:
             updated = content.get("updated_at", "")
-            header = f"🏆 TODAY'S VIP RESULTS\n\n{updated}\n\n" if updated else "🏆 TODAY'S VIP RESULTS\n\n"
+            _vip_header = {
+                "en": "🏆 TODAY'S VIP RESULTS", "sw": "🏆 MATOKEO YA VIP YA LEO",
+                "ar": "🏆 نتائج VIP اليوم", "zh": "🏆 今日VIP结果",
+                "hi": "🏆 आज के VIP परिणाम", "ru": "🏆 РЕЗУЛЬТАТЫ VIP СЕГОДНЯ",
+                "es": "🏆 RESULTADOS VIP HOY", "fr": "🏆 RÉSULTATS VIP AUJOURD'HUI",
+                "pt": "🏆 RESULTADOS VIP HOJE", "de": "🏆 HEUTIGE VIP-ERGEBNISSE",
+                "ur": "🏆 آج کے VIP نتائج", "ja": "🏆 本日のVIP結果",
+            }.get(lang, "🏆 TODAY'S VIP RESULTS")
+            header = f"{_vip_header}\n\n{updated}\n\n" if updated else f"{_vip_header}\n\n"
             body = content.get("text") or ""
             full_text = header + body
             if content.get("file_id") and content.get("file_type") == "photo":
@@ -4715,17 +5129,70 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             sunday = monday + _td(days=6)
             week_range = f"{monday.strftime('%d %b')} – {sunday.strftime('%d %b')}"
             user_refs = get_referral_count(user.id)
-            lines = [f"👑 *TOP INVITERS — THIS WEEK*\n📅 _{week_range}_\n\n"]
+            _wi_title = {
+                "en": "👑 *TOP INVITERS — THIS WEEK*", "sw": "👑 *WAALIKAJI BORA — WIKI HII*",
+                "ar": "👑 *أفضل المدعوين — هذا الأسبوع*", "zh": "👑 *本周最佳邀请者*",
+                "hi": "👑 *इस सप्ताह के शीर्ष आमंत्रणकर्ता*", "ru": "👑 *ТОП РЕФЕРЕРОВ — ЭТА НЕДЕЛЯ*",
+                "es": "👑 *MEJORES INVITADORES — ESTA SEMANA*", "fr": "👑 *MEILLEURS PARRAINS — CETTE SEMAINE*",
+                "pt": "👑 *MELHORES INDICADORES — ESTA SEMANA*", "de": "👑 *TOP-EINLADER — DIESE WOCHE*",
+                "ur": "👑 *اس ہفتے کے بہترین مدعو کنندگان*", "ja": "👑 *今週のトップ招待者*",
+            }.get(lang, "👑 *TOP INVITERS — THIS WEEK*")
+            _wi_invited = {
+                "en": "people invited", "sw": "watu wamealikwa", "ar": "شخص مدعو",
+                "zh": "人受邀", "hi": "लोग आमंत्रित", "ru": "приглашено",
+                "es": "personas invitadas", "fr": "personnes invitées", "pt": "pessoas convidadas",
+                "de": "Personen eingeladen", "ur": "افراد مدعو", "ja": "人を招待",
+            }.get(lang, "people invited")
+            _wi_you = {
+                "en": "You", "sw": "Wewe", "ar": "أنت", "zh": "你",
+                "hi": "आप", "ru": "Вы", "es": "Tú", "fr": "Vous",
+                "pt": "Você", "de": "Sie", "ur": "آپ", "ja": "あなた",
+            }.get(lang, "You")
+            _wi_invite_more = {
+                "en": "Invite *{gap} more* to enter the Top 5!",
+                "sw": "Alika *{gap} zaidi* kuingia kwenye Top 5!",
+                "ar": "ادعُ *{gap} أخرى* للدخول إلى أفضل 5!",
+                "zh": "再邀请 *{gap}* 人进入前5名！",
+                "hi": "Top 5 में आने के लिए *{gap} और* आमंत्रित करें!",
+                "ru": "Пригласите ещё *{gap}* для входа в Топ 5!",
+                "es": "¡Invita *{gap} más* para entrar al Top 5!",
+                "fr": "Invitez *{gap} de plus* pour entrer dans le Top 5!",
+                "pt": "Convide *{gap} mais* para entrar no Top 5!",
+                "de": "Lade *{gap} mehr* ein für die Top 5!",
+                "ur": "Top 5 میں آنے کے لیے *{gap} اور* مدعو کریں!",
+                "ja": "Top 5入りにあと *{gap}人* 招待してください！",
+            }.get(lang, "Invite *{gap} more* to enter the Top 5!")
+            _wi_top = {
+                "en": "🔥 *You're in the top tier! Keep going!*",
+                "sw": "🔥 *Uko kwenye kiwango cha juu! Endelea!*",
+                "ar": "🔥 *أنت في المستوى الأعلى! استمر!*",
+                "zh": "🔥 *您在顶层！继续加油！*",
+                "hi": "🔥 *आप शीर्ष स्तर पर हैं! जारी रखें!*",
+                "ru": "🔥 *Вы в топ-уровне! Продолжайте!*",
+                "es": "🔥 *¡Estás en el nivel superior! ¡Sigue!*",
+                "fr": "🔥 *Vous êtes au top! Continuez!*",
+                "pt": "🔥 *Você está no topo! Continue!*",
+                "de": "🔥 *Sie sind in der Top-Stufe! Weiter so!*",
+                "ur": "🔥 *آپ سرفہرست ہیں! جاری رکھیں!*",
+                "ja": "🔥 *あなたはトップ層にいます！続けましょう！*",
+            }.get(lang, "🔥 *You're in the top tier! Keep going!*")
+            _wi_reset = {
+                "en": "🔄 *Leaderboard resets every Monday!*\n🚀 Share your link → climb the ranks!",
+                "sw": "🔄 *Orodha inawekwa upya kila Jumatatu!*\n🚀 Shiriki kiungo chako → panda daraja!",
+                "ar": "🔄 *لوحة المتصدرين تُعاد كل يوم اثنين!*\n🚀 شارك رابطك → ارتقِ في الترتيب!",
+                "ru": "🔄 *Таблица обновляется каждый понедельник!*\n🚀 Поделитесь ссылкой → поднимайтесь!",
+            }.get(lang, "🔄 *Leaderboard resets every Monday!*\n🚀 Share your link → climb the ranks!")
+            lines = [f"{_wi_title}\n📅 _{week_range}_\n\n"]
             for i, (name, flag, count) in enumerate(leaders):
-                lines.append(f"{medals[i]} *{name}* {flag} — *{count} people invited*\n")
-            lines.append(f"\n👤 *You:* {user_refs} people invited")
+                lines.append(f"{medals[i]} *{name}* {flag} — *{count} {_wi_invited}*\n")
+            lines.append(f"\n👤 *{_wi_you}:* {user_refs} {_wi_invited}")
             top_count = leaders[-1][2] if leaders else 10
             if user_refs < top_count:
                 gap = top_count - user_refs
-                lines.append(f"\n💪 Invite *{gap} more* to enter the Top 5!")
+                lines.append(f"\n💪 {_wi_invite_more.format(gap=gap)}")
             else:
-                lines.append("\n🔥 *You're in the top tier! Keep going!*")
-            lines.append("\n\n🔄 *Leaderboard resets every Monday!*\n🚀 Share your link → climb the ranks!")
+                lines.append(f"\n{_wi_top}")
+            lines.append(f"\n\n{_wi_reset}")
             winners_text = "\n".join(lines)
             img = rand_img(SERVICE_PHOTOS, context.user_data, "last_img_winners")
             try:
@@ -4746,9 +5213,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.warning(f"do_winners error: {e}")
             try:
+                _wi_err = {
+                    "en": "👑 *TOP INVITERS — THIS WEEK*\n\n⚠️ Could not load leaderboard. Please try again!",
+                    "sw": "👑 *WAALIKAJI BORA — WIKI HII*\n\n⚠️ Imeshindwa kupakia orodha. Tafadhali jaribu tena!",
+                }.get(lang, "👑 *TOP INVITERS — THIS WEEK*\n\n⚠️ Could not load leaderboard. Please try again!")
                 msg = await send_protected_text(
-                    context, cid,
-                    "👑 *TOP INVITERS — THIS WEEK*\n\n⚠️ Could not load leaderboard. Please try again!",
+                    context, cid, _wi_err,
                     InlineKeyboardMarkup([
                         [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
                     ]))
@@ -4931,9 +5401,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bot_msg_ids[cid].remove(spin_msg.message_id)
 
         # Always show exciting lose message with hope — no win tracking, no admin mention
-        result_header = f"🎰 *LUCKY SPIN RESULT* 🎰\n\n{prize_text}"
+        _spin_again = {
+            "en": "🔄 Spin Again Tomorrow 🕐", "sw": "🔄 Spin Tena Kesho 🕐",
+            "ar": "🔄 الدوران مجدداً غداً 🕐", "zh": "🔄 明天再旋转 🕐",
+            "hi": "🔄 कल फिर Spin करें 🕐", "ru": "🔄 Крутить снова завтра 🕐",
+            "es": "🔄 Girar Mañana 🕐", "fr": "🔄 Retourner Demain 🕐",
+            "pt": "🔄 Girar Amanhã 🕐", "de": "🔄 Morgen wieder drehen 🕐",
+            "ur": "🔄 کل دوبارہ Spin کریں 🕐", "ja": "🔄 明日また回す 🕐",
+        }
+        _spin_title = {
+            "en": "🎰 *LUCKY SPIN RESULT* 🎰", "sw": "🎰 *MATOKEO YA LUCKY SPIN* 🎰",
+            "ar": "🎰 *نتيجة الدورة المحظوظة* 🎰", "zh": "🎰 *幸运转盘结果* 🎰",
+            "hi": "🎰 *Lucky Spin परिणाम* 🎰", "ru": "🎰 *РЕЗУЛЬТАТ СЧАСТЛИВОГО СПИНА* 🎰",
+            "es": "🎰 *RESULTADO DEL GIRO* 🎰", "fr": "🎰 *RÉSULTAT DU SPIN* 🎰",
+            "pt": "🎰 *RESULTADO DO GIRO* 🎰", "de": "🎰 *GLÜCKSRAD ERGEBNIS* 🎰",
+            "ur": "🎰 *Lucky Spin نتیجہ* 🎰", "ja": "🎰 *ラッキースピン結果* 🎰",
+        }
+        result_header = f"{_spin_title.get(lang, '🎰 *LUCKY SPIN RESULT* 🎰')}\n\n{prize_text}"
         result_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔄 Spin Again Tomorrow 🕐", callback_data="main_menu")],
+            [InlineKeyboardButton(_spin_again.get(lang, "🔄 Spin Again Tomorrow 🕐"), callback_data="main_menu")],
             [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
             [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
         ])
@@ -5009,7 +5495,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             msg = await context.bot.send_message(
                 chat_id=uid,
-                text="🟢 *You are now connected to our support team!*\n\nPlease describe your issue. 💬",
+                text={
+                    "en": "🟢 *You are now connected to our support team!*\n\nPlease describe your issue. 💬",
+                    "sw": "🟢 *Umeunganishwa na timu yetu ya usaidizi!*\n\nTafadhali eleza tatizo lako. 💬",
+                    "ar": "🟢 *أنت الآن متصل بفريق الدعم!*\n\nيرجى وصف مشكلتك. 💬",
+                    "zh": "🟢 *您已连接到我们的支持团队！*\n\n请描述您的问题。 💬",
+                    "hi": "🟢 *आप हमारी सपोर्ट टीम से जुड़ गए हैं!*\n\nकृपया अपनी समस्या बताएं। 💬",
+                    "ru": "🟢 *Вы подключены к команде поддержки!*\n\nОпишите вашу проблему. 💬",
+                    "es": "🟢 *¡Ahora estás conectado con nuestro equipo de soporte!*\n\nPor favor describe tu problema. 💬",
+                    "fr": "🟢 *Vous êtes connecté à notre équipe support!*\n\nVeuillez décrire votre problème. 💬",
+                    "pt": "🟢 *Você está conectado à nossa equipe de suporte!*\n\nDescreva seu problema. 💬",
+                    "de": "🟢 *Sie sind jetzt mit unserem Support-Team verbunden!*\n\nBitte beschreiben Sie Ihr Problem. 💬",
+                    "ur": "🟢 *آپ ہماری سپورٹ ٹیم سے جڑ گئے ہیں!*\n\nبراہ کرم اپنا مسئلہ بیان کریں۔ 💬",
+                    "ja": "🟢 *サポートチームに接続されました！*\n\n問題を説明してください。 💬",
+                    "it": "🟢 *Sei connesso al nostro team di supporto!*\n\nDescivi il tuo problema. 💬",
+                    "ko": "🟢 *지원팀에 연결되었습니다!*\n\n문제를 설명해 주세요. 💬",
+                    "tr": "🟢 *Destek ekibimize bağlandınız!*\n\nLütfen sorununuzu açıklayın. 💬",
+                    "fa": "🟢 *به تیم پشتیبانی متصل شدید!*\n\nلطفاً مشکل خود را شرح دهید. 💬",
+                    "pl": "🟢 *Połączono z zespołem wsparcia!*\n\nProszę opisać swój problem. 💬",
+                    "uk": "🟢 *Ви підключені до команди підтримки!*\n\nБудь ласка, опишіть вашу проблему. 💬",
+                    "kk": "🟢 *Сіз қолдау тобына қосылдыңыз!*\n\nМәселеңізді сипаттаңыз. 💬",
+                    "cs": "🟢 *Jste připojeni k týmu podpory!*\n\nPopište prosím svůj problém. 💬",
+                }.get(ulang, "🟢 *You are now connected to our support team!*\n\nPlease describe your issue. 💬"),
                 parse_mode="Markdown",
                 protect_content=True)
             track_support_msg(uid, msg.message_id)
@@ -5130,9 +5637,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             }
             pocket_text = pocket_texts.get(lang, pocket_texts["en"])
             # Build keyboard — add link button if pocket_link is set
+            _open_btn = {
+                "en": "🤖 Open Pocket Option Bot", "sw": "🤖 Fungua Pocket Option Bot",
+                "ar": "🤖 فتح بوت Pocket Option", "zh": "🤖 打开Pocket Option Bot",
+                "hi": "🤖 Pocket Option Bot खोलें", "ru": "🤖 Открыть Pocket Option Bot",
+                "es": "🤖 Abrir Pocket Option Bot", "fr": "🤖 Ouvrir Pocket Option Bot",
+                "pt": "🤖 Abrir Pocket Option Bot", "de": "🤖 Pocket Option Bot öffnen",
+                "ur": "🤖 Pocket Option Bot کھولیں", "ja": "🤖 Pocket Option Botを開く",
+            }
             kb_rows = []
             if pocket_link:
-                kb_rows.append([InlineKeyboardButton("🤖 Open Pocket Option Bot", url=pocket_link)])
+                kb_rows.append([InlineKeyboardButton(_open_btn.get(lang, "🤖 Open Pocket Option Bot"), url=pocket_link)])
             kb_rows.append([InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")])
             kb_rows.append([InlineKeyboardButton(ui("btn_back", lang), callback_data="svc_freebot")])
             msg = await context.bot.send_video(
@@ -5148,12 +5663,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pocket_link = FREE_BOT_LINKS.get("pocket_link", "")
             kb_rows = []
             if pocket_link:
-                kb_rows.append([InlineKeyboardButton("🤖 Open Pocket Option Bot", url=pocket_link)])
+                kb_rows.append([InlineKeyboardButton(_open_btn.get(lang, "🤖 Open Pocket Option Bot"), url=pocket_link)])
             kb_rows.append([InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")])
             kb_rows.append([InlineKeyboardButton(ui("btn_back", lang), callback_data="svc_freebot")])
             msg = await send_protected_text(
                 context, cid,
-                "💰 *POCKET OPTION BOT — NEW!* 🆕\n\n🤖 Our Pocket Option trading bot is ready!\n\nTap below to access it or contact support.",
+                {
+                    "en": "💰 *POCKET OPTION BOT — NEW!* 🆕\n\n🤖 Our Pocket Option trading bot is ready!\n\nTap below to access it or contact support.",
+                    "sw": "💰 *BOT YA POCKET OPTION — MPYA!* 🆕\n\n🤖 Bot yetu ya Pocket Option iko tayari!\n\nBonyeza hapa chini kuifikia au wasiliana na usaidizi.",
+                    "ar": "💰 *بوت Pocket Option — جديد!* 🆕\n\n🤖 بوتنا جاهز!\n\nاضغط أدناه للوصول أو تواصل مع الدعم.",
+                    "ru": "💰 *БОТ Pocket Option — НОВИНКА!* 🆕\n\n🤖 Наш бот готов!\n\nНажмите ниже для доступа или свяжитесь с поддержкой.",
+                }.get(lang, "💰 *POCKET OPTION BOT — NEW!* 🆕\n\n🤖 Our Pocket Option trading bot is ready!\n\nTap below to access it or contact support."),
                 InlineKeyboardMarkup(kb_rows))
             track_msg(cid, msg.message_id)
 
@@ -5173,9 +5693,29 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ref_list = get_referred_users(user.id)
         ref_count = len(ref_list)
         if not ref_list:
-            text = "👥 *Your Referrals*\n\nYou haven't invited anyone yet.\n\nShare your link and start earning discounts! 🎁"
+            _no_ref = {
+                "en": "👥 *Your Referrals*\n\nYou haven't invited anyone yet.\n\nShare your link and start earning discounts! 🎁",
+                "sw": "👥 *Rufaa Zako*\n\nHujamwalika mtu yeyote bado.\n\nShiriki kiungo chako na uanze kupata punguzo! 🎁",
+                "ar": "👥 *إحالاتك*\n\nلم تدعُ أحداً بعد.\n\nشارك رابطك وابدأ بكسب الخصومات! 🎁",
+                "zh": "👥 *您的推荐*\n\n您还没有邀请任何人。\n\n分享您的链接开始赚取折扣！ 🎁",
+                "hi": "👥 *आपके रेफरल*\n\nआपने अभी तक किसी को आमंत्रित नहीं किया।\n\nअपना लिंक साझा करें और छूट पाना शुरू करें! 🎁",
+                "ru": "👥 *Ваши рефералы*\n\nВы ещё никого не пригласили.\n\nПоделитесь ссылкой и начните зарабатывать скидки! 🎁",
+                "es": "👥 *Tus Referidos*\n\nAún no has invitado a nadie.\n\n¡Comparte tu enlace y empieza a ganar descuentos! 🎁",
+                "fr": "👥 *Vos Parrainages*\n\nVous n'avez encore invité personne.\n\nPartagez votre lien et commencez à gagner des remises! 🎁",
+                "pt": "👥 *Seus Indicados*\n\nVocê ainda não convidou ninguém.\n\nCompartilhe seu link e comece a ganhar descontos! 🎁",
+                "de": "👥 *Ihre Empfehlungen*\n\nSie haben noch niemanden eingeladen.\n\nTeilen Sie Ihren Link und verdienen Sie Rabatte! 🎁",
+                "ur": "👥 *آپ کے ریفرلز*\n\nآپ نے ابھی تک کسی کو مدعو نہیں کیا۔\n\nاپنا لنک شیئر کریں اور چھوٹ حاصل کرنا شروع کریں! 🎁",
+                "ja": "👥 *あなたの紹介*\n\nまだ誰も招待していません。\n\nリンクを共有して割引を獲得しましょう! 🎁",
+            }
+            text = _no_ref.get(lang, _no_ref["en"])
         else:
-            lines = [f"👥 *Your Referrals ({ref_count} people)*\n"]
+            _ref_header = {
+                "en": "Your Referrals", "sw": "Rufaa Zako", "ar": "إحالاتك",
+                "zh": "您的推荐", "hi": "आपके रेफरल", "ru": "Ваши рефералы",
+                "es": "Tus Referidos", "fr": "Vos Parrainages", "pt": "Seus Indicados",
+                "de": "Ihre Empfehlungen", "ur": "آپ کے ریفرلز", "ja": "あなたの紹介",
+            }
+            lines = [f"👥 *{_ref_header.get(lang, 'Your Referrals')} ({ref_count} {'watu' if lang=='sw' else 'people'})*\n"]
             for i, (name_r, joined_r) in enumerate(ref_list[:20], 1):
                 safe = escape_md(name_r or "Unknown")
                 lines.append(f"{i}. {safe} — {joined_r[:10] if joined_r else '?'}")
@@ -5549,139 +6089,124 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════════════════════
 
 async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /preview        — Preview current bot flow (English)
+    /preview sw     — Preview in Swahili
+    /preview en     — Preview in English
+    Works for all 20 supported languages.
+    """
     if not is_admin(update.effective_user.id):
         return
 
     user = update.effective_user
     cid  = update.effective_chat.id
 
-    # Parse optional language arg: /preview sw  or /preview en
+    # Parse language arg
     lang = "en"
     if context.args:
-        lang = context.args[0].lower().strip()
-        if lang not in UI:
-            lang = "en"
+        arg = context.args[0].lower().strip()
+        if arg in UI:
+            lang = arg
 
     await update.message.reply_text(
-        f"👁 *PREVIEW MODE — New User Experience*\n\n"
-        f"🌍 Language: `{lang}`\n\n"
-        f"Sending you the full new-user flow now...\n"
-        f"_(This is exactly what a new user sees)_",
+        f"👁 *PREVIEW MODE*\n\n"
+        f"🌍 Language: `{lang}`\n"
+        f"📱 Showing current bot flow (8 steps)...\n\n"
+        f"_This is exactly what users see_",
         parse_mode="Markdown")
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(0.8)
 
     # ── STEP 1: Language selector ──────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1: Language Selector*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1: Language Selector* (first visit only)\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
     await context.bot.send_message(
         chat_id=cid,
-        text="🌍 *Welcome to EVALON WINNERS!*\n\nChoose your language / Chagua lugha yako:",
+        text="🏆 *EVALON WINNERS TRADER* 🏆\n\nChoose your language / Chagua lugha yako:",
         parse_mode="Markdown",
         reply_markup=lang_keyboard())
+    await asyncio.sleep(1.2)
 
-    await asyncio.sleep(1.5)
-
-    # ── STEP 2: Join channel prompt ────────────────────────────
+    # ── STEP 2: Join gate ──────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
         text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
     await context.bot.send_message(
         chat_id=cid,
         text=ui("join_msg", lang),
         parse_mode="Markdown",
         reply_markup=join_keyboard(lang))
+    await asyncio.sleep(1.2)
 
-    await asyncio.sleep(1.5)
-
-    # ── STEP 3: Onboarding video + text ───────────────────────
+    # ── STEP 3: Welcome screen — users land here directly after joining ──
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Onboarding (New Users Only)*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Welcome + Main Menu*\n_(Users go here directly after channel join)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.5)
-
-    try:
-        await context.bot.send_video(
-            chat_id=cid,
-            video=ONBOARDING_VIDEO)
-    except Exception as e:
-        await context.bot.send_message(
-            chat_id=cid,
-            text=f"⚠️ _Video failed to send: {e}_\n_(Video ID: {ONBOARDING_VIDEO})_",
-            parse_mode="Markdown")
-
-    await asyncio.sleep(1.0)
-
-    onboard_text = get_onboarding_text(lang, user.first_name)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=onboard_text,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🚀 Continue", callback_data="noop")
-        ]]))
-
-    await asyncio.sleep(1.5)
-
-    # ── STEP 4: Poll ───────────────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Poll (After Continue)*\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.5)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=ui("poll_msg", lang),
-        parse_mode="Markdown",
-        reply_markup=poll_keyboard(lang))
-
-    await asyncio.sleep(1.5)
-
-    # ── STEP 5: Main menu (welcome) ────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Main Menu (After Poll)*\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.5)
-
+    await asyncio.sleep(0.4)
     welcome_text = build_welcome_text(lang, user.first_name)
     try:
         await send_welcome_media(context, cid, welcome_text, main_menu(lang))
     except Exception as e:
         await context.bot.send_message(
-            chat_id=cid,
-            text=welcome_text,
-            parse_mode="Markdown",
-            reply_markup=main_menu(lang))
+            chat_id=cid, text=welcome_text,
+            parse_mode="Markdown", reply_markup=main_menu(lang))
+    await asyncio.sleep(1.2)
 
-    await asyncio.sleep(1.0)
-
-    # ── STEP 6: Services menu ──────────────────────────────────
+    # ── STEP 4: Services menu ──────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Services Menu*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Services Menu*\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
     await context.bot.send_message(
         chat_id=cid,
         text=ui("services_msg", lang),
         parse_mode="Markdown",
         reply_markup=services_menu(lang))
+    await asyncio.sleep(1.2)
 
-    await asyncio.sleep(1.0)
+    # ── STEP 5: Free Bot menu — all brokers ───────────────────
+    await context.bot.send_message(
+        chat_id=cid,
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Free Bot Menu (All Brokers)*\n━━━━━━━━━━━━━━━━━━",
+        parse_mode="Markdown")
+    await asyncio.sleep(0.4)
+    _freebot_txt = {
+        "sw": "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE!\n\n✅ Mawakala WOTE\n✅ Rahisi kutumia\n\nChagua broker yako 👇",
+        "en": "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot!\n\n✅ Works on ALL brokers\n✅ Easy to use\n\nChoose your broker 👇",
+    }
+    await context.bot.send_message(
+        chat_id=cid,
+        text=_freebot_txt.get(lang, _freebot_txt["en"]),
+        parse_mode="Markdown",
+        reply_markup=freebot_menu(lang))
+    await asyncio.sleep(1.2)
+
+    # ── STEP 6: Broker poll ────────────────────────────────────
+    await context.bot.send_message(
+        chat_id=cid,
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Broker Poll*\n_(Shown to new users)_\n━━━━━━━━━━━━━━━━━━",
+        parse_mode="Markdown")
+    await asyncio.sleep(0.4)
+    await context.bot.send_message(
+        chat_id=cid,
+        text=ui("poll_msg", lang),
+        parse_mode="Markdown",
+        reply_markup=poll_keyboard(lang))
+    await asyncio.sleep(1.2)
 
     # ── STEP 7: Spin wheel ─────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 7: Lucky Spin (first time)*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 7: Lucky Spin*\n_(1x per day — 5% win chance)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
     await context.bot.send_message(
         chat_id=cid,
         text=SPIN_WHEEL_VISUAL + "      ✨ Spinning... ✨",
@@ -5689,8 +6214,20 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton("🔄 Spin Again Tomorrow 🕐", callback_data="noop"),
         ]]))
+    await asyncio.sleep(0.8)
 
-    await asyncio.sleep(1.0)
+    # ── STEP 8: Broadcast sample ───────────────────────────────
+    await context.bot.send_message(
+        chat_id=cid,
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 8: Broadcast Sample*\n_(How broadcast messages appear)_\n━━━━━━━━━━━━━━━━━━",
+        parse_mode="Markdown")
+    await asyncio.sleep(0.4)
+    await context.bot.send_message(
+        chat_id=cid,
+        text="🔥 *EVALON WINNERS — BROADCAST!*\n\n📊 Today signals: *9/10 won!* 💪\n\n_Bold, italic, emojis — all preserved exactly as admin sends_",
+        parse_mode="Markdown",
+        reply_markup=broadcast_keyboard(lang))
+    await asyncio.sleep(0.6)
 
     # ── DONE ───────────────────────────────────────────────────
     await context.bot.send_message(
@@ -5699,13 +6236,14 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "━━━━━━━━━━━━━━━━━━\n"
             "✅ *PREVIEW COMPLETE!*\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-            f"🌍 Language previewed: `{lang}`\n\n"
-            "📌 *Quick Tips:*\n"
-            "• `/preview sw` — preview in Swahili\n"
-            "• `/preview ar` — preview in Arabic\n"
-            "• `/preview en` — preview in English\n"
+            f"🌍 Language: `{lang}` | 8 steps shown\n\n"
+            "📌 Other languages:\n"
+            "• `/preview sw` — Swahili\n"
+            "• `/preview ar` — Arabic\n"
+            "• `/preview hi` — Hindi\n"
+            "• `/preview fr` — French\n"
             "• Works for all 20 languages\n\n"
-            "🗑 You can delete these messages manually."
+            "🗑 Delete these messages when done."
         ),
         parse_mode="Markdown")
 
@@ -6020,79 +6558,109 @@ async def results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show all admin commands"""
+    """Show all admin commands — /help"""
     if not is_admin(update.effective_user.id):
         return
-    await update.message.reply_text(
-        "🤖 *EVALON WINNERS BOT — ADMIN COMMANDS*\n\n"
+
+    # Send in 2 messages to avoid Telegram 4096 char limit
+    msg1 = (
+        "🤖 *EVALON WINNERS — ADMIN PANEL*\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "📊 *STATISTICS*\n"
+        "📊 *STATISTICS & USERS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/stats` — Total users, active, new today, top referrers\n\n"
+        "`/stats` — Jumla ya users, active, wapya leo, top referrers\n"
+        "`/users` — Orodha ya users WOTE (jina + ID)\n"
+        "`/users john` — Tafuta user kwa jina, username, au ID\n"
+        "`/blockedusers` — Users waliozuia bot\n"
+        "`/history USER_ID` — Ujumbe 50 wa mwisho na user huyo\n"
+        "`/history USER_ID 100` — Ujumbe 100\n"
+        "`/history USER_ID all` — Ujumbe WOTE tangu siku ya kwanza\n"
+        "`/userchart USER_ID` — Chart ya shughuli za kila siku\n"
+        "`/getid` _(reply to photo/video)_ — Pata file_id\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "📢 *BROADCAST*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/broadcast text` — Send text to ALL users\n"
-        "`/broadcast` _(reply to photo/video)_ — Send media to all\n\n"
+        "`/broadcast Ujumbe wako` — Tuma text kwa users WOTE\n"
+        "`/broadcast` _(reply to photo/video/file)_ — Tuma media kwa wote\n"
+        "✅ Bold, italic, links — zinahifadhiwa exactly kama ulivyoandika\n"
+        "✅ Progress inaonyeshwa kila users 50\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🆕 *DYNAMIC CONTENT*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/setnews Your text` — Set What's New Today\n"
-        "`/setnews` _(reply to photo/video)_ — Set with media\n"
-        "`/setvip Today: 8/10 won!` — Set VIP Results\n"
-        "`/setvip` _(reply to photo/video)_ — Set with media\n"
-        "`/clearnews` — Clear What's New content\n"
-        "`/clearvip` — Clear VIP Results content\n"
-        "`/results Today: 8/10 won!` — Save session results to history\n"
-        "`/results` _(reply to photo/video)_ — Save results with media\n\n"
+        "`/setnews Ujumbe wako` — Weka What's New ya leo\n"
+        "`/setnews` _(reply to photo/video)_ — Weka na picha/video\n"
+        "`/setvip Leo: 8/10 zilishinda!` — Weka VIP Results\n"
+        "`/setvip` _(reply to photo/video)_ — Weka na media\n"
+        "`/clearnews` — Futa What's New content\n"
+        "`/clearvip` — Futa VIP Results content\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "📈 *RESULTS HISTORY*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "`/results Leo 8/10 zilishinda!` — Hifadhi matokeo ya session\n"
+        "`/results` _(reply to photo/video)_ — Hifadhi na media\n"
+        "`/setresult` — Hifadhi VIP content ya sasa kama result\n"
+        "`/setresult Maandishi` _(au reply to photo)_ — Hifadhi na label\n"
+    )
+
+    msg2 = (
         "━━━━━━━━━━━━━━━━━━\n"
         "💬 *SUPPORT SESSIONS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/sessions` — View & manage active support chats\n"
-        "🟢 Connect button — Start chatting with user\n"
-        "🔴 End Chat button — End session + send rating\n\n"
+        "`/sessions` — Ona na simamia support sessions zinazoendelea\n"
+        "🟢 Connect — Anza mazungumzo na user\n"
+        "🔴 End Chat — Maliza session + tuma rating\n"
+        "_Reply kwenye ujumbe ulioforwardiwa = jibu user_\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🎰 *SPIN WHEEL*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/spinners` — See top 10 most active spinners\n"
-        "`/givespin USER_ID DISCOUNT SERVICE` — Give reward\n"
-        "   Example: `/givespin 123456 3 signals`\n"
+        "`/spinners` — Top 10 wanaospin zaidi\n"
+        "`/givespin USER_ID DISCOUNT SERVICE` — Toa tuzo\n"
+        "   Mfano: `/givespin 123456789 30 signals`\n"
         "   Services: `signals` `social` `indicator` `autobot` `any`\n\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🔧 *UTILITIES*\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "`/addphoto` _(reply to photo)_ — Add photo to service images pool\n"
-        "`/addbot Name | Link | Desc` — Add new bot to Free Bots menu\n"
-        "`/addbot` — List all added bots\n"
-        "`/delbot ID` — Remove a bot from menu\n"
-        "`/setpocketlink https://t.me/YourBot` — Set Pocket Option bot link\n"
-        "`/setwelcome` _(reply to video/photo)_ — Change welcome screen media\n"
-        "`/setwelcome reset` — Restore default welcome video\n"
-        "`/getid` _(reply to photo/video)_ — Get file\\_id\n"
-        "`/preview` — Preview new user experience (English)\n"
-        "`/preview sw` — Preview in any language\n"
-        "`/blockedusers` — See users who have blocked the bot\n"
-        "`/feedback` — Send 5 mixed feedback (EN+SW+UR)\n"
-        "`/feedback 70` — Send 70 mixed feedback\n"
-        "`/feedbackadd Name | 🇳🇬 | Text` — Add custom feedback\n"
-        "`/feedbacklist` — See all custom feedback\n"
-        "`/feedbackdlt` — Delete ALL custom feedback\n"
-        "`/help` — Show this message\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "⭐ *SUCCESS STORIES*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/addstory Your text` — Add text story\n"
-        "`/addstory` _(reply to photo/video)_ — Add story with media\n"
-        "`/liststories` — See all stories with IDs\n"
-        "`/deletestory ID` — Delete a story by ID\n"
-        "_Stories button appears in main menu only when at least 1 story exists_\n\n"
+        "`/addstory Maandishi yako` — Ongeza story ya maandishi\n"
+        "`/addstory` _(reply to photo/video)_ — Ongeza story na media\n"
+        "`/liststories` — Ona stories zote na IDs zao\n"
+        "`/deletestory ID` — Futa story kwa ID\n"
+        "_Stories button inaonekana main menu tu ukiwa na story 1+_\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "💡 *TIPS*\n"
+        "🔧 *BOT SETTINGS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "• To reply to user in support: reply to their forwarded message\n"
-        "• `/setnews` and `/setvip` update instantly — no redeploy needed\n"
-        "• `/spinners` shows who spins most — pick 1-2 winners per week",
-        parse_mode="Markdown")
+        "`/setwelcome` _(reply to video/photo)_ — Badilisha welcome screen\n"
+        "`/setwelcome reset` — Rudisha welcome video ya default\n"
+        "`/setpocketlink https://t.me/YourBot` — Weka link ya Pocket Option bot\n"
+        "`/addphoto` _(reply to photo)_ — Ongeza picha kwenye service images pool\n"
+        "`/addbot Jina | Link | Maelezo` — Ongeza bot kwenye Free Bots menu\n"
+        "`/addbot` — Ona bots zote zilizoongezwa\n"
+        "`/delbot ID` — Futa bot kutoka menu\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "⭐ *FAKE FEEDBACK*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "`/feedback` — Tuma feedback 5 za mchanganyiko\n"
+        "`/feedback 70` — Tuma feedback 70\n"
+        "`/feedbackadd Jina | 🇳🇬 | Maandishi` — Ongeza feedback yako\n"
+        "`/feedbacklist` — Ona feedback zote za custom\n"
+        "`/feedbackdlt` — Futa feedback ZOTE za custom\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "👁 *PREVIEW & TOOLS*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "`/preview` — Ona flow kamili ya user mpya (English, steps 8)\n"
+        "`/preview sw` — Preview kwa lugha yoyote (sw/ar/hi/fr...)\n"
+        "`/help` — Onyesha commands hizi\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "💡 *VIDOKEZO*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "• `/setnews` na `/setvip` zinafanya kazi mara moja — huhitaji redeploy\n"
+        "• `/users` kisha `/history ID` = njia rahisi ya kuona mazungumzo\n"
+        "• `/spinners` kila wiki — chagua washindi 1-2 wa tuzo\n"
+        "• Broadcast: reply kwenye ujumbe wowote + `/broadcast` = inatumwa exactly"
+    )
+
+    await update.message.reply_text(msg1, parse_mode="Markdown")
+    await asyncio.sleep(0.3)
+    await update.message.reply_text(msg2, parse_mode="Markdown")
 
 
 async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -6626,55 +7194,221 @@ async def blockedusers_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /history USER_ID — Admin views all saved chat messages with a user
-    /history USER_ID 50 — Get last 50 messages
+    /history USER_ID       — Ujumbe 50 wa mwisho
+    /history USER_ID 100   — Ujumbe 100
+    /history USER_ID all   — Ujumbe WOTE tangu mwanzo
+    Kila ujumbe unatumwa peke yake kama chat halisi.
     """
     if not is_admin(update.effective_user.id):
         return
     args = context.args
     if not args:
         await update.message.reply_text(
-            "📋 *View User Chat History*\n\n"
-            "Usage: `/history USER_ID`\n"
-            "Example: `/history 123456789`\n\n"
-            "Shows all saved messages between you and this user.",
+            "📋 *View Chat History*\n\n"
+            "Usage:\n"
+            "`/history USER_ID` — last 50 msgs\n"
+            "`/history USER_ID 100` — last 100 msgs\n"
+            "`/history USER_ID all` — ALL messages ever\n\n"
+            "Each message sent separately — like a real chat.",
             parse_mode="Markdown")
         return
     try:
         uid = int(args[0])
-        limit = int(args[1]) if len(args) > 1 else 50
     except:
         await update.message.reply_text("❌ Invalid user ID.", parse_mode="Markdown")
         return
 
+    limit = 50
+    if len(args) > 1:
+        if args[1].lower() == "all":
+            limit = 5000
+        elif args[1].isdigit():
+            limit = int(args[1])
+
     u_info = get_user_info(uid)
     msgs = get_chat_history_for_user(uid, limit)
+
     if not msgs:
         await update.message.reply_text(
-            f"📭 No chat history found for `{uid}`.", parse_mode="Markdown")
+            f"📭 Hakuna historia ya chat kwa `{uid}`.",
+            parse_mode="Markdown")
         return
 
     safe_name = escape_md(u_info.get("name", str(uid)))
     uun = f"@{u_info.get('username', '')}" if u_info.get("username") else "no username"
-    header = f"💬 *CHAT HISTORY*\n👤 {safe_name} ({uun})\n🆔 `{uid}`\n📊 Last {len(msgs)} messages\n\n"
 
-    lines = []
+    # Header
+    await update.message.reply_text(
+        f"💬 *CHAT HISTORY*\n"
+        f"👤 {safe_name} ({escape_md(uun)})\n"
+        f"🆔 `{uid}`\n"
+        f"📊 Ujumbe: *{len(msgs)}*\n"
+        f"─────────────────────\n"
+        f"_Ujumbe wote hapa chini_ 👇",
+        parse_mode="Markdown")
+
+    await asyncio.sleep(0.5)
+
+    last_date = None
     for sender, message, media_type, sent_at in msgs:
-        icon = "👤" if sender == "user" else "🤖"
-        time_str = sent_at or "?"
-        if message:
-            lines.append(f"{icon} [{time_str}]\n{escape_md(message[:200])}")
-        elif media_type:
-            lines.append(f"{icon} [{time_str}] [{media_type.upper()}]")
+        await asyncio.sleep(0.12)
 
-    # Send in chunks of 4000 chars
-    full_text = header + "\n\n".join(lines)
-    for i in range(0, len(full_text), 4000):
-        chunk = full_text[i:i+4000]
+        # Date divider when day changes
         try:
-            await update.message.reply_text(chunk, parse_mode="Markdown")
+            msg_date = sent_at[:10] if sent_at else None
+            if msg_date and msg_date != last_date:
+                try:
+                    dt = datetime.strptime(msg_date, "%d/%m/%Y")
+                    date_label = dt.strftime("%A, %d %B %Y")
+                except:
+                    date_label = msg_date
+                await update.message.reply_text(
+                    f"📅 ─── *{escape_md(date_label)}* ───",
+                    parse_mode="Markdown")
+                last_date = msg_date
+                await asyncio.sleep(0.1)
         except:
-            await update.message.reply_text(chunk)
+            pass
+
+        # Time (HH:MM only)
+        time_str = sent_at[11:16] if sent_at and len(sent_at) > 10 else ""
+
+        if sender == "user":
+            icon = "👤"
+            label = safe_name
+        else:
+            icon = "🤖"
+            label = "Admin"
+
+        if message:
+            # Handle long messages in chunks
+            text = message
+            first = True
+            while text:
+                chunk = text[:900]
+                text = text[900:]
+                header_part = f"{icon} *{escape_md(label)}* `{time_str}`\n" if first else ""
+                first = False
+                try:
+                    await update.message.reply_text(
+                        f"{header_part}{escape_md(chunk)}",
+                        parse_mode="Markdown")
+                except:
+                    await update.message.reply_text(
+                        f"{icon} {label} [{time_str}]\n{chunk}")
+                await asyncio.sleep(0.08)
+        elif media_type:
+            try:
+                await update.message.reply_text(
+                    f"{icon} *{escape_md(label)}* `{time_str}`\n📎 _{media_type.upper()}_",
+                    parse_mode="Markdown")
+            except:
+                pass
+
+    # Footer
+    await update.message.reply_text(
+        f"✅ *Mwisho wa historia* — ujumbe {len(msgs)}",
+        parse_mode="Markdown")
+
+
+
+# ══════════════════════════════════════════════════════════════
+#  /users — Orodha ya users wote: jina + ID
+# ══════════════════════════════════════════════════════════════
+
+def get_all_users_list():
+    """Leta users wote: id, name, username, joined, last_seen"""
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, name, username, joined, last_seen
+            FROM users ORDER BY joined ASC
+        """)
+        rows = c.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning(f"get_all_users_list failed: {e}")
+        return []
+
+
+async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /users        — Orodha ya users wote (jina + ID)
+    /users john   — Tafuta kwa jina au username
+    """
+    if not is_admin(update.effective_user.id):
+        return
+
+    search = " ".join(context.args).lower().strip() if context.args else ""
+
+    await update.message.reply_text(
+        f"⏳ Inatafuta{'...' if not search else f' *{escape_md(search)}*...'}",
+        parse_mode="Markdown")
+
+    all_users = get_all_users_list()
+
+    if search:
+        # Filter by name or username
+        filtered = [
+            (uid, name, uname, joined, last_seen)
+            for uid, name, uname, joined, last_seen in all_users
+            if search in (name or "").lower()
+            or search in (uname or "").lower()
+            or search in str(uid)
+        ]
+    else:
+        filtered = all_users
+
+    total = len(filtered)
+
+    if not filtered:
+        await update.message.reply_text(
+            f"📭 Hakuna user anayepatikana na '*{escape_md(search)}*'",
+            parse_mode="Markdown")
+        return
+
+    # Build orodha — send in chunks of 50 users per message
+    chunk_size = 50
+    chunks = [filtered[i:i+chunk_size] for i in range(0, len(filtered), chunk_size)]
+    total_pages = len(chunks)
+
+    for page, chunk in enumerate(chunks, 1):
+        lines_out = []
+
+        if page == 1:
+            header = (
+                f"👥 *USERS LIST*\n"
+                f"📊 Jumla: *{total}*"
+            )
+            if search:
+                header += f"\n🔍 Search: `{escape_md(search)}`"
+            header += f"\n{'─' * 20}"
+            lines_out.append(header)
+
+        for uid, name, uname, joined, last_seen in chunk:
+            safe_name = escape_md(name or str(uid))
+            uname_str = f"@{uname}" if uname else "—"
+            joined_short = joined[:10] if joined else "?"
+            lines_out.append(
+                f"👤 *{safe_name}*\n"
+                f"   🆔 `{uid}`  |  {escape_md(uname_str)}\n"
+                f"   📅 {joined_short}"
+            )
+
+        if total_pages > 1:
+            lines_out.append(f"\n_Ukurasa {page}/{total_pages}_")
+
+        text = "\n\n".join(lines_out)
+
+        try:
+            await update.message.reply_text(text, parse_mode="Markdown")
+        except Exception as e:
+            # Fallback bila markdown
+            plain = text.replace("*", "").replace("`", "").replace("_", "").replace("\n", "\n")
+            await update.message.reply_text(plain)
+
         await asyncio.sleep(0.3)
 
 
@@ -6711,6 +7445,8 @@ def main():
     app.add_handler(CommandHandler("setwelcome", setwelcome_command))
     app.add_handler(CommandHandler("history", history_command))
     app.add_handler(CommandHandler("setresult", setresult_command))
+    app.add_handler(CommandHandler("users", users_command))
+    app.add_handler(CommandHandler("userchart", userchart_command))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
@@ -6750,3 +7486,157 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ══════════════════════════════════════════════════════════════
+#  /userchart USER_ID — Visual chat activity chart for a user
+# ══════════════════════════════════════════════════════════════
+
+def get_chat_stats_for_user(uid):
+    """
+    Returns per-day message counts: {date_str: {user: N, admin: N}}
+    Also returns first_seen date and total counts.
+    """
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        # All messages ever for this user
+        c.execute("""
+            SELECT sender, sent_at FROM chat_history
+            WHERE user_id=%s ORDER BY id ASC
+        """, (uid,))
+        rows = c.fetchall()
+        conn.close()
+    except:
+        return {}, None, 0, 0
+
+    from collections import defaultdict
+    daily = defaultdict(lambda: {"user": 0, "admin": 0})
+    total_user = 0
+    total_admin = 0
+    first_date = None
+
+    for sender, sent_at in rows:
+        if not sent_at:
+            continue
+        try:
+            # sent_at format: "DD/MM/YYYY HH:MM"
+            day = sent_at[:10]  # "DD/MM/YYYY"
+            if sender == "user":
+                daily[day]["user"] += 1
+                total_user += 1
+            else:
+                daily[day]["admin"] += 1
+                total_admin += 1
+            if first_date is None:
+                first_date = day
+        except:
+            continue
+
+    return dict(daily), first_date, total_user, total_admin
+
+
+def build_text_chart(uid, u_info, daily, first_date, total_user, total_admin):
+    """Build ASCII bar chart as Telegram message text."""
+    if not daily:
+        return None
+
+    name = u_info.get("name", str(uid))
+    uname = f"@{u_info['username']}" if u_info.get("username") else "no username"
+    joined = u_info.get("joined", first_date or "?")
+
+    # Sort dates
+    def parse_day(d):
+        try:
+            return datetime.strptime(d, "%d/%m/%Y")
+        except:
+            return datetime.min
+
+    sorted_days = sorted(daily.keys(), key=parse_day)
+    total_msgs = total_user + total_admin
+
+    lines = []
+    lines.append(f"📊 *CHAT CHART*")
+    lines.append(f"👤 {escape_md(name)} ({escape_md(uname)})")
+    lines.append(f"🆔 `{uid}`")
+    lines.append(f"📅 Joined: {joined}")
+    lines.append(f"💬 Total: *{total_msgs}* msgs ({total_user} user / {total_admin} admin)\n")
+    lines.append("─────────────────────")
+
+    # Max msgs in a day (for bar scaling)
+    max_msgs = max((daily[d]["user"] + daily[d]["admin"]) for d in sorted_days) or 1
+    bar_max = 12  # max bar length in chars
+
+    for day in sorted_days:
+        u = daily[day]["user"]
+        a = daily[day]["admin"]
+        total_day = u + a
+        bar_len = max(1, round(total_day / max_msgs * bar_max))
+        bar = "█" * bar_len
+
+        # Show date without year if same year as today
+        try:
+            dt = datetime.strptime(day, "%d/%m/%Y")
+            label = dt.strftime("%d %b")
+        except:
+            label = day
+
+        lines.append(f"`{label}` {bar} {total_day}  _(👤{u} / 🤖{a})_")
+
+    lines.append("─────────────────────")
+
+    # Most active day
+    busiest = max(sorted_days, key=lambda d: daily[d]["user"] + daily[d]["admin"])
+    busiest_count = daily[busiest]["user"] + daily[busiest]["admin"]
+    try:
+        busiest_label = datetime.strptime(busiest, "%d/%m/%Y").strftime("%d %b %Y")
+    except:
+        busiest_label = busiest
+
+    lines.append(f"🔥 Most active: *{busiest_label}* ({busiest_count} msgs)")
+    lines.append(f"📆 Days active: *{len(sorted_days)}*")
+
+    return "\n".join(lines)
+
+
+async def userchart_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /userchart USER_ID — Show chat activity chart for a user
+    Shows per-day message counts (user vs admin) from day 1 to today
+    """
+    if not is_admin(update.effective_user.id):
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "📊 *User Chat Chart*\n\n"
+            "Usage: `/userchart USER_ID`\n"
+            "Example: `/userchart 123456789`\n\n"
+            "Shows bar chart of daily messages between you and this user.",
+            parse_mode="Markdown")
+        return
+
+    try:
+        uid = int(context.args[0])
+    except:
+        await update.message.reply_text("❌ Invalid user ID.", parse_mode="Markdown")
+        return
+
+    u_info = get_user_info(uid)
+    daily, first_date, total_user, total_admin = get_chat_stats_for_user(uid)
+
+    if not daily:
+        name = escape_md(u_info.get("name", str(uid)))
+        await update.message.reply_text(
+            f"📭 *No chat history found for {name}*\n\n"
+            f"🆔 `{uid}`\n\n"
+            f"_Messages are only recorded during active support sessions._",
+            parse_mode="Markdown")
+        return
+
+    chart_text = build_text_chart(uid, u_info, daily, first_date, total_user, total_admin)
+    try:
+        await update.message.reply_text(chart_text, parse_mode="Markdown")
+    except Exception as e:
+        # Fallback without markdown if parse fails
+        await update.message.reply_text(chart_text)
