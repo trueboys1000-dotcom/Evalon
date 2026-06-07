@@ -583,20 +583,33 @@ STREAK_BADGES = [
     (100, "🌟", "Elite Master"),
 ]
 
-def get_streak_badge(streak):
+STREAK_BADGE_NAMES = {
+    "Newcomer":         {"sw":"Mwanzo","ar":"مبتدئ","zh":"新手","hi":"नया","ru":"Новичок","es":"Principiante","fr":"Débutant","pt":"Iniciante","de":"Anfänger","ur":"نئے","ja":"初心者","tr":"Başlangıç","fa":"تازه‌کار","ko":"초보자"},
+    "On Fire":          {"sw":"Unawaka Moto","ar":"ملتهب","zh":"火热","hi":"जोश में","ru":"В Огне","es":"En Llamas","fr":"En Feu","pt":"Em Chamas","de":"Auf Feuer","ur":"جوش میں","ja":"燃えてる","tr":"Ateşte","fa":"آتشین","ko":"불타는"},
+    "Weekly Warrior":   {"sw":"Shujaa wa Wiki","ar":"محارب أسبوعي","zh":"周战士","hi":"साप्ताहिक योद्धा","ru":"Недельный Воин","es":"Guerrero Semanal","fr":"Guerrier Hebdo","pt":"Guerreiro Semanal","de":"Wöchentlicher Krieger","ur":"ہفتہ وار جنگجو","ja":"週間戦士","tr":"Haftalık Savaşçı","fa":"سرباز هفتگی","ko":"주간 전사"},
+    "Diamond Trader":   {"sw":"Mfanyabiashara wa Almasi","ar":"متداول الماسي","zh":"钻石交易者","hi":"हीरा ट्रेडर","ru":"Алмазный Трейдер","es":"Trader Diamante","fr":"Trader Diamant","pt":"Trader Diamante","de":"Diamant-Trader","ur":"ہیرا ٹریڈر","ja":"ダイヤモンドトレーダー","tr":"Elmas Trader","fa":"معامله‌گر الماس","ko":"다이아몬드 트레이더"},
+    "VIP Legend":       {"sw":"Hadithi ya VIP","ar":"أسطورة VIP","zh":"VIP传奇","hi":"VIP किंवदंती","ru":"VIP Легенда","es":"Leyenda VIP","fr":"Légende VIP","pt":"Lenda VIP","de":"VIP-Legende","ur":"VIP لیجنڈ","ja":"VIPレジェンド","tr":"VIP Efsanesi","fa":"افسانه VIP","ko":"VIP 레전드"},
+    "Trading Champion": {"sw":"Bingwa wa Biashara","ar":"بطل التداول","zh":"交易冠军","hi":"ट्रेडिंग चैंपियन","ru":"Чемпион Трейдинга","es":"Campeón de Trading","fr":"Champion de Trading","pt":"Campeão de Trading","de":"Trading-Champion","ur":"ٹریڈنگ چیمپیئن","ja":"トレーディングチャンピオン","tr":"Ticaret Şampiyonu","fa":"قهرمان معاملات","ko":"트레이딩 챔피언"},
+    "Elite Master":     {"sw":"Bwana Mkuu","ar":"السيد النخبة","zh":"精英大师","hi":"एलीट मास्टर","ru":"Элитный Мастер","es":"Maestro Élite","fr":"Maître Élite","pt":"Mestre Elite","de":"Elite-Meister","ur":"ایلیٹ ماسٹر","ja":"エリートマスター","tr":"Elit Usta","fa":"استاد نخبه","ko":"엘리트 마스터"},
+}
+
+def _translate_badge_name(name, lang):
+    return STREAK_BADGE_NAMES.get(name, {}).get(lang, name)
+
+def get_streak_badge(streak, lang="en"):
     badge_emoji = "🌱"
     badge_name  = "Newcomer"
     for days, emoji, name in STREAK_BADGES:
         if streak >= days:
             badge_emoji = emoji
             badge_name  = name
-    return badge_emoji, badge_name
+    return badge_emoji, _translate_badge_name(badge_name, lang)
 
-def get_next_badge(streak):
+def get_next_badge(streak, lang="en"):
     for days, emoji, name in STREAK_BADGES:
         if streak < days:
-            return days, emoji, name
-    return None, "🌟", "Elite Master"
+            return days, emoji, _translate_badge_name(name, lang)
+    return None, "🌟", _translate_badge_name("Elite Master", lang)
 
 def init_spin_db():
     """Create spin_log table if not exists"""
@@ -1293,6 +1306,380 @@ DAILY_QUOTES = [
     ("Discipline today, financial freedom tomorrow.", "Unknown"),
 ]
 
+# Translated quotes for non-English users
+DAILY_QUOTES_TRANSLATED = {
+    "sw": [
+        ("Soko la hisa ni kifaa cha kuhamisha pesa kutoka kwa watakaomalizika hadi wenye subira.", "Warren Buffett"),
+        ("Hatari hutoka kwa kutojua unachofanya.", "Warren Buffett"),
+        ("Lengo la mfanyabiashara mzuri ni kufanya biashara bora, si kuwa sahihi.", "Mark Douglas"),
+        ("Kila mfanyabiashara ana hadithi. Washindi wanaandika mwisho mzuri zaidi.", ""),
+        ("Katika biashara, jambo muhimu zaidi si kupata pesa, bali kutopoteza.", "George Soros"),
+        ("Soko ni pendulum inayozunguka kati ya matumaini na kukata tamaa.", "Benjamin Graham"),
+        ("Fanya biashara unayoona, si unayofikiri.", ""),
+        ("Biashara yenye mafanikio inahusu kusimamia hatari, si kuiepuka.", ""),
+        ("Hatari kubwa zaidi ya yote ni kutochukua hatua.", "Mellody Hobson"),
+        ("Panga biashara yako na ufanye biashara yako uliyoipanga.", ""),
+        ("Kata hasara zako haraka na ruhusu faida zako ziendelee.", ""),
+        ("Ogopa wengine wanapochanganyikiwa na tamaa; tamaa wengine wanapoanza kuogopa.", "Warren Buffett"),
+        ("Biashara si kuhusu kuwa sahihi — ni kuhusu kupata faida.", ""),
+        ("Nidhamu ndiyo daraja kati ya malengo na mafanikio.", "Jim Rohn"),
+        ("Kila mtaalamu aliwahi kuwa mwanzo. Endelea!", ""),
+        ("Uthabiti hushinda ukamilifu kila wakati.", ""),
+        ("Adui wako mkubwa zaidi katika biashara ni hisia zako mwenyewe.", ""),
+        ("Faida ndogo thabiti hushinda ushindi mkubwa wenye hatari.", ""),
+        ("Mwelekeo ni rafiki yako — hadi mwisho.", ""),
+        ("Subira na nidhamu vinatenganisha washindi na walioshindwa.", ""),
+        ("Jua hatari yako kabla ya kujua tuzo yako.", ""),
+        ("Soko linalipa wale wanaoliheshimu.", ""),
+        ("Biashara moja nzuri inastahili mia mbaya zilizofanywa haraka.", ""),
+        ("Wafanyabiashara wanaoshinda wanafikiri kwa uwezekano, si uhakika.", "Mark Douglas"),
+        ("Uwekezaji bora unaoufanya ni katika nafsi yako.", "Warren Buffett"),
+        ("Mafanikio katika biashara hutoka kwa maandalizi, si bahati.", ""),
+        ("Mfanyabiashara mzuri anajifunza daima, anabadilika daima.", ""),
+        ("Faida ndogo thabiti zinafikia utajiri wa kubadilisha maisha.", ""),
+        ("Soko litakuwepo daima. Mtaji wako huenda usiwe. Ulinde.", ""),
+        ("Nidhamu leo, uhuru wa fedha kesho.", ""),
+    ],
+    "ar": [
+        ("سوق الأوراق المالية أداة لنقل الأموال من غير الصبورين إلى الصبورين.", "Warren Buffett"),
+        ("تأتي المخاطرة من عدم معرفة ما تفعله.", "Warren Buffett"),
+        ("هدف المتداول الناجح هو إجراء أفضل الصفقات، وليس أن يكون على حق.", "Mark Douglas"),
+        ("لكل متداول قصة. الفائزون فقط يكتبون نهايات أفضل.", ""),
+        ("في التداول، الأهم ليس كسب المال بل عدم خسارته.", "George Soros"),
+        ("السوق بندول يتأرجح للأبد بين التفاؤل والتشاؤم.", "Benjamin Graham"),
+        ("تداول ما تراه، لا ما تظنه.", ""),
+        ("التداول الناجح يتعلق بإدارة المخاطر، وليس تجنبها.", ""),
+        ("أكبر مخاطرة على الإطلاق هي عدم المجازفة.", "Mellody Hobson"),
+        ("خطط لصفقتك وتداول وفق خطتك.", ""),
+        ("اقطع خسائرك بسرعة ودع أرباحك تنمو.", ""),
+        ("كن خائفاً حين يكون الآخرون جشعين، وكن جشعاً حين يخاف الآخرون.", "Warren Buffett"),
+        ("التداول لا يتعلق بأن تكون على حق — بل بأن تكون مربحاً.", ""),
+        ("الانضباط هو الجسر بين الأهداف والإنجاز.", "Jim Rohn"),
+        ("كل خبير كان مبتدئاً يوماً. استمر!", ""),
+        ("الاتساق يتفوق على الكمال في كل مرة.", ""),
+        ("أكبر عدو لك في التداول هو عواطفك.", ""),
+        ("الأرباح الصغيرة المتسقة تتفوق على المكاسب الكبيرة المحفوفة بالمخاطر.", ""),
+        ("الاتجاه صديقك — حتى النهاية.", ""),
+        ("الصبر والانضباط يفصلان الفائزين عن الخاسرين.", ""),
+        ("اعرف مخاطرتك قبل أن تعرف مكافأتك.", ""),
+        ("السوق يكافئ من يحترمه.", ""),
+        ("صفقة واحدة جيدة تساوي مئة صفقة متسرعة.", ""),
+        ("المتداولون الفائزون يفكرون بالاحتمالات لا باليقين.", "Mark Douglas"),
+        ("أفضل استثمار يمكنك القيام به هو في نفسك.", "Warren Buffett"),
+        ("النجاح في التداول يأتي من الإعداد، لا من الحظ.", ""),
+        ("المتداول الجيد يتعلم دائماً ويتكيف دائماً.", ""),
+        ("الأرباح الصغيرة المتسقة تتراكم لتصبح ثروة تغير الحياة.", ""),
+        ("السوق سيبقى دائماً. رأس مالك قد لا يبقى. احمِه.", ""),
+        ("الانضباط اليوم، الحرية المالية غداً.", ""),
+    ],
+    "hi": [
+        ("शेयर बाजार अधीर से धैर्यवान को पैसा ट्रांसफर करने का उपकरण है।", "Warren Buffett"),
+        ("जोखिम तब आता है जब आप नहीं जानते कि आप क्या कर रहे हैं।", "Warren Buffett"),
+        ("सफल ट्रेडर का लक्ष्य सर्वोत्तम ट्रेड करना है, सही होना नहीं।", "Mark Douglas"),
+        ("हर ट्रेडर की एक कहानी है। जीतने वाले बेहतर अंत लिखते हैं।", ""),
+        ("ट्रेडिंग में सबसे महत्वपूर्ण बात पैसा कमाना नहीं, बल्कि न खोना है।", "George Soros"),
+        ("बाजार एक पेंडुलम है जो हमेशा आशावाद और निराशावाद के बीच झूलता है।", "Benjamin Graham"),
+        ("जो देखें उस पर ट्रेड करें, जो सोचें उस पर नहीं।", ""),
+        ("सफल ट्रेडिंग जोखिम प्रबंधन के बारे में है, इससे बचने के बारे में नहीं।", ""),
+        ("सबसे बड़ा जोखिम यह है कि जोखिम न लिया जाए।", "Mellody Hobson"),
+        ("अपने ट्रेड की योजना बनाएं और योजना के अनुसार ट्रेड करें।", ""),
+        ("अपना नुकसान जल्दी काटें और मुनाफे को बढ़ने दें।", ""),
+        ("जब दूसरे लालची हों तो डरें; जब दूसरे डरें तो लालची बनें।", "Warren Buffett"),
+        ("ट्रेडिंग सही होने के बारे में नहीं है — यह लाभदायक होने के बारे में है।", ""),
+        ("अनुशासन लक्ष्यों और उपलब्धियों के बीच का पुल है।", "Jim Rohn"),
+        ("हर विशेषज्ञ कभी शुरुआती था। आगे बढ़ते रहें!", ""),
+        ("निरंतरता हर बार पूर्णता को हराती है।", ""),
+        ("ट्रेडिंग में आपका सबसे बड़ा दुश्मन आपकी भावनाएं हैं।", ""),
+        ("छोटे निरंतर मुनाफे बड़े जोखिम भरे जीत से बेहतर हैं।", ""),
+        ("ट्रेंड आपका दोस्त है — अंत तक।", ""),
+        ("धैर्य और अनुशासन विजेताओं को हारने वालों से अलग करते हैं।", ""),
+        ("अपना इनाम जानने से पहले अपना जोखिम जानें।", ""),
+        ("बाजार उन्हें पुरस्कृत करता है जो इसका सम्मान करते हैं।", ""),
+        ("एक अच्छा ट्रेड सौ जल्दबाजी के ट्रेड के बराबर है।", ""),
+        ("जीतने वाले ट्रेडर संभावनाओं में सोचते हैं, निश्चितताओं में नहीं।", "Mark Douglas"),
+        ("आप जो सबसे अच्छा निवेश कर सकते हैं वह खुद में है।", "Warren Buffett"),
+        ("ट्रेडिंग में सफलता तैयारी से आती है, भाग्य से नहीं।", ""),
+        ("अच्छा ट्रेडर हमेशा सीखता है, हमेशा अनुकूल होता है।", ""),
+        ("छोटे निरंतर मुनाफे जीवन-बदलने वाली संपत्ति बनाते हैं।", ""),
+        ("बाजार हमेशा रहेगा। आपकी पूंजी शायद नहीं। इसे बचाएं।", ""),
+        ("आज अनुशासन, कल वित्तीय स्वतंत्रता।", ""),
+    ],
+    "ru": [
+        ("Фондовый рынок — это устройство для передачи денег от нетерпеливых терпеливым.", "Warren Buffett"),
+        ("Риск возникает от незнания того, что вы делаете.", "Warren Buffett"),
+        ("Цель успешного трейдера — совершать лучшие сделки, а не быть правым.", "Mark Douglas"),
+        ("У каждого трейдера есть история. Победители пишут лучшие концовки.", ""),
+        ("В трейдинге главное — не зарабатывать, а не терять.", "George Soros"),
+        ("Рынок — маятник, вечно колеблющийся между оптимизмом и пессимизмом.", "Benjamin Graham"),
+        ("Торгуйте то, что видите, а не то, что думаете.", ""),
+        ("Успешный трейдинг — управление рисками, а не их избегание.", ""),
+        ("Самый большой риск — не рисковать вовсе.", "Mellody Hobson"),
+        ("Планируйте сделку и торгуйте по плану.", ""),
+        ("Режьте убытки и давайте прибыли расти.", ""),
+        ("Бойтесь, когда другие жадничают; жадничайте, когда другие боятся.", "Warren Buffett"),
+        ("Трейдинг — не о том, чтобы быть правым, а о том, чтобы быть прибыльным.", ""),
+        ("Дисциплина — мост между целями и достижениями.", "Jim Rohn"),
+        ("Каждый эксперт когда-то был новичком. Продолжайте!", ""),
+        ("Последовательность побеждает совершенство каждый раз.", ""),
+        ("Ваш главный враг в трейдинге — ваши собственные эмоции.", ""),
+        ("Маленькая стабильная прибыль лучше больших рискованных выигрышей.", ""),
+        ("Тренд — ваш друг до самого конца.", ""),
+        ("Терпение и дисциплина отделяют победителей от проигравших.", ""),
+        ("Знайте свой риск, прежде чем узнаете своё вознаграждение.", ""),
+        ("Рынок вознаграждает тех, кто его уважает.", ""),
+        ("Одна хорошая сделка стоит ста поспешных.", ""),
+        ("Победители думают вероятностями, а не уверенностью.", "Mark Douglas"),
+        ("Лучшая инвестиция — в себя.", "Warren Buffett"),
+        ("Успех в трейдинге приходит от подготовки, а не от удачи.", ""),
+        ("Хороший трейдер всегда учится и адаптируется.", ""),
+        ("Небольшая стабильная прибыль накапливается в богатство, меняющее жизнь.", ""),
+        ("Рынок всегда будет. Ваш капитал — возможно нет. Защитите его.", ""),
+        ("Дисциплина сегодня — финансовая свобода завтра.", ""),
+    ],
+    "fr": [
+        ("Le marché boursier est un dispositif pour transférer de l'argent des impatients aux patients.", "Warren Buffett"),
+        ("Le risque vient de ne pas savoir ce qu'on fait.", "Warren Buffett"),
+        ("L'objectif d'un trader est de faire les meilleures transactions, pas d'avoir raison.", "Mark Douglas"),
+        ("Chaque trader a une histoire. Les gagnants écrivent de meilleures fins.", ""),
+        ("En trading, l'essentiel n'est pas de gagner de l'argent, mais de ne pas en perdre.", "George Soros"),
+        ("Le marché est un pendule oscillant entre optimisme et pessimisme.", "Benjamin Graham"),
+        ("Tradez ce que vous voyez, pas ce que vous pensez.", ""),
+        ("Le trading réussi consiste à gérer le risque, pas à l'éviter.", ""),
+        ("Le plus grand risque est de ne pas en prendre.", "Mellody Hobson"),
+        ("Planifiez votre trade et tradez votre plan.", ""),
+        ("Coupez vos pertes et laissez courir vos profits.", ""),
+        ("Ayez peur quand les autres sont avides; soyez avide quand les autres ont peur.", "Warren Buffett"),
+        ("Le trading ne consiste pas à avoir raison — mais à être rentable.", ""),
+        ("La discipline est le pont entre les objectifs et les accomplissements.", "Jim Rohn"),
+        ("Chaque expert a été débutant. Continuez!", ""),
+        ("La cohérence bat la perfection à chaque fois.", ""),
+        ("Votre plus grand ennemi en trading, ce sont vos émotions.", ""),
+        ("Les petits profits constants battent les grands gains risqués.", ""),
+        ("La tendance est votre amie — jusqu'à la fin.", ""),
+        ("La patience et la discipline séparent les gagnants des perdants.", ""),
+        ("Connaissez votre risque avant de connaître votre récompense.", ""),
+        ("Le marché récompense ceux qui le respectent.", ""),
+        ("Un bon trade vaut cent trades précipités.", ""),
+        ("Les traders gagnants pensent en probabilités, pas en certitudes.", "Mark Douglas"),
+        ("Le meilleur investissement est en vous-même.", "Warren Buffett"),
+        ("Le succès en trading vient de la préparation, pas de la chance.", ""),
+        ("Un bon trader apprend et s'adapte toujours.", ""),
+        ("Les petits profits constants se transforment en richesse qui change la vie.", ""),
+        ("Le marché sera toujours là. Votre capital, peut-être pas. Protégez-le.", ""),
+        ("Discipline aujourd'hui, liberté financière demain.", ""),
+    ],
+    "es": [
+        ("El mercado de valores es un dispositivo para transferir dinero de los impacientes a los pacientes.", "Warren Buffett"),
+        ("El riesgo viene de no saber lo que estás haciendo.", "Warren Buffett"),
+        ("El objetivo de un trader exitoso es hacer las mejores operaciones, no tener razón.", "Mark Douglas"),
+        ("Cada trader tiene una historia. Los ganadores escriben mejores finales.", ""),
+        ("En el trading, lo más importante no es ganar dinero, sino no perderlo.", "George Soros"),
+        ("El mercado es un péndulo que oscila eternamente entre el optimismo y el pesimismo.", "Benjamin Graham"),
+        ("Opera lo que ves, no lo que piensas.", ""),
+        ("El trading exitoso consiste en gestionar el riesgo, no en evitarlo.", ""),
+        ("El mayor riesgo de todos es no tomar ninguno.", "Mellody Hobson"),
+        ("Planifica tu operación y opera tu plan.", ""),
+        ("Corta tus pérdidas rápido y deja correr tus ganancias.", ""),
+        ("Sé temeroso cuando otros son codiciosos; sé codicioso cuando otros tienen miedo.", "Warren Buffett"),
+        ("El trading no es sobre tener razón — es sobre ser rentable.", ""),
+        ("La disciplina es el puente entre las metas y los logros.", "Jim Rohn"),
+        ("Todo experto fue una vez principiante. ¡Sigue adelante!", ""),
+        ("La consistencia supera la perfección en cada ocasión.", ""),
+        ("Tu mayor enemigo en el trading son tus emociones.", ""),
+        ("Las pequeñas ganancias consistentes superan las grandes ganancias arriesgadas.", ""),
+        ("La tendencia es tu amiga — hasta el final.", ""),
+        ("La paciencia y la disciplina separan a los ganadores de los perdedores.", ""),
+        ("Conoce tu riesgo antes de conocer tu recompensa.", ""),
+        ("El mercado recompensa a quienes lo respetan.", ""),
+        ("Una buena operación vale cien apresuradas.", ""),
+        ("Los traders ganadores piensan en probabilidades, no en certezas.", "Mark Douglas"),
+        ("La mejor inversión que puedes hacer es en ti mismo.", "Warren Buffett"),
+        ("El éxito en el trading viene de la preparación, no de la suerte.", ""),
+        ("Un buen trader siempre está aprendiendo y adaptándose.", ""),
+        ("Las pequeñas ganancias consistentes se acumulan en riqueza que cambia la vida.", ""),
+        ("El mercado siempre estará ahí. Tu capital quizás no. Protégelo.", ""),
+        ("Disciplina hoy, libertad financiera mañana.", ""),
+    ],
+    "de": [
+        ("Die Börse ist ein Gerät, um Geld von Ungeduldigen zu Geduldigen zu übertragen.", "Warren Buffett"),
+        ("Risiko entsteht, wenn man nicht weiß, was man tut.", "Warren Buffett"),
+        ("Das Ziel eines erfolgreichen Traders ist es, die besten Trades zu machen, nicht Recht zu haben.", "Mark Douglas"),
+        ("Jeder Trader hat eine Geschichte. Die Gewinner schreiben bessere Enden.", ""),
+        ("Im Trading ist das Wichtigste nicht, Geld zu verdienen, sondern es nicht zu verlieren.", "George Soros"),
+        ("Der Markt ist ein Pendel, das ewig zwischen Optimismus und Pessimismus schwingt.", "Benjamin Graham"),
+        ("Handle, was du siehst, nicht was du denkst.", ""),
+        ("Erfolgreiches Trading dreht sich um Risikomanagement, nicht darum, es zu vermeiden.", ""),
+        ("Das größte Risiko ist, keines einzugehen.", "Mellody Hobson"),
+        ("Plane deinen Trade und trade deinen Plan.", ""),
+        ("Begrenze deine Verluste und lass deine Gewinne laufen.", ""),
+        ("Sei ängstlich, wenn andere gierig sind; sei gierig, wenn andere ängstlich sind.", "Warren Buffett"),
+        ("Trading ist nicht darum, Recht zu haben — sondern profitabel zu sein.", ""),
+        ("Disziplin ist die Brücke zwischen Zielen und Leistungen.", "Jim Rohn"),
+        ("Jeder Experte war einmal Anfänger. Weiter so!", ""),
+        ("Beständigkeit schlägt jedes Mal Perfektion.", ""),
+        ("Dein größter Feind im Trading sind deine eigenen Emotionen.", ""),
+        ("Kleine konsistente Gewinne schlagen große riskante Gewinne.", ""),
+        ("Der Trend ist dein Freund — bis zum Ende.", ""),
+        ("Geduld und Disziplin trennen Gewinner von Verlierern.", ""),
+        ("Kenne dein Risiko, bevor du deine Belohnung kennst.", ""),
+        ("Der Markt belohnt diejenigen, die ihn respektieren.", ""),
+        ("Ein guter Trade ist hundert übereilte wert.", ""),
+        ("Gewinnende Trader denken in Wahrscheinlichkeiten, nicht in Gewissheiten.", "Mark Douglas"),
+        ("Die beste Investition ist die in dich selbst.", "Warren Buffett"),
+        ("Erfolg im Trading kommt von Vorbereitung, nicht von Glück.", ""),
+        ("Ein guter Trader lernt und passt sich immer an.", ""),
+        ("Kleine konsistente Gewinne wachsen zu lebensveränderndem Reichtum.", ""),
+        ("Der Markt wird immer da sein. Dein Kapital vielleicht nicht. Schütze es.", ""),
+        ("Disziplin heute, finanzielle Freiheit morgen.", ""),
+    ],
+    "pt": [
+        ("O mercado de ações é um dispositivo para transferir dinheiro dos impacientes para os pacientes.", "Warren Buffett"),
+        ("O risco vem de não saber o que está fazendo.", "Warren Buffett"),
+        ("O objetivo de um trader de sucesso é fazer as melhores negociações, não estar certo.", "Mark Douglas"),
+        ("Todo trader tem uma história. Os vencedores escrevem melhores finais.", ""),
+        ("No trading, o mais importante não é ganhar dinheiro, mas não perdê-lo.", "George Soros"),
+        ("O mercado é um pêndulo que oscila eternamente entre otimismo e pessimismo.", "Benjamin Graham"),
+        ("Negocie o que vê, não o que pensa.", ""),
+        ("O trading bem-sucedido é sobre gerenciar riscos, não evitá-los.", ""),
+        ("O maior risco de todos é não correr nenhum.", "Mellody Hobson"),
+        ("Planeje seu trade e trade seu plano.", ""),
+        ("Corte suas perdas rapidamente e deixe seus lucros crescerem.", ""),
+        ("Tenha medo quando os outros são gananciosos; seja ganancioso quando os outros têm medo.", "Warren Buffett"),
+        ("O trading não é sobre estar certo — é sobre ser lucrativo.", ""),
+        ("A disciplina é a ponte entre objetivos e realizações.", "Jim Rohn"),
+        ("Todo especialista já foi iniciante. Continue!", ""),
+        ("A consistência supera a perfeição sempre.", ""),
+        ("Seu maior inimigo no trading são suas emoções.", ""),
+        ("Pequenos lucros consistentes superam grandes ganhos arriscados.", ""),
+        ("A tendência é sua amiga — até o fim.", ""),
+        ("Paciência e disciplina separam os vencedores dos perdedores.", ""),
+        ("Conheça seu risco antes de conhecer sua recompensa.", ""),
+        ("O mercado recompensa quem o respeita.", ""),
+        ("Uma boa negociação vale cem apressadas.", ""),
+        ("Traders vencedores pensam em probabilidades, não em certezas.", "Mark Douglas"),
+        ("O melhor investimento que você pode fazer é em si mesmo.", "Warren Buffett"),
+        ("O sucesso no trading vem da preparação, não da sorte.", ""),
+        ("Um bom trader está sempre aprendendo e se adaptando.", ""),
+        ("Pequenos lucros consistentes se acumulam em riqueza que muda a vida.", ""),
+        ("O mercado sempre estará lá. Seu capital talvez não. Proteja-o.", ""),
+        ("Disciplina hoje, liberdade financeira amanhã.", ""),
+    ],
+    "zh": [
+        ("股票市场是将钱从没有耐心者转移到有耐心者的装置。", "Warren Buffett"),
+        ("风险来自于不知道自己在做什么。", "Warren Buffett"),
+        ("成功交易者的目标是做出最佳交易，而不是总是正确。", "Mark Douglas"),
+        ("每个交易者都有故事。赢家写出更好的结局。", ""),
+        ("在交易中，最重要的不是赚钱，而是不亏钱。", "George Soros"),
+        ("市场是一个永远在乐观和悲观之间摆动的钟摆。", "Benjamin Graham"),
+        ("交易你所看到的，而不是你所想的。", ""),
+        ("成功的交易是管理风险，而不是回避它。", ""),
+        ("最大的风险是不冒风险。", "Mellody Hobson"),
+        ("计划你的交易，按照计划交易。", ""),
+        ("快速止损，让利润奔跑。", ""),
+        ("当别人贪婪时要恐惧，当别人恐惧时要贪婪。", "Warren Buffett"),
+        ("交易不是要正确 — 而是要盈利。", ""),
+        ("纪律是目标和成就之间的桥梁。", "Jim Rohn"),
+        ("每个专家都曾是初学者。继续前行！", ""),
+        ("一致性每次都胜过完美。", ""),
+        ("你在交易中最大的敌人是你自己的情绪。", ""),
+        ("稳定的小利润胜过高风险的大胜。", ""),
+        ("趋势是你的朋友 — 直到结束。", ""),
+        ("耐心和纪律将赢家与输家分开。", ""),
+        ("了解你的风险，然后再了解你的回报。", ""),
+        ("市场奖励尊重它的人。", ""),
+        ("一笔好交易胜过一百笔仓促的交易。", ""),
+        ("获胜的交易者用概率思考，而不是用确定性。", "Mark Douglas"),
+        ("你能做出的最好投资是投资自己。", "Warren Buffett"),
+        ("交易的成功来自准备，而不是运气。", ""),
+        ("好的交易者总是在学习，总是在适应。", ""),
+        ("稳定的小利润积累成改变人生的财富。", ""),
+        ("市场将永远存在。你的资金可能不会。保护它。", ""),
+        ("今天的纪律，明天的财务自由。", ""),
+    ],
+    "ur": [
+        ("اسٹاک مارکیٹ بے صبروں سے صبروالوں کو پیسہ منتقل کرنے کا آلہ ہے۔", "Warren Buffett"),
+        ("خطرہ یہ نہ جاننے سے آتا ہے کہ آپ کیا کر رہے ہیں۔", "Warren Buffett"),
+        ("کامیاب ٹریڈر کا مقصد بہترین ٹریڈ کرنا ہے، صحیح ہونا نہیں۔", "Mark Douglas"),
+        ("ہر ٹریڈر کی ایک کہانی ہے۔ جیتنے والے بہتر انجام لکھتے ہیں۔", ""),
+        ("ٹریڈنگ میں سب سے اہم بات پیسہ کمانا نہیں بلکہ نہ گنوانا ہے۔", "George Soros"),
+        ("مارکیٹ ایک پینڈولم ہے جو ہمیشہ امید اور مایوسی کے درمیان جھولتی ہے۔", "Benjamin Graham"),
+        ("جو دیکھیں اس پر ٹریڈ کریں، جو سوچیں اس پر نہیں۔", ""),
+        ("کامیاب ٹریڈنگ خطرے کا انتظام کرنے کے بارے میں ہے، اس سے بچنے کے بارے میں نہیں۔", ""),
+        ("سب سے بڑا خطرہ کوئی خطرہ نہ لینا ہے۔", "Mellody Hobson"),
+        ("اپنے ٹریڈ کی منصوبہ بندی کریں اور اپنے منصوبے کے مطابق ٹریڈ کریں۔", ""),
+        ("اپنا نقصان جلدی کاٹیں اور منافع کو بڑھنے دیں۔", ""),
+        ("جب دوسرے لالچی ہوں تو ڈریں؛ جب دوسرے ڈریں تو لالچی بنیں۔", "Warren Buffett"),
+        ("ٹریڈنگ صحیح ہونے کے بارے میں نہیں ہے — یہ منافع بخش ہونے کے بارے میں ہے۔", ""),
+        ("نظم و ضبط اہداف اور کامیابیوں کے درمیان پل ہے۔", "Jim Rohn"),
+        ("ہر ماہر کبھی ابتدائی تھا۔ جاری رکھیں!", ""),
+        ("استحکام ہر بار کمال کو شکست دیتا ہے۔", ""),
+        ("ٹریڈنگ میں آپ کا سب سے بڑا دشمن آپ کے جذبات ہیں۔", ""),
+        ("چھوٹے مستحکم منافع بڑے خطرناک فوائد سے بہتر ہیں۔", ""),
+        ("رجحان آپ کا دوست ہے — آخر تک۔", ""),
+        ("صبر اور نظم و ضبط جیتنے والوں کو ہارنے والوں سے الگ کرتے ہیں۔", ""),
+        ("اپنا انعام جاننے سے پہلے اپنا خطرہ جانیں۔", ""),
+        ("مارکیٹ ان لوگوں کو انعام دیتی ہے جو اس کا احترام کرتے ہیں۔", ""),
+        ("ایک اچھا ٹریڈ سو جلدبازی والے ٹریڈز کے برابر ہے۔", ""),
+        ("جیتنے والے ٹریڈرز امکانات میں سوچتے ہیں، یقین میں نہیں۔", "Mark Douglas"),
+        ("آپ جو سب سے اچھی سرمایہ کاری کر سکتے ہیں وہ خود میں ہے۔", "Warren Buffett"),
+        ("ٹریڈنگ میں کامیابی تیاری سے آتی ہے، قسمت سے نہیں۔", ""),
+        ("اچھا ٹریڈر ہمیشہ سیکھتا اور ڈھلتا ہے۔", ""),
+        ("چھوٹے مستحکم منافع زندگی بدلنے والی دولت میں تبدیل ہوتے ہیں۔", ""),
+        ("مارکیٹ ہمیشہ رہے گی۔ آپ کی سرمایہ شاید نہیں۔ اسے بچائیں۔", ""),
+        ("آج نظم و ضبط، کل مالی آزادی۔", ""),
+    ],
+    "ja": [
+        ("株式市場は、せっかちな人から忍耐強い人へお金を移すための装置です。", "Warren Buffett"),
+        ("リスクは自分が何をしているかを知らないことから生まれる。", "Warren Buffett"),
+        ("成功したトレーダーの目標は、最良のトレードをすることであり、正しくあることではない。", "Mark Douglas"),
+        ("すべてのトレーダーには物語がある。勝者だけがより良い結末を書く。", ""),
+        ("トレードで最も重要なのはお金を稼ぐことではなく、失わないことだ。", "George Soros"),
+        ("市場は楽観主義と悲観主義の間を永遠に揺れ動く振り子だ。", "Benjamin Graham"),
+        ("見えるものをトレードし、考えていることをトレードするな。", ""),
+        ("成功するトレードはリスクを管理することであり、回避することではない。", ""),
+        ("最大のリスクは、リスクを取らないことだ。", "Mellody Hobson"),
+        ("トレードを計画し、計画通りにトレードせよ。", ""),
+        ("損失を素早く切り、利益を伸ばせ。", ""),
+        ("他人が欲張っているときは恐れよ；他人が恐れているときは欲張れ。", "Warren Buffett"),
+        ("トレードは正しくあることではなく、利益を上げることだ。", ""),
+        ("規律は目標と達成の橋だ。", "Jim Rohn"),
+        ("すべての専門家はかつて初心者だった。続けよう！", ""),
+        ("一貫性は毎回完璧さに勝る。", ""),
+        ("トレードで最大の敵は自分の感情だ。", ""),
+        ("小さく安定した利益は大きなリスクのある勝利に勝る。", ""),
+        ("トレンドは友達だ — 終わりまで。", ""),
+        ("忍耐と規律が勝者と敗者を分ける。", ""),
+        ("報酬を知る前にリスクを知れ。", ""),
+        ("市場はそれを尊重する人に報いる。", ""),
+        ("一つの良いトレードは百の急いだトレードに値する。", ""),
+        ("勝つトレーダーは確実性ではなく確率で考える。", "Mark Douglas"),
+        ("できる最良の投資は自分への投資だ。", "Warren Buffett"),
+        ("トレードの成功は準備から来る、運ではない。", ""),
+        ("良いトレーダーは常に学び、常に適応する。", ""),
+        ("小さく安定した利益は人生を変える富に積み上がる。", ""),
+        ("市場は常にそこにある。あなたの資本はそうではないかもしれない。守れ。", ""),
+        ("今日の規律、明日の経済的自由。", ""),
+    ],
+}
+
+def get_daily_quote_for_lang(lang):
+    """Return a daily quote in the user's language"""
+    day = datetime.now().timetuple().tm_yday
+    if lang in DAILY_QUOTES_TRANSLATED:
+        quotes = DAILY_QUOTES_TRANSLATED[lang]
+        idx = day % len(quotes)
+        quote, author = quotes[idx]
+        author_str = f" — {author}" if author else ""
+        flag_idx = day % len(DAILY_FLAGS)
+        flag = DAILY_FLAGS[flag_idx]
+        return f'💡 *"{quote}"*{author_str}\n\n{flag} User'
+    # Fallback to English
+    idx = day % len(DAILY_QUOTES)
+    flag_idx = day % len(DAILY_FLAGS)
+    quote, author = DAILY_QUOTES[idx]
+    flag = DAILY_FLAGS[flag_idx]
+    return f'💡 *"{quote}"*\n\n{flag} User'
+
 DAILY_FLAGS = [
     "🇳🇬", "🇰🇪", "🇬🇭", "🇿🇦", "🇹🇿", "🇺🇬", "🇨🇲", "🇸🇳",
     "🇧🇷", "🇲🇽", "🇨🇴", "🇦🇷", "🇵🇹", "🇪🇸", "🇫🇷", "🇩🇪",
@@ -1302,54 +1689,184 @@ DAILY_FLAGS = [
     "🇨🇮", "🇿🇲", "🇿🇼", "🇲🇿", "🇦🇴", "🇸🇴", "🇲🇱", "🇬🇳",
 ]
 
-def get_daily_quote():
-    day = datetime.now().timetuple().tm_yday
-    idx = day % len(DAILY_QUOTES)
-    flag_idx = day % len(DAILY_FLAGS)
-    quote, author = DAILY_QUOTES[idx]
-    flag = DAILY_FLAGS[flag_idx]
-    return f'💡 *"{quote}"*\n\n{flag} User'
+def get_daily_quote(lang="en"):
+    return get_daily_quote_for_lang(lang)
 
 # ══════════════════════════════════════════════════════════════
 #  BINARY TRADING TIPS
 # ══════════════════════════════════════════════════════════════
 
-BINARY_TIPS = [
-    "💡 *TIP:* Always trade with the trend — if the market is going UP, look for BUY signals only!",
-    "💡 *TIP:* Never risk more than 2-5% of your account on a single trade. Protect your capital first!",
-    "💡 *TIP:* The best sessions overlap London (8AM-12PM GMT) and New York (1PM-5PM GMT)!",
-    "💡 *TIP:* After 3 consecutive losses, STOP trading. Take a break and come back fresh.",
-    "💡 *TIP:* Wait for a clear signal before entering. Patience is the most profitable skill!",
-    "💡 *TIP:* Strong support and resistance levels give the highest probability trades.",
-    "💡 *TIP:* Use 1-5 minute candles for binary options — clearer entry signals!",
-    "💡 *TIP:* Always check the economic calendar before trading! News events can break any pattern.",
-    "💡 *TIP:* Avoid trading the first 5 minutes of a new session — markets are too volatile!",
-    "💡 *TIP:* Best binary trades happen when indicator AND price action agree on direction.",
-    "💡 *TIP:* Set a daily profit target. When you reach it, STOP. Don't let greed destroy your gains!",
-    "💡 *TIP:* OTC weekend markets follow patterns — great practice time for beginners!",
-    "💡 *TIP:* Screenshot your trades. Review what worked and what didn't every week.",
-    "💡 *TIP:* For 1-minute candles, use 1-2 minute expiry for best results.",
-    "💡 *TIP:* When in doubt, stay OUT. No trade is always better than a bad trade!",
-    "💡 *TIP:* Master one asset before trading many — consistency beats variety.",
-    "💡 *TIP:* Wednesday-Thursday often give the best signals — Monday/Friday can be unpredictable.",
-    "💡 *TIP:* Your mindset determines your results. Trade calm, trade smart!",
-    "💡 *TIP:* Keep a trading journal — this separates professionals from gamblers.",
-    "💡 *TIP:* Practice on demo accounts before using real money!",
-    "💡 *TIP:* Consecutive wins cause overconfidence. Treat every trade as your first!",
-    "💡 *TIP:* Check H1 timeframe for trend direction, then M5 for entry timing.",
-    "💡 *TIP:* The best binary traders win 60-70% of trades — consistency beats perfection!",
-    "💡 *TIP:* Avoid major news: NFP, CPI, Fed announcements can move markets wildly!",
-    "💡 *TIP:* Start small and grow — 5% daily compounded beats 50% gambles every time.",
-    "💡 *TIP:* Emotional trading kills accounts. Step away when angry or overexcited.",
-    "💡 *TIP:* The indicator is a tool, not a guarantee. Always confirm with price action!",
-    "💡 *TIP:* Two indicators confirming same direction = high probability trade!",
-    "💡 *TIP:* Asian session (midnight-8AM GMT) is quieter — good for OTC assets.",
-    "💡 *TIP:* Higher payout percentage = less trades needed to profit. Choose wisely!",
-]
+BINARY_TIPS = {
+    "en": [
+        "💡 *TIP:* Always trade with the trend — if the market is going UP, look for BUY signals only!",
+        "💡 *TIP:* Never risk more than 2-5% of your account on a single trade. Protect your capital first!",
+        "💡 *TIP:* The best sessions overlap London (8AM-12PM GMT) and New York (1PM-5PM GMT)!",
+        "💡 *TIP:* After 3 consecutive losses, STOP trading. Take a break and come back fresh.",
+        "💡 *TIP:* Wait for a clear signal before entering. Patience is the most profitable skill!",
+        "💡 *TIP:* Strong support and resistance levels give the highest probability trades.",
+        "💡 *TIP:* Use 1-5 minute candles for binary options — clearer entry signals!",
+        "💡 *TIP:* Always check the economic calendar before trading! News events can break any pattern.",
+        "💡 *TIP:* Avoid trading the first 5 minutes of a new session — markets are too volatile!",
+        "💡 *TIP:* Best binary trades happen when indicator AND price action agree on direction.",
+        "💡 *TIP:* Set a daily profit target. When you reach it, STOP. Don't let greed destroy your gains!",
+        "💡 *TIP:* OTC weekend markets follow patterns — great practice time for beginners!",
+        "💡 *TIP:* Screenshot your trades. Review what worked and what didn't every week.",
+        "💡 *TIP:* For 1-minute candles, use 1-2 minute expiry for best results.",
+        "💡 *TIP:* When in doubt, stay OUT. No trade is always better than a bad trade!",
+        "💡 *TIP:* Master one asset before trading many — consistency beats variety.",
+        "💡 *TIP:* Wednesday-Thursday often give the best signals — Monday/Friday can be unpredictable.",
+        "💡 *TIP:* Your mindset determines your results. Trade calm, trade smart!",
+        "💡 *TIP:* Keep a trading journal — this separates professionals from gamblers.",
+        "💡 *TIP:* Practice on demo accounts before using real money!",
+        "💡 *TIP:* Consecutive wins cause overconfidence. Treat every trade as your first!",
+        "💡 *TIP:* Check H1 timeframe for trend direction, then M5 for entry timing.",
+        "💡 *TIP:* The best binary traders win 60-70% of trades — consistency beats perfection!",
+        "💡 *TIP:* Avoid major news: NFP, CPI, Fed announcements can move markets wildly!",
+        "💡 *TIP:* Start small and grow — 5% daily compounded beats 50% gambles every time.",
+        "💡 *TIP:* Emotional trading kills accounts. Step away when angry or overexcited.",
+        "💡 *TIP:* The indicator is a tool, not a guarantee. Always confirm with price action!",
+        "💡 *TIP:* Two indicators confirming same direction = high probability trade!",
+        "💡 *TIP:* Asian session (midnight-8AM GMT) is quieter — good for OTC assets.",
+        "💡 *TIP:* Higher payout percentage = less trades needed to profit. Choose wisely!",
+    ],
+    "sw": [
+        "💡 *KIDOKEZO:* Fanya biashara kwa mwelekeo daima — ikiwa soko linaenda JUU, tafuta ishara za BUY tu!",
+        "💡 *KIDOKEZO:* Usihatarishe zaidi ya 2-5% ya akaunti yako kwenye biashara moja. Linda mtaji wako kwanza!",
+        "💡 *KIDOKEZO:* Vikao bora vinaingiliana London (8AM-12PM GMT) na New York (1PM-5PM GMT)!",
+        "💡 *KIDOKEZO:* Baada ya hasara 3 mfululizo, SIMAMA kufanya biashara. Pumzika na urudi ukiwa mpya.",
+        "💡 *KIDOKEZO:* Subiri ishara wazi kabla ya kuingia. Subira ndiyo ujuzi wenye faida zaidi!",
+        "💡 *KIDOKEZO:* Viwango vikali vya msaada na upinzani hutoa biashara za uwezekano wa juu.",
+        "💡 *KIDOKEZO:* Tumia mishumaa ya dakika 1-5 kwa binary options — ishara za kuingia wazi zaidi!",
+        "💡 *KIDOKEZO:* Angalia kila wakati kalenda ya kiuchumi kabla ya kufanya biashara! Habari zinaweza kuvunja mfumo wowote.",
+        "💡 *KIDOKEZO:* Epuka kufanya biashara dakika 5 za kwanza za kipindi kipya — masoko ni ya msisimko sana!",
+        "💡 *KIDOKEZO:* Biashara bora za binary hutokea kiashiria NA mwelekeo wa bei vinakubaliana.",
+        "💡 *KIDOKEZO:* Weka lengo la faida ya kila siku. Ukifikia, SIMAMA. Usiruhusu tamaa kuharibu mafanikio yako!",
+        "💡 *KIDOKEZO:* Masoko ya OTC ya wikendi yanafuata mifumo — wakati mzuri wa mazoezi kwa wanaoanza!",
+        "💡 *KIDOKEZO:* Piga picha za biashara zako. Kagua kilichofanya kazi na kisichofanya kila wiki.",
+        "💡 *KIDOKEZO:* Kwa mishumaa ya dakika 1, tumia muda wa kumalizika wa dakika 1-2 kwa matokeo bora.",
+        "💡 *KIDOKEZO:* Ukiwa na shaka, KAA MBALI. Kutofanya biashara ni bora daima kuliko biashara mbaya!",
+        "💡 *KIDOKEZO:* Miliki mali moja kabla ya kufanya biashara nyingi — uthabiti hushinda utofauti.",
+        "💡 *KIDOKEZO:* Jumatano-Alhamisi mara nyingi hutoa ishara bora — Jumatatu/Ijumaa inaweza kutotabirika.",
+        "💡 *KIDOKEZO:* Mtazamo wako huamua matokeo yako. Fanya biashara kwa utulivu, kwa akili!",
+        "💡 *KIDOKEZO:* Weka jarida la biashara — hii inatenganisha wataalamu na wachezaji wa kamari.",
+        "💡 *KIDOKEZO:* Zoea kwenye akaunti za demo kabla ya kutumia pesa halisi!",
+        "💡 *KIDOKEZO:* Ushindi wa mfululizo husababisha kiburi. Tazama kila biashara kama ya kwanza!",
+        "💡 *KIDOKEZO:* Angalia muda wa H1 kwa mwelekeo, kisha M5 kwa wakati wa kuingia.",
+        "💡 *KIDOKEZO:* Wafanyabiashara bora wa binary wanashinda 60-70% ya biashara — uthabiti hushinda ukamilifu!",
+        "💡 *KIDOKEZO:* Epuka habari kubwa: NFP, CPI, matangazo ya Fed yanaweza kusogeza masoko kupita kiasi!",
+        "💡 *KIDOKEZO:* Anza kidogo ukue — 5% kwa siku kuchanganywa hushinda kamari za 50% kila wakati.",
+        "💡 *KIDOKEZO:* Biashara ya kihisia inaharibu akaunti. Toka unapokuwa na hasira au msisimko.",
+        "💡 *KIDOKEZO:* Kiashiria ni chombo, si dhamana. Thibitisha daima na mwelekeo wa bei!",
+        "💡 *KIDOKEZO:* Viashiria viwili vinavyothibitisha mwelekeo mmoja = biashara ya uwezekano wa juu!",
+        "💡 *KIDOKEZO:* Kipindi cha Asia (usiku wa manane-8AM GMT) ni tulivu zaidi — kizuri kwa mali za OTC.",
+        "💡 *KIDOKEZO:* Asilimia ya malipo ya juu = biashara chache zinahitajika kupata faida. Chagua kwa hekima!",
+    ],
+    "ar": [
+        "💡 *نصيحة:* تداول دائماً مع الاتجاه — إذا كان السوق صاعداً، ابحث فقط عن إشارات الشراء!",
+        "💡 *نصيحة:* لا تخاطر بأكثر من 2-5% من حسابك في صفقة واحدة. احمِ رأس مالك أولاً!",
+        "💡 *نصيحة:* أفضل الجلسات تتداخل في لندن (8AM-12PM GMT) ونيويورك (1PM-5PM GMT)!",
+        "💡 *نصيحة:* بعد 3 خسائر متتالية، توقف عن التداول. خذ استراحة وعد منتعشاً.",
+        "💡 *نصيحة:* انتظر إشارة واضحة قبل الدخول. الصبر هو المهارة الأكثر ربحاً!",
+        "💡 *نصيحة:* مستويات الدعم والمقاومة القوية تعطي صفقات ذات احتمالية عالية.",
+        "💡 *نصيحة:* استخدم شموع 1-5 دقائق للخيارات الثنائية — إشارات دخول أوضح!",
+        "💡 *نصيحة:* تحقق دائماً من التقويم الاقتصادي قبل التداول! الأخبار يمكن أن تكسر أي نمط.",
+        "💡 *نصيحة:* تجنب التداول في الدقائق الخمس الأولى من جلسة جديدة — الأسواق متقلبة جداً!",
+        "💡 *نصيحة:* أفضل صفقات ثنائية تحدث عندما يتفق المؤشر والحركة السعرية على الاتجاه.",
+        "💡 *نصيحة:* حدد هدف ربح يومي. عند تحقيقه، توقف. لا تدع الجشع يدمر مكاسبك!",
+        "💡 *نصيحة:* أسواق OTC في عطلة نهاية الأسبوع تتبع أنماطاً — وقت ممارسة رائع للمبتدئين!",
+        "💡 *نصيحة:* التقط لقطات من صفقاتك. راجع ما نجح وما لم ينجح كل أسبوع.",
+        "💡 *نصيحة:* لشموع دقيقة واحدة، استخدم انتهاء مدة 1-2 دقيقة لأفضل النتائج.",
+        "💡 *نصيحة:* عند الشك، ابقَ خارجاً. عدم التداول أفضل دائماً من صفقة سيئة!",
+        "💡 *نصيحة:* أتقن أصلاً واحداً قبل تداول كثير — الاتساق يتفوق على التنوع.",
+        "💡 *نصيحة:* الأربعاء-الخميس يعطيان أفضل الإشارات — الاثنين/الجمعة قد يكونان غير متوقعَين.",
+        "💡 *نصيحة:* عقليتك تحدد نتائجك. تداول بهدوء، تداول بذكاء!",
+        "💡 *نصيحة:* احتفظ بمذكرات تداول — هذا يفصل المحترفين عن المقامرين.",
+        "💡 *نصيحة:* تدرب على حسابات التجريب قبل استخدام الأموال الحقيقية!",
+        "💡 *نصيحة:* الانتصارات المتتالية تسبب الغرور. تعامل مع كل صفقة كأنها الأولى!",
+        "💡 *نصيحة:* تحقق من الإطار الزمني H1 لاتجاه الترند، ثم M5 لتوقيت الدخول.",
+        "💡 *نصيحة:* أفضل متداولي الخيارات الثنائية يفوزون في 60-70% من الصفقات — الاتساق يتفوق على الكمال!",
+        "💡 *نصيحة:* تجنب الأخبار الكبرى: NFP، CPI، إعلانات الفيدرالي يمكن أن تحرك الأسواق بشكل كبير!",
+        "💡 *نصيحة:* ابدأ صغيراً وانمُ — 5% يومياً مركباً يتفوق على المقامرات بـ50% في كل مرة.",
+        "💡 *نصيحة:* التداول العاطفي يدمر الحسابات. ابتعد عند الغضب أو الإثارة الزائدة.",
+        "💡 *نصيحة:* المؤشر أداة وليس ضماناً. تأكد دائماً من حركة السعر!",
+        "💡 *نصيحة:* مؤشران يؤكدان نفس الاتجاه = صفقة عالية الاحتمال!",
+        "💡 *نصيحة:* جلسة آسيا (منتصف الليل-8AM GMT) أهدأ — جيدة لأصول OTC.",
+        "💡 *نصيحة:* نسبة عوائد أعلى = صفقات أقل للربح. اختر بحكمة!",
+    ],
+    "hi": [
+        "💡 *सुझाव:* हमेशा ट्रेंड के साथ ट्रेड करें — अगर बाजार ऊपर जा रहा है, तो केवल BUY सिग्नल खोजें!",
+        "💡 *सुझाव:* एक ट्रेड पर 2-5% से ज्यादा जोखिम न लें। पहले अपनी पूंजी की रक्षा करें!",
+        "💡 *सुझाव:* सबसे अच्छे सत्र लंदन (8AM-12PM GMT) और न्यूयॉर्क (1PM-5PM GMT) के बीच होते हैं!",
+        "💡 *सुझाव:* 3 लगातार नुकसान के बाद, ट्रेडिंग बंद करें। ब्रेक लें और ताजे दिमाग से वापस आएं।",
+        "💡 *सुझाव:* प्रवेश से पहले स्पष्ट सिग्नल का इंतजार करें। धैर्य सबसे लाभदायक कौशल है!",
+        "💡 *सुझाव:* मजबूत सपोर्ट और रेसिस्टेंस स्तर सबसे अधिक संभावना वाले ट्रेड देते हैं।",
+        "💡 *सुझाव:* बाइनरी ऑप्शन के लिए 1-5 मिनट की कैंडल उपयोग करें — स्पष्ट प्रवेश सिग्नल!",
+        "💡 *सुझाव:* ट्रेडिंग से पहले हमेशा आर्थिक कैलेंडर जांचें! समाचार किसी भी पैटर्न को तोड़ सकते हैं।",
+        "💡 *सुझाव:* नए सत्र के पहले 5 मिनट ट्रेड करने से बचें — बाजार बहुत अस्थिर होते हैं!",
+        "💡 *सुझाव:* सबसे अच्छे बाइनरी ट्रेड तब होते हैं जब इंडिकेटर और प्राइस एक्शन दोनों एक दिशा में हों।",
+        "💡 *सुझाव:* दैनिक लाभ लक्ष्य निर्धारित करें। पहुंचने पर रुकें। लालच को अपने लाभ को नष्ट न करने दें!",
+        "💡 *सुझाव:* OTC वीकेंड बाजार पैटर्न का पालन करते हैं — शुरुआती लोगों के लिए अभ्यास का बढ़िया समय!",
+        "💡 *सुझाव:* अपने ट्रेड का स्क्रीनशॉट लें। हर हफ्ते समीक्षा करें कि क्या काम किया।",
+        "💡 *सुझाव:* 1 मिनट कैंडल के लिए, बेस्ट रिजल्ट के लिए 1-2 मिनट एक्सपायरी उपयोग करें।",
+        "💡 *सुझाव:* संदेह होने पर बाहर रहें। कोई ट्रेड न करना हमेशा बुरे ट्रेड से बेहतर है!",
+        "💡 *सुझाव:* कई में ट्रेड करने से पहले एक एसेट में महारत हासिल करें — स्थिरता विविधता से बेहतर है।",
+        "💡 *सुझाव:* बुधवार-गुरुवार अक्सर बेहतरीन सिग्नल देते हैं — सोमवार/शुक्रवार अप्रत्याशित हो सकते हैं।",
+        "💡 *सुझाव:* आपकी मानसिकता आपके परिणाम निर्धारित करती है। शांति से ट्रेड करें, समझदारी से!",
+        "💡 *सुझाव:* ट्रेडिंग जर्नल रखें — यह पेशेवरों को जुआरियों से अलग करता है।",
+        "💡 *सुझाव:* असली पैसे से पहले डेमो अकाउंट पर अभ्यास करें!",
+        "💡 *सुझाव:* लगातार जीत अति-आत्मविश्वास पैदा करती है। हर ट्रेड को पहला मानें!",
+        "💡 *सुझाव:* ट्रेंड दिशा के लिए H1 टाइमफ्रेम देखें, फिर प्रवेश समय के लिए M5।",
+        "💡 *सुझाव:* सबसे अच्छे बाइनरी ट्रेडर 60-70% ट्रेड जीतते हैं — स्थिरता परिपूर्णता से बेहतर!",
+        "💡 *सुझाव:* बड़ी खबरों से बचें: NFP, CPI, फेड घोषणाएं बाजारों को अनियमित कर सकती हैं!",
+        "💡 *सुझाव:* छोटे से शुरू करें और बढ़ें — रोज 5% चक्रवृद्धि 50% जुए को हर बार हराती है।",
+        "💡 *सुझाव:* भावनात्मक ट्रेडिंग खाते बर्बाद करती है। गुस्से या अति-उत्साह में हटें।",
+        "💡 *सुझाव:* इंडिकेटर एक उपकरण है, गारंटी नहीं। हमेशा प्राइस एक्शन से पुष्टि करें!",
+        "💡 *सुझाव:* एक ही दिशा की पुष्टि करने वाले दो इंडिकेटर = उच्च संभावना वाला ट्रेड!",
+        "💡 *सुझाव:* एशिया सत्र (मध्यरात्रि-8AM GMT) शांत है — OTC एसेट के लिए अच्छा।",
+        "💡 *सुझाव:* अधिक भुगतान प्रतिशत = लाभ के लिए कम ट्रेड चाहिए। समझदारी से चुनें!",
+    ],
+    "ru": [
+        "💡 *СОВЕТ:* Всегда торгуйте по тренду — если рынок идёт ВВЕРХ, ищите только сигналы на покупку!",
+        "💡 *СОВЕТ:* Никогда не рискуйте более 2-5% счёта на одной сделке. Сначала защитите капитал!",
+        "💡 *СОВЕТ:* Лучшие сессии — пересечение Лондона (8AM-12PM GMT) и Нью-Йорка (1PM-5PM GMT)!",
+        "💡 *СОВЕТ:* После 3 убыточных сделок подряд — ОСТАНОВИТЕСЬ. Отдохните и вернитесь свежим.",
+        "💡 *СОВЕТ:* Ждите чёткого сигнала перед входом. Терпение — самый прибыльный навык!",
+        "💡 *СОВЕТ:* Сильные уровни поддержки и сопротивления дают сделки с высокой вероятностью.",
+        "💡 *СОВЕТ:* Используйте свечи 1-5 минут для бинарных опционов — более чёткие сигналы входа!",
+        "💡 *СОВЕТ:* Всегда проверяйте экономический календарь перед торговлей! Новости могут сломать любой паттерн.",
+        "💡 *СОВЕТ:* Не торгуйте первые 5 минут новой сессии — рынки слишком волатильны!",
+        "💡 *СОВЕТ:* Лучшие бинарные сделки случаются, когда индикатор И цена согласуются в направлении.",
+        "💡 *СОВЕТ:* Установите ежедневную цель прибыли. Достигнув её — СТОП. Не давайте жадности уничтожить прибыль!",
+        "💡 *СОВЕТ:* OTC рынки выходного дня следуют паттернам — отличное время практики для начинающих!",
+        "💡 *СОВЕТ:* Делайте скриншоты сделок. Еженедельно анализируйте что сработало, а что нет.",
+        "💡 *СОВЕТ:* Для 1-минутных свечей используйте экспирацию 1-2 минуты для лучших результатов.",
+        "💡 *СОВЕТ:* При сомнении — не торгуйте. Отсутствие сделки всегда лучше плохой!",
+        "💡 *СОВЕТ:* Освойте один актив, прежде чем торговать многими — последовательность важнее разнообразия.",
+        "💡 *СОВЕТ:* Среда-четверг часто дают лучшие сигналы — понедельник/пятница могут быть непредсказуемы.",
+        "💡 *СОВЕТ:* Ваш настрой определяет результаты. Торгуйте спокойно, торгуйте умно!",
+        "💡 *СОВЕТ:* Ведите торговый журнал — это отличает профессионалов от игроков.",
+        "💡 *СОВЕТ:* Практикуйтесь на демо-счётах перед реальными деньгами!",
+        "💡 *СОВЕТ:* Серия побед вызывает самоуверенность. Относитесь к каждой сделке как к первой!",
+        "💡 *СОВЕТ:* Проверьте H1 для направления тренда, затем M5 для тайминга входа.",
+        "💡 *СОВЕТ:* Лучшие бинарные трейдеры выигрывают 60-70% сделок — последовательность важнее совершенства!",
+        "💡 *СОВЕТ:* Избегайте крупных новостей: NFP, CPI, заявления ФРС могут сильно двигать рынки!",
+        "💡 *СОВЕТ:* Начните с малого и растите — 5% ежедневно в сложных процентах лучше 50% ставок.",
+        "💡 *СОВЕТ:* Эмоциональная торговля уничтожает счета. Уходите когда злитесь или перевозбуждены.",
+        "💡 *СОВЕТ:* Индикатор — инструмент, не гарантия. Всегда подтверждайте ценовым действием!",
+        "💡 *СОВЕТ:* Два индикатора, подтверждающие одно направление = сделка с высокой вероятностью!",
+        "💡 *СОВЕТ:* Азиатская сессия (полночь-8AM GMT) тише — хорошо для OTC активов.",
+        "💡 *СОВЕТ:* Более высокий процент выплат = меньше сделок для прибыли. Выбирайте мудро!",
+    ],
+}
+# Use English tips for other languages
+for _lc in ["es","fr","pt","de","zh","ur","ja","tr","fa","ko","it","pl","uk","kk","cs"]:
+    if _lc not in BINARY_TIPS:
+        BINARY_TIPS[_lc] = BINARY_TIPS["en"]
 
-def get_daily_binary_tip():
-    idx = (datetime.now().timetuple().tm_yday + 7) % len(BINARY_TIPS)
-    return BINARY_TIPS[idx]
+def get_daily_binary_tip(lang="en"):
+    pool = BINARY_TIPS.get(lang, BINARY_TIPS["en"])
+    idx = (datetime.now().timetuple().tm_yday + 7) % len(pool)
+    return pool[idx]
 
 # ══════════════════════════════════════════════════════════════
 #  SCARCITY MESSAGES (shown to returning users visit >= 3)
@@ -1571,25 +2088,21 @@ def save_quiz_score(uid, score):
 #  RESULTS HISTORY DB FUNCTIONS
 # ══════════════════════════════════════════════════════════════
 
-def save_result(result_date, content_text, media_id=None, media_type=None):
+def save_result(result_date, content_text, media_id=None, media_type=None, src_chat_id=None, src_message_id=None):
     try:
         conn = get_conn()
         c = conn.cursor()
-        # Ensure table exists
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS results_history (
-                id         SERIAL PRIMARY KEY,
-                caption    TEXT DEFAULT NULL,
-                media_id   TEXT DEFAULT NULL,
-                media_type TEXT DEFAULT NULL,
-                saved_at   TEXT DEFAULT NULL
-            )
-        """)
+        # Add new columns if missing
+        try:
+            c.execute("ALTER TABLE results_history ADD COLUMN IF NOT EXISTS src_chat_id BIGINT DEFAULT NULL")
+            c.execute("ALTER TABLE results_history ADD COLUMN IF NOT EXISTS src_message_id BIGINT DEFAULT NULL")
+            conn.commit()
+        except: pass
         now = datetime.now().strftime("%d/%m/%Y %H:%M")
         c.execute("""
-            INSERT INTO results_history (caption, media_id, media_type, saved_at)
-            VALUES (%s, %s, %s, %s)
-        """, (content_text[:2000] if content_text else result_date, media_id, media_type, now))
+            INSERT INTO results_history (caption, media_id, media_type, saved_at, src_chat_id, src_message_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (content_text[:2000] if content_text else result_date, media_id, media_type, now, src_chat_id, src_message_id))
         conn.commit()
         conn.close()
         return True
@@ -1613,7 +2126,7 @@ def get_results_history(limit=10):
         """)
         conn.commit()
         c.execute("""
-            SELECT id, caption, media_id, media_type, saved_at
+            SELECT id, caption, media_id, media_type, saved_at, src_chat_id, src_message_id
             FROM results_history
             ORDER BY id DESC LIMIT %s
         """, (limit,))
@@ -1750,19 +2263,37 @@ def get_user_vip_progress(uid):
     except:
         return 0
 
-def render_vip_progress_bar(pct):
+def render_vip_progress_bar(pct, lang="en"):
     filled = int(pct / 5)   # 20 segments
     bar = "█" * filled + "░" * (20 - filled)
+    _labels = {
+        "en": {100: "🔥 MAX — VIP Ready!", 75: "Almost there! 💎", 50: "Good progress! 🚀", 25: "Keep going! 💪", 0: "Just started 🌱"},
+        "sw": {100: "🔥 KIWANGO CHA JUU — VIP Tayari!", 75: "Karibu sana! 💎", 50: "Maendeleo mazuri! 🚀", 25: "Endelea! 💪", 0: "Umeanza tu 🌱"},
+        "ar": {100: "🔥 الحد الأقصى — VIP جاهز!", 75: "على وشك الوصول! 💎", 50: "تقدم ممتاز! 🚀", 25: "استمر! 💪", 0: "بداية فقط 🌱"},
+        "zh": {100: "🔥 最高 — VIP 就绪！", 75: "快到了！ 💎", 50: "进展良好！ 🚀", 25: "继续！ 💪", 0: "刚开始 🌱"},
+        "hi": {100: "🔥 MAX — VIP तैयार!", 75: "लगभग पहुंच गए! 💎", 50: "अच्छी प्रगति! 🚀", 25: "जारी रखें! 💪", 0: "अभी शुरू 🌱"},
+        "ru": {100: "🔥 МАКСИМУМ — VIP Готов!", 75: "Почти там! 💎", 50: "Хороший прогресс! 🚀", 25: "Продолжайте! 💪", 0: "Только начали 🌱"},
+        "es": {100: "🔥 MÁX — ¡VIP Listo!", 75: "¡Casi allí! 💎", 50: "¡Buen progreso! 🚀", 25: "¡Sigue adelante! 💪", 0: "Apenas empezando 🌱"},
+        "fr": {100: "🔥 MAX — VIP Prêt!", 75: "Presque là! 💎", 50: "Bon progrès! 🚀", 25: "Continuez! 💪", 0: "Tout juste commencé 🌱"},
+        "pt": {100: "🔥 MÁX — VIP Pronto!", 75: "Quase lá! 💎", 50: "Bom progresso! 🚀", 25: "Continue! 💪", 0: "Apenas começando 🌱"},
+        "de": {100: "🔥 MAX — VIP Bereit!", 75: "Fast da! 💎", 50: "Guter Fortschritt! 🚀", 25: "Weiter so! 💪", 0: "Gerade begonnen 🌱"},
+        "ur": {100: "🔥 MAX — VIP تیار!", 75: "تقریباً پہنچ گئے! 💎", 50: "اچھی پیشرفت! 🚀", 25: "جاری رکھیں! 💪", 0: "ابھی شروع 🌱"},
+        "ja": {100: "🔥 MAX — VIP準備完了！", 75: "もうすぐ！ 💎", 50: "良い進歩！ 🚀", 25: "続けて！ 💪", 0: "始まったばかり 🌱"},
+        "tr": {100: "🔥 MAKS — VIP Hazır!", 75: "Neredeyse! 💎", 50: "İyi ilerleme! 🚀", 25: "Devam et! 💪", 0: "Yeni başladı 🌱"},
+        "fa": {100: "🔥 حداکثر — VIP آماده!", 75: "نزدیک است! 💎", 50: "پیشرفت خوب! 🚀", 25: "ادامه دهید! 💪", 0: "تازه شروع شده 🌱"},
+        "ko": {100: "🔥 최대 — VIP 준비!", 75: "거의 다 왔어요! 💎", 50: "좋은 진전! 🚀", 25: "계속하세요! 💪", 0: "막 시작했어요 🌱"},
+    }
+    labels = _labels.get(lang, _labels["en"])
     if pct >= 100:
-        label = "🔥 MAX — VIP Ready!"
+        label = labels[100]
     elif pct >= 75:
-        label = "Almost there! 💎"
+        label = labels[75]
     elif pct >= 50:
-        label = "Good progress! 🚀"
+        label = labels[50]
     elif pct >= 25:
-        label = "Keep going! 💪"
+        label = labels[25]
     else:
-        label = "Just started 🌱"
+        label = labels[0]
     return f"[{bar}]\n    {pct}% \u2014 {label}"
 
 def has_early_bird_badge(uid):
@@ -1776,24 +2307,51 @@ def build_profile_text(uid, lang):
     ref_count = get_referral_count(uid)
     quiz_score = get_quiz_score(uid)
     progress = get_user_vip_progress(uid)
-    bar = render_vip_progress_bar(progress)
+    bar = render_vip_progress_bar(progress, lang)
 
     # Real badges
     badge_list = [ACHIEVEMENTS[b][0] for b in badges if b in ACHIEVEMENTS]
     # Fake Early Bird badge (seed-based)
     if has_early_bird_badge(uid):
         badge_list = ["🌅 Early Bird"] + badge_list
-    badge_display = "  ".join(badge_list) if badge_list else "None yet 🌱"
+
+    _none_badge = {
+        "en": "None yet 🌱", "sw": "Bado hakuna 🌱", "ar": "لا يوجد بعد 🌱",
+        "zh": "还没有 🌱", "hi": "अभी कोई नहीं 🌱", "ru": "Пока нет 🌱",
+        "es": "Ninguno aún 🌱", "fr": "Aucun encore 🌱", "pt": "Nenhum ainda 🌱",
+        "de": "Noch keine 🌱", "ur": "ابھی کوئی نہیں 🌱", "ja": "まだなし 🌱",
+        "tr": "Henüz yok 🌱", "fa": "هنوز هیچ 🌱", "ko": "아직 없음 🌱",
+    }
+    badge_display = "  ".join(badge_list) if badge_list else _none_badge.get(lang, "None yet 🌱")
+
+    _profile_titles = {
+        "en":  ("👤 *YOUR PROFILE*", "Member for", "days", "Daily streak", "days", "People invited", "Quiz score", "Badges", "VIP Progress", "Keep active to unlock VIP access!"),
+        "sw":  ("👤 *WASIFU WAKO*", "Umekuwa mwanachama kwa", "siku", "Mfululizo wa kila siku", "siku", "Watu waliealikwa", "Alama ya maswali", "Beji", "Maendeleo ya VIP", "Endelea kuwa hai kufungua upatikanaji wa VIP!"),
+        "ar":  ("👤 *ملفك الشخصي*", "عضو منذ", "يوم", "سلسلة يومية", "يوم", "الأشخاص المدعوون", "درجة الاختبار", "الأوسمة", "تقدم VIP", "ابق نشطاً لفتح وصول VIP!"),
+        "zh":  ("👤 *您的资料*", "成员已", "天", "每日连续", "天", "邀请人数", "测验分数", "徽章", "VIP进度", "保持活跃以解锁VIP访问！"),
+        "hi":  ("👤 *आपकी प्रोफ़ाइल*", "सदस्य", "दिन से", "दैनिक स्ट्रीक", "दिन", "आमंत्रित लोग", "क्विज़ स्कोर", "बैज", "VIP प्रगति", "VIP एक्सेस अनलॉक करने के लिए सक्रिय रहें!"),
+        "ru":  ("👤 *ВАШ ПРОФИЛЬ*", "Участник уже", "дней", "Ежедневная серия", "дней", "Приглашённые люди", "Очки викторины", "Значки", "Прогресс VIP", "Будьте активны для разблокировки VIP!"),
+        "es":  ("👤 *TU PERFIL*", "Miembro desde hace", "días", "Racha diaria", "días", "Personas invitadas", "Puntuación del quiz", "Insignias", "Progreso VIP", "¡Mantente activo para desbloquear el acceso VIP!"),
+        "fr":  ("👤 *VOTRE PROFIL*", "Membre depuis", "jours", "Série quotidienne", "jours", "Personnes invitées", "Score du quiz", "Badges", "Progression VIP", "Restez actif pour débloquer l'accès VIP!"),
+        "pt":  ("👤 *SEU PERFIL*", "Membro há", "dias", "Sequência diária", "dias", "Pessoas convidadas", "Pontuação do quiz", "Emblemas", "Progresso VIP", "Fique ativo para desbloquear o acesso VIP!"),
+        "de":  ("👤 *IHR PROFIL*", "Mitglied seit", "Tagen", "Tägliche Serie", "Tagen", "Eingeladene Personen", "Quiz-Punkte", "Abzeichen", "VIP-Fortschritt", "Bleiben Sie aktiv, um VIP-Zugang freizuschalten!"),
+        "ur":  ("👤 *آپ کی پروفائل*", "رکن ہیں", "دنوں سے", "روزانہ سلسلہ", "دن", "مدعو لوگ", "کوئز سکور", "بیجز", "VIP پیشرفت", "VIP رسائی کو غیر مقفل کرنے کے لیے فعال رہیں!"),
+        "ja":  ("👤 *あなたのプロフィール*", "メンバー歴", "日", "毎日の連続", "日", "招待した人数", "クイズスコア", "バッジ", "VIP進捗", "VIPアクセスを解除するためにアクティブを維持！"),
+        "tr":  ("👤 *PROFİLİNİZ*", "Üyesiniz", "gün", "Günlük seri", "gün", "Davet edilen kişiler", "Quiz puanı", "Rozetler", "VIP İlerlemesi", "VIP erişimini açmak için aktif kalın!"),
+        "fa":  ("👤 *پروفایل شما*", "عضو به مدت", "روز", "رشته روزانه", "روز", "افراد دعوت شده", "امتیاز آزمون", "نشان‌ها", "پیشرفت VIP", "برای باز کردن دسترسی VIP فعال بمانید!"),
+        "ko":  ("👤 *내 프로필*", "회원 기간", "일", "일일 연속", "일", "초대한 사람들", "퀴즈 점수", "배지", "VIP 진행률", "VIP 액세스를 잠금 해제하려면 활성 상태를 유지하세요!"),
+    }
+    t = _profile_titles.get(lang, _profile_titles["en"])
 
     profile = (
-        "👤 *YOUR PROFILE*\n\n"
-        f"📅 Member for: *{days} days*\n"
-        f"🔥 Daily streak: *{streak_val} days*\n"
-        f"👥 People invited: *{ref_count}*\n"
-        f"🧠 Quiz score: *{quiz_score}/3*\n\n"
-        f"🏅 *Badges:*\n{badge_display}\n\n"
-        f"🎯 *VIP Progress:*\n{bar}\n\n"
-        "💎 Keep active to unlock VIP access!"
+        f"{t[0]}\n\n"
+        f"📅 {t[1]}: *{days} {t[2]}*\n"
+        f"🔥 {t[3]}: *{streak_val} {t[4]}*\n"
+        f"👥 {t[5]}: *{ref_count}*\n"
+        f"🧠 {t[6]}: *{quiz_score}/3*\n\n"
+        f"🏅 *{t[7]}:*\n{badge_display}\n\n"
+        f"🎯 *{t[8]}:*\n{bar}\n\n"
+        f"💎 {t[9]}"
     )
     return profile
 
@@ -1830,14 +2388,53 @@ COMEBACK_MSGS = {
     1: {
         "en": "👋 *Hey {name}! It's been a week!*\n\n🔥 The market has been WILD this week!\n\nTraders who stayed consistent saw amazing results.\n\nDon't miss week 2 — it's usually even BETTER! 💎",
         "sw": "👋 *Habari {name}! Imekuwa wiki!*\n\n🔥 Soko limekuwa LA MSISIMKO wiki hii!\n\nWafanyabiashara waliobaki thabiti walipata matokeo ya ajabu.\n\nUsikose wiki ya 2 — kawaida ni BORA zaidi! 💎",
+        "ar": "👋 *مرحباً {name}! مرّ أسبوع!*\n\n🔥 السوق كان مجنوناً هذا الأسبوع!\n\nالمتداولون الثابتون حققوا نتائج مذهلة.\n\nلا تفوت الأسبوع الثاني — عادةً ما يكون أفضل! 💎",
+        "zh": "👋 *嘿 {name}！已经过了一周了！*\n\n🔥 这周市场波动很大！\n\n保持稳定的交易者看到了惊人的结果。\n\n不要错过第二周 — 通常更好！ 💎",
+        "hi": "👋 *हेलो {name}! एक हफ्ता हो गया!*\n\n🔥 इस हफ्ते बाजार बहुत तेज था!\n\nस्थिर रहने वाले ट्रेडर्स ने शानदार नतीजे देखे।\n\nदूसरा हफ्ता मत चूकें — यह आमतौर पर और भी बेहतर होता है! 💎",
+        "ru": "👋 *Привет {name}! Прошла неделя!*\n\n🔥 Рынок был ДИКИМ на этой неделе!\n\nТрейдеры, оставшиеся последовательными, увидели удивительные результаты.\n\nНе пропустите 2-ю неделю — обычно ещё ЛУЧШЕ! 💎",
+        "es": "👋 *¡Hola {name}! ¡Ha pasado una semana!*\n\n🔥 ¡El mercado ha estado SALVAJE esta semana!\n\nLos traders que se mantuvieron constantes vieron resultados increíbles.\n\n¡No te pierdas la semana 2 — suele ser aún MEJOR! 💎",
+        "fr": "👋 *Bonjour {name}! Ça fait une semaine!*\n\n🔥 Le marché a été SAUVAGE cette semaine!\n\nLes traders constants ont vu des résultats incroyables.\n\nNe manquez pas la semaine 2 — c'est généralement encore MIEUX! 💎",
+        "pt": "👋 *Olá {name}! Já faz uma semana!*\n\n🔥 O mercado esteve SELVAGEM esta semana!\n\nTraders que permaneceram consistentes viram resultados incríveis.\n\nNão perca a semana 2 — geralmente é ainda MELHOR! 💎",
+        "de": "👋 *Hey {name}! Eine Woche ist vergangen!*\n\n🔥 Der Markt war diese Woche WILD!\n\nTrader, die konsequent blieben, sahen erstaunliche Ergebnisse.\n\nVerpasse nicht Woche 2 — sie ist normalerweise noch BESSER! 💎",
+        "ur": "👋 *ہیلو {name}! ایک ہفتہ ہو گیا!*\n\n🔥 اس ہفتے مارکیٹ بہت تیز تھی!\n\nمستقل رہنے والے ٹریڈرز نے شاندار نتائج دیکھے۔\n\nدوسرا ہفتہ مت چھوڑیں — عام طور پر اور بھی بہتر ہوتا ہے! 💎",
+        "ja": "👋 *こんにちは {name}！1週間が経ちました！*\n\n🔥 今週の市場は激しかったです！\n\n一貫したトレーダーは素晴らしい結果を得ました。\n\n2週目を見逃さないで — 通常さらに良くなります！ 💎",
+        "tr": "👋 *Merhaba {name}! Bir hafta geçti!*\n\n🔥 Bu hafta piyasa ÇILGIN bir haftaydı!\n\nTutarlı kalan yatırımcılar muhteşem sonuçlar gördü.\n\n2. haftayı kaçırma — genellikle daha da İYİ! 💎",
+        "fa": "👋 *سلام {name}! یک هفته گذشت!*\n\n🔥 این هفته بازار دیوانه‌وار بود!\n\nمعامله‌گرانی که ثابت قدم ماندند نتایج شگفت‌انگیزی دیدند.\n\nهفته دوم را از دست ندهید — معمولاً بهتر هم هست! 💎",
+        "ko": "👋 *안녕하세요 {name}! 일주일이 지났어요!*\n\n🔥 이번 주 시장은 엄청났어요!\n\n꾸준히 한 트레이더들은 놀라운 결과를 얻었어요.\n\n2주차를 놓치지 마세요 — 보통 더 좋아집니다! 💎",
     },
     2: {
         "en": "🌟 *{name}, you're 2 weeks in!*\n\n💎 This is where real traders are MADE.\n\nThe ones who push through week 2 are the ones who change their lives.\n\nYou've got this. Come back and WIN! 🏆",
         "sw": "🌟 *{name}, uko wiki 2!*\n\n💎 Hapa ndipo wafanyabiashara wa kweli WANAUNDWA.\n\nWale wanaopita wiki ya 2 ndio wanaobadilisha maisha yao.\n\nUnaweza. Rudi na USHINDE! 🏆",
+        "ar": "🌟 *{name}, مرّت أسبوعان!*\n\n💎 هنا يُصنع المتداولون الحقيقيون.\n\nالذين يتخطون الأسبوع الثاني هم من يغيرون حياتهم.\n\nأنت قادر. عد وافز! 🏆",
+        "zh": "🌟 *{name}，已经2周了！*\n\n💎 这里是真正的交易者被塑造的地方。\n\n那些坚持过第二周的人改变了他们的生活。\n\n你能做到。回来赢吧！ 🏆",
+        "hi": "🌟 *{name}, 2 हफ्ते हो गए!*\n\n💎 यहीं असली ट्रेडर्स बनते हैं।\n\nजो दूसरे हफ्ते से गुजरते हैं वही अपनी जिंदगी बदलते हैं।\n\nआप कर सकते हैं। वापस आएं और जीतें! 🏆",
+        "ru": "🌟 *{name}, уже 2 недели!*\n\n💎 Именно здесь СОЗДАЮТСЯ настоящие трейдеры.\n\nТе, кто проходит 2-ю неделю — те, кто меняет свою жизнь.\n\nУ вас получится. Возвращайтесь и ПОБЕЖДАЙТЕ! 🏆",
+        "es": "🌟 *{name}, ¡llevas 2 semanas!*\n\n💎 Aquí es donde se HACEN los verdaderos traders.\n\nLos que superan la semana 2 son los que cambian sus vidas.\n\n¡Tú puedes. Regresa y GANA! 🏆",
+        "fr": "🌟 *{name}, vous êtes à 2 semaines!*\n\n💎 C'est ici que les vrais traders sont CRÉÉS.\n\nCeux qui passent la semaine 2 sont ceux qui changent leur vie.\n\nVous pouvez y arriver. Revenez et GAGNEZ! 🏆",
+        "pt": "🌟 *{name}, você está há 2 semanas!*\n\n💎 É aqui que os verdadeiros traders são FEITOS.\n\nOs que passam pela semana 2 são os que mudam suas vidas.\n\nVocê consegue. Volte e VENÇA! 🏆",
+        "de": "🌟 *{name}, du bist seit 2 Wochen dabei!*\n\n💎 Hier werden echte Trader GEMACHT.\n\nDiejenigen, die Woche 2 durchstehen, sind diejenigen, die ihr Leben verändern.\n\nDu schaffst das. Komm zurück und GEWINNE! 🏆",
+        "ur": "🌟 *{name}، 2 ہفتے ہو گئے!*\n\n💎 یہیں اصل ٹریڈرز بنتے ہیں۔\n\nجو دوسرے ہفتے سے گزرتے ہیں وہی اپنی زندگی بدلتے ہیں۔\n\nآپ کر سکتے ہیں۔ واپس آئیں اور جیتیں! 🏆",
+        "ja": "🌟 *{name}、2週間が経ちました！*\n\n💎 ここが本物のトレーダーが作られる場所です。\n\n2週目を乗り越えた人が人生を変えます。\n\nあなたならできます。戻って勝ちましょう！ 🏆",
+        "tr": "🌟 *{name}, 2 haftadır buradasın!*\n\n💎 Gerçek yatırımcılar burada YAPILIR.\n\n2. haftayı geçenler hayatlarını değiştirenlerdir.\n\nBunu başarabilirsin. Geri dön ve KAZAN! 🏆",
+        "fa": "🌟 *{name}، دو هفته گذشت!*\n\n💎 اینجاست که معامله‌گران واقعی ساخته می‌شوند.\n\nکسانی که از هفته دوم عبور می‌کنند زندگیشان را تغییر می‌دهند.\n\nشما می‌توانید. برگردید و ببرید! 🏆",
+        "ko": "🌟 *{name}，2주가 됐어요!*\n\n💎 여기서 진짜 트레이더가 만들어집니다.\n\n2주차를 버텨낸 사람들이 인생을 바꿉니다.\n\n당신도 할 수 있어요. 돌아와서 이기세요! 🏆",
     },
     3: {
         "en": "🚀 *{name} — 3 weeks strong!*\n\n👑 You're in the top 10% of traders just by STAYING.\n\nMost quit in week 1. You're still here.\n\nThat's the trader's mindset. Don't stop now — your breakthrough is CLOSE! ⚡",
         "sw": "🚀 *{name} — Wiki 3 imara!*\n\n👑 Uko kwenye asilimia 10 ya juu ya wafanyabiashara kwa KUBAKI tu.\n\nWengi walikata tamaa wiki ya 1. Bado uko hapa.\n\nHiyo ndiyo akili ya mfanyabiashara. Usiacha sasa — mafanikio yako YAKO KARIBU! ⚡",
+        "ar": "🚀 *{name} — 3 أسابيع قوية!*\n\n👑 أنت في أفضل 10% من المتداولين فقط بالبقاء.\n\nمعظم الناس استسلموا في الأسبوع الأول. أنت لا تزال هنا.\n\nهذه عقلية المتداول. لا تتوقف الآن — اختراقك قريب! ⚡",
+        "zh": "🚀 *{name} — 坚持了3周！*\n\n👑 仅仅通过留下来，你就进入了前10%的交易者。\n\n大多数人在第一周就放弃了。你还在这里。\n\n这就是交易者的心态。现在不要停 — 你的突破就在眼前！ ⚡",
+        "hi": "🚀 *{name} — 3 हफ्ते मजबूत!*\n\n👑 सिर्फ रुकने से आप ट्रेडर्स के शीर्ष 10% में हैं।\n\nज्यादातर लोग पहले हफ्ते में छोड़ देते हैं। आप अभी भी यहाँ हैं।\n\nयही ट्रेडर की मानसिकता है। अभी मत रोकें — आपकी सफलता करीब है! ⚡",
+        "ru": "🚀 *{name} — 3 недели на высоте!*\n\n👑 Вы в топ 10% трейдеров просто тем, что ОСТАЁТЕСЬ.\n\nБольшинство сдались на 1-й неделе. Вы всё ещё здесь.\n\nЭто мышление трейдера. Не останавливайтесь — ваш прорыв БЛИЗКО! ⚡",
+        "es": "🚀 *{name} — ¡3 semanas fuertes!*\n\n👑 Estás en el top 10% de traders solo por QUEDARTE.\n\nLa mayoría abandonó en la semana 1. Tú sigues aquí.\n\nEsa es la mentalidad del trader. ¡No te detengas — tu avance está CERCA! ⚡",
+        "fr": "🚀 *{name} — 3 semaines fortes!*\n\n👑 Vous êtes dans le top 10% des traders rien qu'en RESTANT.\n\nLa plupart ont abandonné en semaine 1. Vous êtes encore là.\n\nC'est l'état d'esprit du trader. N'arrêtez pas maintenant — votre percée est PROCHE! ⚡",
+        "pt": "🚀 *{name} — 3 semanas fortes!*\n\n👑 Você está no top 10% dos traders só por FICAR.\n\nA maioria desistiu na semana 1. Você ainda está aqui.\n\nEssa é a mentalidade do trader. Não pare agora — seu avanço está PERTO! ⚡",
+        "de": "🚀 *{name} — 3 Wochen stark!*\n\n👑 Du bist allein durch BLEIBEN in den Top 10% der Trader.\n\nDie meisten gaben in Woche 1 auf. Du bist noch hier.\n\nDas ist die Trader-Mentalität. Hör jetzt nicht auf — dein Durchbruch ist NAH! ⚡",
+        "ur": "🚀 *{name} — 3 ہفتے مضبوط!*\n\n👑 صرف ٹھہرنے سے آپ ٹریڈرز کے سرفہرست 10% میں ہیں۔\n\nزیادہ تر لوگ پہلے ہفتے میں چھوڑ دیتے ہیں۔ آپ ابھی بھی یہاں ہیں۔\n\nیہی ٹریڈر کی ذہنیت ہے۔ ابھی مت رکیں — آپ کی کامیابی قریب ہے! ⚡",
+        "ja": "🚀 *{name} — 3週間強い！*\n\n👑 留まるだけでトレーダーの上位10%にいます。\n\nほとんどの人が1週目で辞めました。あなたはまだここにいる。\n\nそれがトレーダーのマインドセットです。今止まるな — あなたのブレークスルーはすぐそこ！ ⚡",
+        "tr": "🚀 *{name} — 3 hafta güçlü!*\n\n👑 Sadece KALARAK yatırımcıların ilk %10'undasın.\n\nÇoğu 1. haftada bıraktı. Sen hâlâ buradasın.\n\nBu yatırımcının zihniyetidir. Şimdi durma — atılımın YAKINDA! ⚡",
+        "fa": "🚀 *{name} — 3 هفته قوی!*\n\n👑 فقط با ماندن در ۱۰٪ برتر معامله‌گران هستید.\n\nبیشتر مردم در هفته اول تسلیم شدند. شما هنوز اینجا هستید.\n\nاین ذهنیت معامله‌گر است. الان متوقف نشوید — پیشرفت شما نزدیک است! ⚡",
+        "ko": "🚀 *{name} — 3주 동안 강하게!*\n\n👑 그냥 남아 있는 것만으로도 트레이더 상위 10%입니다.\n\n대부분은 1주차에 그만뒀어요. 당신은 아직 여기 있어요.\n\n이것이 트레이더의 마인드셋입니다. 지금 멈추지 마세요 — 돌파구가 가깝습니다! ⚡",
     },
 }
 
@@ -1896,6 +2493,19 @@ async def send_fomo_message(context):
     fomo_msgs = {
         "en": f"👀 *Still thinking about {service}?*\n\nWhile you're deciding, others are already winning...\n\nDon't let hesitation cost you profits. 💰\n\n👇 Take action now:",
         "sw": f"👀 *Bado unafikiri kuhusu {service}?*\n\nUnapoamua, wengine wanashinda tayari...\n\nUsiache kusita kukugharimu faida. 💰\n\n👇 Chukua hatua sasa:",
+        "ar": f"👀 *لا تزال تفكر في {service}؟*\n\nبينما تتردد، الآخرون يفوزون بالفعل...\n\nلا تدع التردد يكلفك الأرباح. 💰\n\n👇 تصرف الآن:",
+        "zh": f"👀 *还在考虑{service}吗？*\n\n当你犹豫时，别人已经在赢了...\n\n不要让犹豫让你损失利润。 💰\n\n👇 立即行动：",
+        "hi": f"👀 *अभी भी {service} के बारे में सोच रहे हैं?*\n\nजब आप तय कर रहे हैं, दूसरे पहले से जीत रहे हैं...\n\nहिचकिचाहट को आपका मुनाफा न छिनने दें। 💰\n\n👇 अभी कदम उठाएं:",
+        "ru": f"👀 *Всё ещё думаете о {service}?*\n\nПока вы решаете, другие уже побеждают...\n\nНе позволяйте нерешительности лишить вас прибыли. 💰\n\n👇 Действуйте сейчас:",
+        "es": f"👀 *¿Todavía pensando en {service}?*\n\nMientras decides, otros ya están ganando...\n\nNo dejes que la duda te cueste ganancias. 💰\n\n👇 ¡Actúa ahora!",
+        "fr": f"👀 *Vous pensez encore à {service}?*\n\nPendant que vous réfléchissez, d'autres gagnent déjà...\n\nNe laissez pas l'hésitation vous coûter des profits. 💰\n\n👇 Agissez maintenant:",
+        "pt": f"👀 *Ainda pensando em {service}?*\n\nEnquanto você decide, outros já estão ganhando...\n\nNão deixe a hesitação custar seus lucros. 💰\n\n👇 Aja agora:",
+        "de": f"👀 *Denken Sie noch über {service} nach?*\n\nWährend Sie entscheiden, gewinnen andere bereits...\n\nLassen Sie Zögern Ihre Gewinne nicht kosten. 💰\n\n👇 Handeln Sie jetzt:",
+        "ur": f"👀 *ابھی بھی {service} کے بارے میں سوچ رہے ہیں؟*\n\nجب آپ فیصلہ کر رہے ہیں، دوسرے پہلے سے جیت رہے ہیں...\n\nہچکچاہٹ کو آپ کا منافع نہ لینے دیں۔ 💰\n\n👇 ابھی قدم اٹھائیں:",
+        "ja": f"👀 *まだ{service}を考えていますか？*\n\nあなたが決めている間、他の人はすでに勝っています...\n\n躊躇があなたの利益を奪わないようにしましょう。 💰\n\n👇 今すぐ行動を:",
+        "tr": f"👀 *Hâlâ {service} hakkında mı düşünüyorsunuz?*\n\nSiz karar verirken başkaları zaten kazanıyor...\n\nTereddüdün kârınıza mal olmasına izin vermeyin. 💰\n\n👇 Şimdi harekete geçin:",
+        "fa": f"👀 *هنوز به {service} فکر می‌کنید؟*\n\nوقتی تصمیم می‌گیرید، دیگران قبلاً دارند می‌برند...\n\nاجازه ندهید تردید سودتان را از بین ببرد. 💰\n\n👇 الان اقدام کنید:",
+        "ko": f"👀 *아직도 {service}에 대해 생각하고 있나요?*\n\n당신이 결정하는 동안 다른 사람들은 이미 이기고 있습니다...\n\n망설임이 이익을 빼앗아 가지 않도록 하세요. 💰\n\n👇 지금 행동하세요:",
     }
     try:
         await context.bot.send_message(
@@ -1932,6 +2542,19 @@ async def send_anti_ghost(context):
     msgs = {
         "en": f"👻 *Hey {name}! Everything okay?*\n\nWe haven't seen you in a while...\n\n🔥 While you were away, traders in our community made serious moves.\n\n💎 Your spot is still here — don't let it go to waste!\n\n👇 Come back:",
         "sw": f"👻 *Hee {name}! Kila kitu sawa?*\n\nHatujakuona kwa muda...\n\n🔥 Ulipokuwa mbali, wafanyabiashara katika jumuiya yetu walifanya vizuri sana.\n\n💎 Nafasi yako bado ipo hapa — usiiacha ipotee!\n\n👇 Rudi:",
+        "ar": f"👻 *مرحباً {name}! هل كل شيء على ما يرام؟*\n\nلم نرك منذ فترة...\n\n🔥 أثناء غيابك، أجرى المتداولون في مجتمعنا صفقات رائعة.\n\n💎 مكانك لا يزال هنا — لا تضيعه!\n\n👇 عد الآن:",
+        "zh": f"👻 *嘿 {name}！一切都好吗？*\n\n我们好久没见到你了...\n\n🔥 你不在的时候，我们社区的交易者做了精彩的操作。\n\n💎 你的位置还在这里 — 不要浪费它！\n\n👇 回来吧:",
+        "hi": f"👻 *हेलो {name}! सब ठीक है?*\n\nहमने आपको काफी समय से नहीं देखा...\n\n🔥 जब आप दूर थे, हमारे समुदाय के ट्रेडर्स ने शानदार प्रदर्शन किया।\n\n💎 आपकी जगह अभी भी यहाँ है — इसे बर्बाद न करें!\n\n👇 वापस आएं:",
+        "ru": f"👻 *Привет {name}! Всё в порядке?*\n\nМы давно вас не видели...\n\n🔥 Пока вас не было, трейдеры в нашем сообществе совершили серьёзные сделки.\n\n💎 Ваше место всё ещё здесь — не дайте ему пропасть!\n\n👇 Возвращайтесь:",
+        "es": f"👻 *¡Hola {name}! ¿Todo bien?*\n\nNo te hemos visto en un tiempo...\n\n🔥 Mientras estabas fuera, los traders de nuestra comunidad hicieron movimientos serios.\n\n💎 Tu lugar sigue aquí — ¡no lo desperdicies!\n\n👇 Regresa:",
+        "fr": f"👻 *Hé {name}! Tout va bien?*\n\nNous ne vous avons pas vu depuis un moment...\n\n🔥 Pendant votre absence, les traders de notre communauté ont fait de grands mouvements.\n\n💎 Votre place est toujours là — ne la gaspillez pas!\n\n👇 Revenez:",
+        "pt": f"👻 *Oi {name}! Tudo bem?*\n\nNão te vemos faz um tempo...\n\n🔥 Enquanto você estava fora, os traders da nossa comunidade fizeram movimentos sérios.\n\n💎 Seu lugar ainda está aqui — não deixe ir desperdiçado!\n\n👇 Volte:",
+        "de": f"👻 *Hey {name}! Alles okay?*\n\nWir haben dich eine Weile nicht gesehen...\n\n🔥 Während du weg warst, machten Trader in unserer Community ernsthafte Züge.\n\n💎 Dein Platz ist noch hier — lass ihn nicht verschwenden!\n\n👇 Komm zurück:",
+        "ur": f"👻 *ہیلو {name}! سب ٹھیک ہے؟*\n\nہم نے آپ کو کافی عرصے سے نہیں دیکھا...\n\n🔥 جب آپ دور تھے، ہماری کمیونٹی کے ٹریڈرز نے زبردست اقدامات کیے۔\n\n💎 آپ کی جگہ ابھی بھی یہاں ہے — اسے ضائع نہ ہونے دیں!\n\n👇 واپس آئیں:",
+        "ja": f"👻 *こんにちは {name}！大丈夫ですか？*\n\nしばらく姿を見ていませんでした...\n\n🔥 あなたがいない間、コミュニティのトレーダーたちは素晴らしい動きをしました。\n\n💎 あなたの場所はまだここにあります — 無駄にしないで！\n\n👇 戻ってきてください:",
+        "tr": f"👻 *Merhaba {name}! Her şey yolunda mı?*\n\nSeni bir süredir görmedik...\n\n🔥 Sen yokken, topluluğumuzdaki yatırımcılar ciddi hamleler yaptı.\n\n💎 Yerin hâlâ burada — israf etme!\n\n👇 Geri dön:",
+        "fa": f"👻 *سلام {name}! همه چیز خوب است؟*\n\nمدتی است شما را ندیده‌ایم...\n\n🔥 در غیاب شما، معامله‌گران جامعه ما حرکات جدی انجام دادند.\n\n💎 جای شما هنوز اینجاست — هدرش ندهید!\n\n👇 برگردید:",
+        "ko": f"👻 *안녕하세요 {name}! 다 잘 되고 있나요?*\n\n한동안 뵙지 못했어요...\n\n🔥 자리를 비우는 동안 커뮤니티의 트레이더들이 엄청난 움직임을 보였습니다.\n\n💎 당신의 자리는 아직 여기 있습니다 — 낭비하지 마세요!\n\n👇 돌아오세요:",
     }
     try:
         await context.bot.send_message(
@@ -2036,7 +2659,7 @@ def build_welcome_text(lang, name, visit_count=1):
     """Build welcome text with smart greeting + daily quote"""
     urgency = get_urgency(lang)
     greeting = get_smart_greeting(lang)
-    quote = get_daily_quote()
+    quote = get_daily_quote(lang)
     base = ui("welcome", lang).format(
         name=escape_md(name), urgency=urgency, business=BUSINESS_NAME)
     if visit_count >= 3:
@@ -3898,8 +4521,16 @@ def lang_keyboard():
     ])
 
 def main_menu(lang):
+    # Referral row — add Stories button only if admin has posted stories
+    ref_row = [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral")]
+    try:
+        if has_stories():
+            ref_row.append(InlineKeyboardButton(ui("btn_stories", lang), callback_data="do_stories"))
+    except:
+        pass
     rows = [
         [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
+        ref_row,
         [InlineKeyboardButton(ui("btn_whats_new", lang), callback_data="do_whats_new"),
          InlineKeyboardButton(ui("btn_vip_results", lang), callback_data="do_vip_results")],
         [InlineKeyboardButton(ui("btn_tip", lang), callback_data="do_tip"),
@@ -3910,16 +4541,8 @@ def main_menu(lang):
          InlineKeyboardButton(ui("btn_profile", lang), callback_data="do_profile")],
         [InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")],
         [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
+        [InlineKeyboardButton(ui("btn_language", lang), callback_data="change_lang")],
     ]
-    # Referral row — add Stories button only if admin has posted stories
-    ref_row = [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral")]
-    try:
-        if has_stories():
-            ref_row.append(InlineKeyboardButton(ui("btn_stories", lang), callback_data="do_stories"))
-    except:
-        pass
-    rows.append(ref_row)
-    rows.append([InlineKeyboardButton(ui("btn_language", lang), callback_data="change_lang")])
     return InlineKeyboardMarkup(rows)
 
 def services_menu(lang):
@@ -4329,10 +4952,13 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         message_id=replied_msg.message_id,
                         reply_markup=kb)
             elif context.args:
-                # Plain text from command args — send as-is
+                # Extract full text after /broadcast preserving newlines
+                raw = update.message.text or ""
+                space = raw.find(" ")
+                text_to_send = raw[space+1:] if space != -1 else raw
                 await context.bot.send_message(
                     chat_id=uid,
-                    text=" ".join(context.args),
+                    text=text_to_send,
                     parse_mode=None,
                     reply_markup=kb)
 
@@ -4460,7 +5086,10 @@ async def _show_results_history(context, cid, lang, page=0):
     total = len(results)
     page = max(0, min(page, total - 1))
     row = results[page]
-    rid, caption, media_id, media_type, saved_at = row
+    # Handle both old rows (5 cols) and new rows (7 cols)
+    rid, caption, media_id, media_type, saved_at = row[0], row[1], row[2], row[3], row[4]
+    src_chat_id    = row[5] if len(row) > 5 else None
+    src_message_id = row[6] if len(row) > 6 else None
 
     header_texts = {
         "en": f"📅 *PAST VIP RESULTS*\n\n🗓 Session: _{saved_at}_\n📊 Result {page+1} of {total}\n\n",
@@ -4487,11 +5116,13 @@ async def _show_results_history(context, cid, lang, page=0):
         "pt": "🚀 Entrar no VIP Agora", "de": "🚀 VIP jetzt beitreten",
         "ur": "🚀 ابھی VIP میں شامل ہوں", "ja": "🚀 今すぐVIPに参加",
     }
+    _nav_back = {"en":"Back","sw":"Nyuma","ar":"السابق","zh":"上一页","hi":"पिछला","ru":"Назад","es":"Anterior","fr":"Précédent","pt":"Anterior","de":"Zurück","ur":"پچھلا","ja":"前へ","tr":"Geri","fa":"قبلی","ko":"이전"}
+    _nav_next = {"en":"Next","sw":"Mbele","ar":"التالي","zh":"下一页","hi":"अगला","ru":"Вперёд","es":"Siguiente","fr":"Suivant","pt":"Próximo","de":"Weiter","ur":"اگلا","ja":"次へ","tr":"İleri","fa":"بعدی","ko":"다음"}
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ " + ("Nyuma" if lang == "sw" else "Back"), callback_data=f"results_page_{page-1}"))
+        nav_row.append(InlineKeyboardButton("⬅️ " + _nav_back.get(lang, "Back"), callback_data=f"results_page_{page-1}"))
     if page < total - 1:
-        nav_row.append(InlineKeyboardButton("➡️ " + ("Mbele" if lang == "sw" else "Next"), callback_data=f"results_page_{page+1}"))
+        nav_row.append(InlineKeyboardButton("➡️ " + _nav_next.get(lang, "Next"), callback_data=f"results_page_{page+1}"))
 
     back_kb_rows = []
     if nav_row:
@@ -4501,22 +5132,34 @@ async def _show_results_history(context, cid, lang, page=0):
     back_kb = InlineKeyboardMarkup(back_kb_rows)
 
     msg = None
-    if media_id and media_type == "photo":
+    if src_chat_id and src_message_id:
+        # Use copy_message - preserves original media without file_id expiry issues
+        try:
+            msg = await context.bot.copy_message(
+                chat_id=cid,
+                from_chat_id=src_chat_id,
+                message_id=src_message_id,
+                caption=header + (caption or ""),
+                parse_mode="Markdown",
+                reply_markup=back_kb,
+                protect_content=True
+            )
+        except Exception as e:
+            logger.warning(f"copy_message failed: {e}")
+    if msg is None and media_id and media_type == "photo":
         try:
             msg = await context.bot.send_photo(
                 chat_id=cid, photo=media_id,
                 caption=header + (caption or ""),
                 parse_mode="Markdown", protect_content=True, reply_markup=back_kb)
-        except:
-            pass
-    elif media_id and media_type == "video":
+        except: pass
+    elif msg is None and media_id and media_type == "video":
         try:
             msg = await context.bot.send_video(
                 chat_id=cid, video=media_id,
                 caption=header + (caption or ""),
                 parse_mode="Markdown", protect_content=True, reply_markup=back_kb)
-        except:
-            pass
+        except: pass
     if msg is None:
         msg = await send_protected_text(context, cid, header + (caption or ""), back_kb)
     track_msg(cid, msg.message_id)
@@ -4584,9 +5227,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await typing_action(cid, context, 1.0)
         visit_count = context.user_data.get("visit_count", 1)
         welcome_text = build_welcome_text(lang, user.first_name, visit_count)
+        _got_it = {
+            "en": "✅ Got it!", "sw": "✅ Nimepokea!", "ar": "✅ فهمت!",
+            "zh": "✅ 明白了!", "hi": "✅ ठीक है!", "ru": "✅ Понял!",
+            "es": "✅ ¡Entendido!", "fr": "✅ Compris!", "pt": "✅ Entendido!",
+            "de": "✅ Verstanden!", "ur": "✅ سمجھ گیا!", "ja": "✅ わかりました!",
+            "tr": "✅ Anlaşıldı!", "fa": "✅ متوجه شدم!", "ko": "✅ 알겠습니다!",
+            "it": "✅ Capito!", "pl": "✅ Rozumiem!", "uk": "✅ Зрозуміло!",
+            "kk": "✅ Түсіндім!", "cs": "✅ Rozumím!",
+        }
+        got_it_text = _got_it.get(lang, "✅ Got it!")
         msg = await send_welcome_media(
             context, cid,
-            f"✅ Got it!\n\n{welcome_text}", main_menu(lang))
+            f"{got_it_text}\n\n{welcome_text}", main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
@@ -5250,29 +5903,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         streak, max_streak = get_streak(user.id)
         if streak == 0:
             streak = 1
-        badge_emoji, badge_name = get_streak_badge(streak)
-        next_days, next_emoji, next_name = get_next_badge(streak)
-        streak_texts = {
-            "en": (
-                f"🔥 *YOUR DAILY STREAK*\n\n"
-                f"{badge_emoji} *{badge_name}*\n\n"
-                f"📅 Current streak: *{streak} days* 🔥\n"
-                f"🏆 Best streak: *{max_streak} days*\n\n"
-                f"{'🎯 Next badge: ' + next_emoji + ' *' + next_name + '* in *' + str(next_days - streak) + ' days!*' if next_days else '🌟 *You have reached the highest rank!*'}\n\n"
-                f"Keep coming back every day to grow your streak!\n"
-                f"Active members get priority rewards from our team. 💎"
-            ),
-            "sw": (
-                f"🔥 *STREAK YAKO YA KILA SIKU*\n\n"
-                f"{badge_emoji} *{badge_name}*\n\n"
-                f"📅 Streak ya sasa: *siku {streak}* 🔥\n"
-                f"🏆 Streak bora: *siku {max_streak}*\n\n"
-                f"{'🎯 Badge inayofuata: ' + next_emoji + ' *' + next_name + '* baada ya siku *' + str(next_days - streak) + '*!' if next_days else '🌟 *Umefika kiwango cha juu kabisa!*'}\n\n"
-                f"Endelea kurudi kila siku kukuza streak yako!\n"
-                f"Wanachama wanaoshiriki hupata zawadi za kipaumbele. 💎"
-            ),
-        }
-        streak_text = streak_texts.get(lang, streak_texts["en"])
+        badge_emoji, badge_name = get_streak_badge(streak, lang)
+        next_days, next_emoji, next_name = get_next_badge(streak, lang)
+        _s_title = {"en":"🔥 *YOUR DAILY STREAK*","sw":"🔥 *STREAK YAKO YA KILA SIKU*","ar":"🔥 *سلسلتك اليومية*","zh":"🔥 *您的每日连续*","hi":"🔥 *आपकी दैनिक स्ट्रीक*","ru":"🔥 *ВАША ЕЖЕДНЕВНАЯ СЕРИЯ*","es":"🔥 *TU RACHA DIARIA*","fr":"🔥 *VOTRE SÉRIE QUOTIDIENNE*","pt":"🔥 *SUA SEQUÊNCIA DIÁRIA*","de":"🔥 *IHRE TÄGLICHE SERIE*","ur":"🔥 *آپ کا روزانہ سلسلہ*","ja":"🔥 *あなたの毎日の連続*","tr":"🔥 *GÜNLÜK SERİNİZ*","fa":"🔥 *رشته روزانه شما*","ko":"🔥 *나의 일일 연속*"}.get(lang,"🔥 *YOUR DAILY STREAK*")
+        _s_cur = {"en":"Current streak","sw":"Streak ya sasa","ar":"السلسلة الحالية","zh":"当前连续","hi":"वर्तमान स्ट्रीक","ru":"Текущая серия","es":"Racha actual","fr":"Série actuelle","pt":"Sequência atual","de":"Aktuelle Serie","ur":"موجودہ سلسلہ","ja":"現在の連続","tr":"Mevcut seri","fa":"رشته فعلی","ko":"현재 연속"}.get(lang,"Current streak")
+        _s_best = {"en":"Best streak","sw":"Streak bora","ar":"أفضل سلسلة","zh":"最佳连续","hi":"सर्वश्रेष्ठ स्ट्रीक","ru":"Лучшая серия","es":"Mejor racha","fr":"Meilleure série","pt":"Melhor sequência","de":"Beste Serie","ur":"بہترین سلسلہ","ja":"ベスト連続","tr":"En iyi seri","fa":"بهترین رشته","ko":"최고 연속"}.get(lang,"Best streak")
+        _s_next = {"en":"Next badge","sw":"Badge inayofuata","ar":"الشارة التالية","zh":"下一个徽章","hi":"अगला बैज","ru":"Следующий значок","es":"Siguiente insignia","fr":"Prochain badge","pt":"Próximo emblema","de":"Nächstes Abzeichen","ur":"اگلا بیج","ja":"次のバッジ","tr":"Sonraki rozet","fa":"نشان بعدی","ko":"다음 배지"}.get(lang,"Next badge")
+        _s_days = {"en":"days","sw":"siku","ar":"يوم","zh":"天","hi":"दिन","ru":"дней","es":"días","fr":"jours","pt":"dias","de":"Tagen","ur":"دن","ja":"日","tr":"gün","fa":"روز","ko":"일"}.get(lang,"days")
+        _s_in = {"en":"in","sw":"baada ya siku","ar":"في","zh":"还需","hi":"में","ru":"через","es":"en","fr":"dans","pt":"em","de":"in","ur":"میں","ja":"あと","tr":"içinde","fa":"در","ko":"후에"}.get(lang,"in")
+        _s_top = {"en":"🌟 *You have reached the highest rank!*","sw":"🌟 *Umefika kiwango cha juu kabisa!*","ar":"🌟 *لقد وصلت إلى أعلى رتبة!*","zh":"🌟 *您已达到最高级别！*","hi":"🌟 *आप सर्वोच्च रैंक पर पहुंच गए!*","ru":"🌟 *Вы достигли высшего ранга!*","es":"🌟 *¡Has alcanzado el rango más alto!*","fr":"🌟 *Vous avez atteint le rang le plus élevé!*","pt":"🌟 *Você alcançou o mais alto nível!*","de":"🌟 *Sie haben den höchsten Rang erreicht!*","ur":"🌟 *آپ نے سب سے اعلیٰ درجہ حاصل کر لیا!*","ja":"🌟 *最高ランクに達しました！*","tr":"🌟 *En yüksek rütbeye ulaştınız!*","fa":"🌟 *به بالاترین رتبه رسیدید!*","ko":"🌟 *최고 등급에 도달했습니다!*"}.get(lang,"🌟 *You have reached the highest rank!*")
+        _s_keep = {"en":"Keep coming back every day to grow your streak!\nActive members get priority rewards. 💎","sw":"Endelea kurudi kila siku kukuza streak yako!\nWanachama wanaoshiriki hupata zawadi za kipaumbele. 💎","ar":"استمر في العودة كل يوم لتنمية سلسلتك!\nالأعضاء النشطون يحصلون على مكافآت ذات أولوية. 💎","zh":"每天回来增长你的连续！\n活跃会员获得优先奖励。 💎","hi":"हर दिन वापस आकर अपनी स्ट्रीक बढ़ाएं!\nसक्रिय सदस्यों को प्राथमिकता पुरस्कार मिलते हैं। 💎","ru":"Возвращайтесь каждый день для роста серии!\nАктивные участники получают приоритетные награды. 💎","es":"¡Vuelve cada día para crecer tu racha!\nLos miembros activos obtienen recompensas prioritarias. 💎","fr":"Revenez chaque jour pour faire grandir votre série!\nLes membres actifs obtiennent des récompenses prioritaires. 💎","pt":"Continue voltando todo dia para crescer sua sequência!\nMembros ativos recebem recompensas prioritárias. 💎","de":"Komm jeden Tag zurück, um deine Serie zu steigern!\nAktive Mitglieder erhalten Prioritätsbelohnungen. 💎","ur":"اپنے سلسلے کو بڑھانے کے لیے ہر روز واپس آئیں!\nفعال اراکین کو ترجیحی انعامات ملتے ہیں۔ 💎","ja":"毎日戻って連続を伸ばしましょう！\nアクティブなメンバーは優先報酬を受け取ります。 💎","tr":"Seriyi büyütmek için her gün geri dön!\nAktif üyeler öncelikli ödüller alır. 💎","fa":"هر روز برگردید تا رشته خود را رشد دهید!\nاعضای فعال پاداش‌های اولویت‌دار دریافت می‌کنند. 💎","ko":"매일 돌아와서 연속을 늘리세요!\n활성 회원은 우선 보상을 받습니다. 💎"}.get(lang,"Keep coming back every day to grow your streak!\nActive members get priority rewards. 💎")
+        next_line = f"🎯 {_s_next}: {next_emoji} *{next_name}* {_s_in} *{next_days - streak} {_s_days}!*" if next_days else _s_top
+        streak_text = (
+            f"{_s_title}\n\n"
+            f"{badge_emoji} *{badge_name}*\n\n"
+            f"📅 {_s_cur}: *{streak} {_s_days}* 🔥\n"
+            f"🏆 {_s_best}: *{max_streak} {_s_days}*\n\n"
+            f"{next_line}\n\n"
+            f"{_s_keep}"
+        )
         img = rand_img(SERVICE_PHOTOS, context.user_data, "last_img_streak")
         msg = await send_protected_photo(
             context, cid, img, streak_text,
@@ -5283,7 +5932,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         track_msg(cid, msg.message_id)
 
     elif data == "do_tip":
-        tip = get_daily_binary_tip()
+        tip = get_daily_binary_tip(lang)
         msg = await send_protected_text(
             context, cid, tip,
             InlineKeyboardMarkup([
@@ -5326,9 +5975,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         correct_count = context.user_data.get("quiz_correct", 0)
         if ans == QUIZ_QUESTIONS[q_idx]["answer"]:
             correct_count += 1
-            feedback = f"✅ *Correct!* {QUIZ_QUESTIONS[q_idx]['explanation']}"
+            _correct = {"en":"✅ *Correct!*","sw":"✅ *Sahihi!*","ar":"✅ *صحيح!*","zh":"✅ *正确！*","hi":"✅ *सही!*","ru":"✅ *Правильно!*","es":"✅ *¡Correcto!*","fr":"✅ *Correct!*","pt":"✅ *Correto!*","de":"✅ *Richtig!*","ur":"✅ *درست!*","ja":"✅ *正解！*","tr":"✅ *Doğru!*","fa":"✅ *درست!*","ko":"✅ *정답!"}.get(lang,"✅ *Correct!*")
+            feedback = f"{_correct} {QUIZ_QUESTIONS[q_idx]['explanation']}"
         else:
-            feedback = f"❌ *Not quite!* {QUIZ_QUESTIONS[q_idx]['explanation']}"
+            _wrong = {"en":"❌ *Not quite!*","sw":"❌ *Si sahihi!*","ar":"❌ *ليس صحيحاً!*","zh":"❌ *不对！*","hi":"❌ *सही नहीं!*","ru":"❌ *Не совсем!*","es":"❌ *¡No del todo!*","fr":"❌ *Pas tout à fait!*","pt":"❌ *Não exatamente!*","de":"❌ *Nicht ganz!*","ur":"❌ *بالکل نہیں!*","ja":"❌ *惜しい！*","tr":"❌ *Tam değil!*","fa":"❌ *نه دقیقاً!*","ko":"❌ *아쉬워요!"}.get(lang,"❌ *Not quite!*")
+            feedback = f"{_wrong} {QUIZ_QUESTIONS[q_idx]['explanation']}"
         context.user_data["quiz_correct"] = correct_count
         next_q = q_idx + 1
         context.user_data["quiz_idx"] = next_q
@@ -6424,7 +7075,10 @@ async def setnews_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = update.message
     replied = msg.reply_to_message
-    text_val = " ".join(context.args) if context.args else None
+    # Extract full text after command preserving newlines
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    text_val = _raw[_sp+1:] if _sp != -1 and context.args else None
 
     if replied and replied.photo:
         set_dynamic_content("news", text_value=text_val or replied.caption,
@@ -6451,15 +7105,21 @@ async def setresult_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = update.message
     replied = msg.reply_to_message
-    text_val = " ".join(context.args) if context.args else None
+    # Extract full text after command preserving newlines
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    text_val = _raw[_sp+1:] if _sp != -1 and context.args else None
     today = datetime.now().strftime("%d/%m/%Y %H:%M")
 
+    src_chat = update.effective_chat.id
     if replied and replied.photo:
         cap = text_val or replied.caption or ""
-        save_result(today, cap, media_id=replied.photo[-1].file_id, media_type="photo")
+        save_result(today, cap, media_id=replied.photo[-1].file_id, media_type="photo",
+                    src_chat_id=src_chat, src_message_id=replied.message_id)
     elif replied and replied.video:
         cap = text_val or replied.caption or ""
-        save_result(today, cap, media_id=replied.video.file_id, media_type="video")
+        save_result(today, cap, media_id=replied.video.file_id, media_type="video",
+                    src_chat_id=src_chat, src_message_id=replied.message_id)
     elif text_val:
         save_result(today, text_val)
     else:
@@ -6490,7 +7150,10 @@ async def setvip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = update.message
     replied = msg.reply_to_message
-    text_val = " ".join(context.args) if context.args else None
+    # Extract full text after command preserving newlines
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    text_val = _raw[_sp+1:] if _sp != -1 and context.args else None
 
     # ── AUTO-SAVE: Move existing VIP content to results_history before overwriting ──
     old_vip = get_dynamic_content("vip")
@@ -6554,7 +7217,10 @@ async def results_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = update.message
     today = datetime.now().strftime("%d/%m/%Y %H:%M")
-    text = " ".join(context.args) if context.args else None
+    # Extract full text after command preserving newlines
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    text = _raw[_sp+1:] if _sp != -1 and context.args else None
 
     # Reply to photo
     if msg.reply_to_message and msg.reply_to_message.photo:
@@ -7093,7 +7759,10 @@ async def addstory_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = update.message
     replied = msg.reply_to_message
-    caption = " ".join(context.args) if context.args else ""
+    # Extract full text after command preserving newlines
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    caption = _raw[_sp+1:] if _sp != -1 and context.args else None
 
     if replied and replied.photo:
         fid   = replied.photo[-1].file_id
