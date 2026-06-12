@@ -4800,51 +4800,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
+    # ── Fast path: read DB first (synchronous, quick) ──
     new_user = is_new_user(user.id)
     lang = get_lang(context, user.id)
     register_user(user, referred_by=referred_by, lang=lang)
 
-    # If user was previously blocked but is back, remove from blocked list
     try:
         unmark_blocked_user(user.id)
     except:
         pass
 
-    if new_user:
-        await notify_new_user(context, user)
-        if referred_by:
-            ref_count = get_referral_count(referred_by)
-            # Notify referrer of discount milestones
-            milestones = {5: 5, 10: 10, 20: 20, 50: 50, 100: 70}
-            if ref_count in milestones:
-                ref_info = get_user_info(referred_by)
-                ref_lang = ref_info.get("lang", "en") or "en"
-                ref_name = escape_md(ref_info['name'])
-                discount = milestones[ref_count]
-                discount_text = REFERRAL_DISCOUNT_MSG.get(ref_lang, REFERRAL_DISCOUNT_MSG["en"])
-                try:
-                    await context.bot.send_message(
-                        chat_id=referred_by,
-                        text=discount_text.format(name=ref_name, count=ref_count, discount=discount),
-                        parse_mode="Markdown",
-                        protect_content=True,
-                        reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton("🎁 Claim My Reward!", callback_data="claim_discount")
-                        ]]))
-                except:
-                    pass
-                # Also notify admin
-                for aid in ADMIN_IDS:
-                    try:
-                        await context.bot.send_message(
-                            chat_id=aid,
-                            text=f"🏆 *REFERRAL MILESTONE!*\n\n👤 {ref_name}\n📊 Reached *{ref_count} referrals*\n🎁 Earned *{discount}% discount*",
-                            parse_mode="Markdown")
-                    except:
-                        pass
-
     await delete_all_bot_msgs(context, cid)
-    await typing_action(cid, context, 1.2)
+    # ✅ NO typing_action delay here — respond immediately
 
     if not context.user_data.get("lang"):
         msg = await send_protected_text(
@@ -4853,6 +4820,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lang_keyboard())
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
+        # Background: notify admin of new user
+        if new_user:
+            asyncio.create_task(notify_new_user(context, user))
         return
 
     if not await is_member(context, user.id):
@@ -4862,26 +4832,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         track_msg(cid, msg.message_id)
         return
 
-    # Go straight to welcome — no onboarding video/text/continue button
     visit_count = context.user_data.get("visit_count", 0) + 1
     context.user_data["visit_count"] = visit_count
 
-    # Show broker poll for first-time visitors
-    if new_user or visit_count == 1:
-        update_streak(user.id)
-        msg = await send_protected_text(
-            context, cid,
-            ui("poll_msg", lang),
-            poll_keyboard(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
-        track_msg(cid, msg.message_id)
-        schedule_comeback(context, cid, user.first_name, lang)
-        schedule_smart_comebacks(context, cid, user.first_name, lang)
-        schedule_auto_clean(context, cid, lang, user.first_name, user.id)
-        return
-
-    welcome_text = build_welcome_text(lang, user.first_name, visit_count)
     update_streak(user.id)
+    welcome_text = build_welcome_text(lang, user.first_name, visit_count)
 
     msg = await send_welcome_media(
         context, cid, welcome_text, main_menu(lang))
@@ -4891,6 +4846,46 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     schedule_comeback(context, cid, user.first_name, lang)
     schedule_smart_comebacks(context, cid, user.first_name, lang)
     schedule_auto_clean(context, cid, lang, user.first_name, user.id)
+
+    # Background: notify admin + referral milestone (new users only)
+    if new_user:
+        asyncio.create_task(notify_new_user(context, user))
+        if referred_by:
+            asyncio.create_task(_handle_referral_milestone(context, user, referred_by))
+
+
+async def _handle_referral_milestone(context, user, referred_by):
+    """Background task: check referral milestones and notify. Does NOT block /start."""
+    try:
+        ref_count = get_referral_count(referred_by)
+        milestones = {5: 5, 10: 10, 20: 20, 50: 50, 100: 70}
+        if ref_count in milestones:
+            ref_info = get_user_info(referred_by)
+            ref_lang = ref_info.get("lang", "en") or "en"
+            ref_name = escape_md(ref_info['name'])
+            discount = milestones[ref_count]
+            discount_text = REFERRAL_DISCOUNT_MSG.get(ref_lang, REFERRAL_DISCOUNT_MSG["en"])
+            try:
+                await context.bot.send_message(
+                    chat_id=referred_by,
+                    text=discount_text.format(name=ref_name, count=ref_count, discount=discount),
+                    parse_mode="Markdown",
+                    protect_content=True,
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton("🎁 Claim My Reward!", callback_data="claim_discount")
+                    ]]))
+            except:
+                pass
+            for aid in ADMIN_IDS:
+                try:
+                    await context.bot.send_message(
+                        chat_id=aid,
+                        text=f"🏆 *REFERRAL MILESTONE!*\n\n👤 {ref_name}\n📊 Reached *{ref_count} referrals*\n🎁 Earned *{discount}% discount*",
+                        parse_mode="Markdown")
+                except:
+                    pass
+    except Exception as e:
+        logger.warning(f"Referral milestone task failed: {e}")
 
 # ══════════════════════════════════════════════════════════════
 #  BROADCAST
@@ -5194,11 +5189,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             track_msg(cid, msg.message_id)
             return
 
-        # Show broker poll in selected language
-        msg = await send_protected_text(
-            context, cid,
-            ui("poll_msg", new_lang),
-            poll_keyboard(new_lang))
+        visit_count = context.user_data.get("visit_count", 1)
+        welcome_text = build_welcome_text(new_lang, user.first_name, visit_count)
+        update_streak(user.id)
+        msg = await send_welcome_media(
+            context, cid, welcome_text, main_menu(new_lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -5209,42 +5204,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if await is_member(context, user.id):
             await safe_delete(context, cid, query.message.message_id)
             await delete_all_bot_msgs(context, cid)
-            # Show broker poll before welcome screen
-            msg = await send_protected_text(
-                context, cid,
-                ui("poll_msg", lang),
-                poll_keyboard(lang))
+            visit_count = context.user_data.get("visit_count", 1)
+            welcome_text = build_welcome_text(lang, user.first_name, visit_count)
+            update_streak(user.id)
+            msg = await send_welcome_media(
+                context, cid, welcome_text, main_menu(lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
             track_msg(cid, msg.message_id)
         else:
             await query.answer("❌ Please join first!", show_alert=True)
-        return
-
-    # Poll
-    if data.startswith("poll_"):
-        await safe_delete(context, cid, query.message.message_id)
-        await delete_all_bot_msgs(context, cid)
-        await typing_action(cid, context, 1.0)
-        visit_count = context.user_data.get("visit_count", 1)
-        welcome_text = build_welcome_text(lang, user.first_name, visit_count)
-        _got_it = {
-            "en": "✅ Got it!", "sw": "✅ Nimepokea!", "ar": "✅ فهمت!",
-            "zh": "✅ 明白了!", "hi": "✅ ठीक है!", "ru": "✅ Понял!",
-            "es": "✅ ¡Entendido!", "fr": "✅ Compris!", "pt": "✅ Entendido!",
-            "de": "✅ Verstanden!", "ur": "✅ سمجھ گیا!", "ja": "✅ わかりました!",
-            "tr": "✅ Anlaşıldı!", "fa": "✅ متوجه شدم!", "ko": "✅ 알겠습니다!",
-            "it": "✅ Capito!", "pl": "✅ Rozumiem!", "uk": "✅ Зрозуміло!",
-            "kk": "✅ Түсіндім!", "cs": "✅ Rozumím!",
-        }
-        got_it_text = _got_it.get(lang, "✅ Got it!")
-        msg = await send_welcome_media(
-            context, cid,
-            f"{got_it_text}\n\n{welcome_text}", main_menu(lang))
-        context.user_data["last_bot_msg_id"] = msg.message_id
-        track_msg(cid, msg.message_id)
-        schedule_comeback(context, cid, user.first_name, lang)
-        schedule_smart_comebacks(context, cid, user.first_name, lang)
-        schedule_auto_clean(context, cid, lang, user.first_name, user.id)
         return
 
     # FIX: User skips text opinion — MUST be BEFORE rate_ check to avoid int("skip") crash
@@ -6830,20 +6798,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=join_keyboard(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 3: Broker poll ────────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Broker Poll*\n_(After joining — user picks their broker to continue)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=ui("poll_msg", lang),
-        parse_mode="Markdown",
-        reply_markup=poll_keyboard(lang))
-    await asyncio.sleep(1.2)
-
-    # ── STEP 4: Welcome screen ─────────────────────────────────
+    # ── STEP 3: Welcome screen ─────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
         text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Welcome + Main Menu*\n_(After broker selection)_\n━━━━━━━━━━━━━━━━━━",
