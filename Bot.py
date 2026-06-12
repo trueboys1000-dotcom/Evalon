@@ -4800,19 +4800,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-    # ── Fast path: read DB first (synchronous, quick) ──
-    new_user = is_new_user(user.id)
-    lang = get_lang(context, user.id)
-    register_user(user, referred_by=referred_by, lang=lang)
-
-    try:
-        unmark_blocked_user(user.id)
-    except:
-        pass
-
     await delete_all_bot_msgs(context, cid)
-    # ✅ NO typing_action delay here — respond immediately
+    await context.bot.send_chat_action(chat_id=cid, action=ChatAction.TYPING)
 
+    # ── Respond immediately — no DB delay ──
     if not context.user_data.get("lang"):
         msg = await send_protected_text(
             context, cid,
@@ -4820,10 +4811,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lang_keyboard())
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        # Background: notify admin of new user
-        if new_user:
-            asyncio.create_task(notify_new_user(context, user))
+        # DB work in background
+        asyncio.create_task(_start_background(user, referred_by, context))
         return
+
+    lang = get_lang(context, user.id)
 
     if not await is_member(context, user.id):
         msg = await send_protected_text(
@@ -4848,10 +4840,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     schedule_auto_clean(context, cid, lang, user.first_name, user.id)
 
     # Background: notify admin + referral milestone (new users only)
-    if new_user:
-        asyncio.create_task(notify_new_user(context, user))
-        if referred_by:
-            asyncio.create_task(_handle_referral_milestone(context, user, referred_by))
+    asyncio.create_task(_start_background(user, referred_by, context))
+
+
+async def _start_background(user, referred_by, context):
+    """DB work done after response is sent — does not block /start."""
+    try:
+        new_user = is_new_user(user.id)
+        lang = context.user_data.get("lang", "en")
+        register_user(user, referred_by=referred_by, lang=lang)
+        try:
+            unmark_blocked_user(user.id)
+        except:
+            pass
+        if new_user:
+            await notify_new_user(context, user)
+            if referred_by:
+                await _handle_referral_milestone(context, user, referred_by)
+    except Exception as e:
+        logger.warning(f"_start_background failed: {e}")
 
 
 async def _handle_referral_milestone(context, user, referred_by):
