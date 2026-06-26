@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║         EVALON WINNERS — TELEGRAM SUPPORT BOT v7.0          ║
+║         EVALON WINNERS — TELEGRAM SUPPORT BOT v7.1          ║
 ║                                                              ║
 ║  ✅ Multi-step menu                                          ║
 ║  ✅ Melt effect (broadcast messages STAY)                    ║
@@ -34,11 +34,13 @@
 ║  ✅ FIXED: MarkdownV2 vs Markdown inconsistency              ║
 ║  ✅ FIXED: editMessageReplyMarkup on deleted messages        ║
 ║  ✅ NEW: Spin Wheel — 1x/day, 5% win chance, admin notify   ║
+║  ✅ NEW: Idea Lab — users submit custom project ideas        ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
 import logging
 import asyncio
+import re
 import random
 import os
 import psycopg2
@@ -101,6 +103,9 @@ bot_msg_ids: dict      = {}
 support_msg_ids: dict  = {}
 # FIX: Track users waiting to give rating text opinion
 awaiting_rating_opinion: dict = {}  # uid -> star_count
+
+# IDEA LAB: Track users who tapped "Submit Idea" and are typing their idea
+awaiting_idea_lab: dict = {}  # uid -> True
 
 # SPIN WHEEL: last spin date stored in DB (see spin_db functions below)
 
@@ -236,6 +241,7 @@ def init_db():
     conn.commit()
     conn.close()
     init_spin_db()
+    init_autobot_db()
     init_dynamic_db()
     init_feedback_db()
     init_media_db()
@@ -318,6 +324,15 @@ def get_all_user_ids():
     rows = c.fetchall()
     conn.close()
     return [r[0] for r in rows]
+
+def get_all_users_info():
+    """Fetch all user IDs + langs in ONE query — used by broadcast to avoid N DB calls"""
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT id, lang FROM users")
+    rows = c.fetchall()
+    conn.close()
+    return [{"user_id": r[0], "lang": r[1] or "en"} for r in rows]
 
 def get_user_count():
     conn = get_conn()
@@ -2092,12 +2107,24 @@ def save_result(result_date, content_text, media_id=None, media_type=None, src_c
     try:
         conn = get_conn()
         c = conn.cursor()
-        # Add new columns if missing
-        try:
-            c.execute("ALTER TABLE results_history ADD COLUMN IF NOT EXISTS src_chat_id BIGINT DEFAULT NULL")
-            c.execute("ALTER TABLE results_history ADD COLUMN IF NOT EXISTS src_message_id BIGINT DEFAULT NULL")
-            conn.commit()
-        except: pass
+        # Ensure table and all columns exist
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS results_history (
+                id             SERIAL PRIMARY KEY,
+                caption        TEXT DEFAULT NULL,
+                media_id       TEXT DEFAULT NULL,
+                media_type     TEXT DEFAULT NULL,
+                saved_at       TEXT DEFAULT NULL,
+                src_chat_id    BIGINT DEFAULT NULL,
+                src_message_id BIGINT DEFAULT NULL
+            )
+        """)
+        for col, col_type in [("src_chat_id", "BIGINT"), ("src_message_id", "BIGINT")]:
+            try:
+                c.execute(f"ALTER TABLE results_history ADD COLUMN IF NOT EXISTS {col} {col_type} DEFAULT NULL")
+            except:
+                pass
+        conn.commit()
         now = datetime.now().strftime("%d/%m/%Y %H:%M")
         c.execute("""
             INSERT INTO results_history (caption, media_id, media_type, saved_at, src_chat_id, src_message_id)
@@ -2114,16 +2141,24 @@ def get_results_history(limit=10):
     try:
         conn = get_conn()
         c = conn.cursor()
-        # Ensure table exists in case migration did not run
+        # Ensure table exists with ALL columns
         c.execute("""
             CREATE TABLE IF NOT EXISTS results_history (
-                id         SERIAL PRIMARY KEY,
-                caption    TEXT DEFAULT NULL,
-                media_id   TEXT DEFAULT NULL,
-                media_type TEXT DEFAULT NULL,
-                saved_at   TEXT DEFAULT NULL
+                id             SERIAL PRIMARY KEY,
+                caption        TEXT DEFAULT NULL,
+                media_id       TEXT DEFAULT NULL,
+                media_type     TEXT DEFAULT NULL,
+                saved_at       TEXT DEFAULT NULL,
+                src_chat_id    BIGINT DEFAULT NULL,
+                src_message_id BIGINT DEFAULT NULL
             )
         """)
+        # Add missing columns if table already existed without them
+        for col, col_type in [("src_chat_id", "BIGINT"), ("src_message_id", "BIGINT")]:
+            try:
+                c.execute(f"ALTER TABLE results_history ADD COLUMN IF NOT EXISTS {col} {col_type} DEFAULT NULL")
+            except:
+                pass
         conn.commit()
         c.execute("""
             SELECT id, caption, media_id, media_type, saved_at, src_chat_id, src_message_id
@@ -2241,6 +2276,63 @@ def has_stories():
     row = c.fetchone()
     conn.close()
     return bool(row)
+
+# ══════════════════════════════════════════════════════════════
+#  AUTOBOT PROMO — DB helpers (gallery, like stories)
+# ══════════════════════════════════════════════════════════════
+def init_autobot_db():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS autobot_promos (
+            id         SERIAL PRIMARY KEY,
+            caption    TEXT,
+            media_id   TEXT,
+            media_type TEXT DEFAULT 'text',
+            created_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def add_autobot_promo(caption, media_id=None, media_type="text"):
+    conn = get_conn()
+    c = conn.cursor()
+    now = datetime.now().strftime("%d/%m/%Y %H:%M")
+    c.execute(
+        "INSERT INTO autobot_promos (caption, media_id, media_type, created_at) VALUES (%s,%s,%s,%s) RETURNING id",
+        (caption, media_id, media_type, now))
+    new_id = c.fetchone()[0]
+    conn.commit()
+    conn.close()
+    return new_id
+
+def get_all_autobot_promos():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT id, caption, media_id, media_type, created_at FROM autobot_promos ORDER BY id DESC")
+    rows = c.fetchall()
+    conn.close()
+    return [{"id": r[0], "caption": r[1], "media_id": r[2], "media_type": r[3], "created_at": r[4]} for r in rows]
+
+def delete_autobot_promo(promo_id):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM autobot_promos WHERE id=%s RETURNING id", (promo_id,))
+    deleted = c.fetchone()
+    conn.commit()
+    conn.close()
+    return bool(deleted)
+
+def has_autobot_promos():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT 1 FROM autobot_promos LIMIT 1")
+    row = c.fetchone()
+    conn.close()
+    return bool(row)
+
+
 
 def get_user_vip_progress(uid):
     """Calculate VIP progress 0-100% from activity points"""
@@ -2453,18 +2545,29 @@ async def send_smart_comeback(context):
         await context.bot.send_photo(
             chat_id=chat_id, photo=img, caption=text,
             parse_mode="Markdown", protect_content=True,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton(btn_go, callback_data="menu_services"),
-                InlineKeyboardButton(btn_sup, callback_data="do_support"),
-            ]]))
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                 InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                 InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                 InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+            ]))
     except:
         try:
             await context.bot.send_message(
                 chat_id=chat_id, text=text,
                 parse_mode="Markdown", protect_content=True,
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton(btn_go, callback_data="menu_services"),
-                ]]))
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                     InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                    [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                    [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                     InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                    [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                     InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+                ]))
         except:
             pass
 
@@ -2512,9 +2615,15 @@ async def send_fomo_message(context):
             chat_id=chat_id,
             text=fomo_msgs.get(lang, fomo_msgs["en"]),
             parse_mode="Markdown", protect_content=True,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")
-            ]]))
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                 InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                 InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                 InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+            ]))
     except:
         pass
 
@@ -2561,9 +2670,15 @@ async def send_anti_ghost(context):
             chat_id=chat_id,
             text=msgs.get(lang, msgs["en"]),
             parse_mode="Markdown", protect_content=True,
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🚀 I'm Back!", callback_data="main_menu")
-            ]]))
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                 InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                 InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                 InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+            ]))
     except:
         pass
 
@@ -2656,7 +2771,7 @@ def get_active_traders_count():
     return ""
 
 def build_welcome_text(lang, name, visit_count=1):
-    """Build welcome text with smart greeting + daily quote"""
+    """Build welcome text with smart greeting + daily quote + win notification for returning users"""
     urgency = get_urgency(lang)
     greeting = get_smart_greeting(lang)
     quote = get_daily_quote(lang)
@@ -2664,7 +2779,11 @@ def build_welcome_text(lang, name, visit_count=1):
         name=escape_md(name), urgency=urgency, business=BUSINESS_NAME)
     if visit_count >= 3:
         scarcity = get_scarcity_msg(lang)
-        return f"{greeting}\n\n{base}\n\n{scarcity}\n\n{quote}"
+        win_notif = get_win_notification(lang)
+        return f"{greeting}\n\n{base}\n\n{win_notif}\n\n{scarcity}\n\n{quote}"
+    if visit_count >= 2:
+        win_notif = get_win_notification(lang)
+        return f"{greeting}\n\n{base}\n\n{win_notif}\n\n{quote}"
     return f"{greeting}\n\n{base}\n\n{quote}"
 
 
@@ -2878,6 +2997,38 @@ UI = {
         "btn_why_evalon": "🤔 Why EVALON?",
         "btn_win_alert": "🔔 Win Alert",
         "no_results_history": "📅 *No past results yet!*\n\nAdmin will post session results here. Check back soon! ⚡",
+        "choose_service": "🔥 *Choose Your Service* 👇",
+        "join_service_msg": "⚠️ *Please join our channel first!*\n\nYou chose *{service}* — Join now to get access! 👇",
+        "btn_idealab": "💡 Idea Lab — Build Your Tool",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Do you have an idea for something you'd like built?
+
+✅ Custom Trading Bot
+✅ Personal Indicator
+✅ Auto Trading System
+✅ Signal Tool
+✅ Any Trading Tool
+
+💎 We build according to your needs!
+
+How it works:
+1️⃣ Send your idea below
+2️⃣ Our team will contact you
+3️⃣ We build it together
+4️⃣ You receive your service when complete!
+
+👇 *Write your idea now:*",
+        "idealab_ack": "🎉 *Thank you for your idea!*
+
+Our team will review it and contact you shortly.
+
+💎 We look forward to helping you build:
+• Your unique bot
+• Your custom indicator
+• Your trading system
+
+🚀 Your idea could become a product helping thousands of traders!",
     },
     "sw": {
         "welcome": "👋 Karibu, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Mahali pa washindi!\n\nUnataka kuchunguza nini? 👇",
@@ -2940,6 +3091,38 @@ UI = {
         "btn_why_evalon": "🤔 Kwa Nini EVALON?",
         "btn_win_alert": "🔔 Arifa ya Ushindi",
         "no_results_history": "📅 *Hakuna matokeo ya nyuma bado!*\n\nAdmin ataweka matokeo ya vikao hapa. Rudi baadaye! ⚡",
+        "choose_service": "🔥 *Chagua Huduma Yako* 👇",
+        "join_service_msg": "⚠️ *Tafadhali jiunge na channel yetu kwanza!*\n\nUlichagua *{service}* — Jiunge sasa upate ufikiaji! 👇",
+        "btn_idealab": "💡 Idea Lab — Tengeneza Chombo Chako",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Je, una wazo la kitu ungependa kutengenezwa?
+
+✅ Custom Trading Bot
+✅ Personal Indicator
+✅ Auto Trading System
+✅ Signal Tool
+✅ Any Trading Tool
+
+💎 Tunatengeneza kwa mahitaji yako!
+
+Jinsi inavyofanya kazi:
+1️⃣ Tuma wazo lako hapa chini
+2️⃣ Timu yetu itawasiliana nawe
+3️⃣ Tunatengeneza pamoja
+4️⃣ Unapata huduma yako ukamilike!
+
+👇 *Andika wazo lako sasa:*",
+        "idealab_ack": "🎉 *Asante kwa wazo lako!*
+
+Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
+
+💎 Tunafurahi kukusaidia kutengeneza:
+• Bot yako ya kipekee
+• Indicator yako maalum
+• Mfumo wako wa trading
+
+🚀 Wazo lako linaweza kuwa bidhaa inayowasaidia maelfu ya wafanyabiashara!",
     },
     "ar": {
         "welcome": "👋 مرحباً، *{name}!*\n\n{urgency}\n\n🏆 *{business}* — حيث يتداول الفائزون!\n\nماذا تريد أن تستكشف؟ 👇",
@@ -2995,7 +3178,39 @@ UI = {
         "btn_why_evalon": "🤔 لماذا EVALON؟",
         "btn_win_alert": "🔔 تنبيه الفوز",
         "no_results_history": "📅 *لا توجد نتائج سابقة بعد!*\n\nسيقوم المشرف بنشر نتائج الجلسات هنا. تحقق لاحقاً! ⚡",
+        "choose_service": "🔥 *اختر خدمتك* 👇",
+        "join_service_msg": "⚠️ *يرجى الانضمام إلى قناتنا أولاً!*\n\nلقد اخترت *{service}* — انضم الآن للحصول على الوصول! 👇",
         "session_ended": "👋 *انتهت جلسة الدعم.*\n\nشكراً للتواصل معنا! 🙏",
+        "btn_idealab": "💡 مختبر الأفكار — ابنِ أداتك",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+هل لديك فكرة لشيء تريد بناءه؟
+
+✅ بوت تداول مخصص
+✅ مؤشر شخصي
+✅ نظام تداول آلي
+✅ أداة إشارات
+✅ أي أداة تداول
+
+💎 نبني وفق احتياجاتك!
+
+كيف يعمل:
+1️⃣ أرسل فكرتك أدناه
+2️⃣ سيتواصل معك فريقنا
+3️⃣ نبنيها معاً
+4️⃣ تحصل على خدمتك عند الاكتمال!
+
+👇 *اكتب فكرتك الآن:*",
+        "idealab_ack": "🎉 *شكراً على فكرتك!*
+
+سيراجعها فريقنا ويتواصل معك قريباً.
+
+💎 يسعدنا مساعدتك في بناء:
+• بوتك الفريد
+• مؤشرك المخصص
+• نظام التداول الخاص بك
+
+🚀 يمكن أن تصبح فكرتك منتجاً يساعد آلاف المتداولين!",
     },
     "zh": {
         "welcome": "👋 欢迎，*{name}!*\n\n{urgency}\n\n🏆 *{business}* — 赢家交易的地方！\n\n您想探索什么？ 👇",
@@ -3051,7 +3266,39 @@ UI = {
         "btn_why_evalon": "🤔 为什么选EVALON？",
         "btn_win_alert": "🔔 获胜提醒",
         "no_results_history": "📅 *暂无历史结果！*\n\n管理员将在此发布会话结果。稍后再来！ ⚡",
+        "choose_service": "🔥 *选择您的服务* 👇",
+        "join_service_msg": "⚠️ *请先加入我们的频道！*\n\n您选择了 *{service}* — 立即加入以获取访问权限！ 👇",
         "session_ended": "👋 *支持聊天已结束。*\n\n感谢您联系我们！ 🙏",
+        "btn_idealab": "💡 创意实验室 — 打造你的工具",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+您有想要开发的东西的想法吗？
+
+✅ 定制交易机器人
+✅ 个人指标
+✅ 自动交易系统
+✅ 信号工具
+✅ 任何交易工具
+
+💎 我们根据您的需求构建！
+
+工作原理：
+1️⃣ 在下方发送您的想法
+2️⃣ 我们的团队将与您联系
+3️⃣ 我们一起构建
+4️⃣ 完成后您将获得服务！
+
+👇 *立即写下您的想法：*",
+        "idealab_ack": "🎉 *感谢您的想法！*
+
+我们的团队将审查并很快与您联系。
+
+💎 我们很乐意帮助您构建：
+• 您独特的机器人
+• 您的自定义指标
+• 您的交易系统
+
+🚀 您的想法可能成为帮助数千名交易者的产品！",
     },
     "hi": {
         "welcome": "👋 स्वागत है, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — जहाँ विजेता व्यापार करते हैं!\n\nआप क्या जानना चाहते हैं? 👇",
@@ -3107,7 +3354,39 @@ UI = {
         "btn_why_evalon": "🤔 EVALON क्यों?",
         "btn_win_alert": "🔔 जीत अलर्ट",
         "no_results_history": "📅 *अभी तक कोई पुराना परिणाम नहीं!*\n\nAdmin यहाँ सत्र परिणाम पोस्ट करेगा। बाद में देखें! ⚡",
+        "choose_service": "🔥 *अपनी सेवा चुनें* 👇",
+        "join_service_msg": "⚠️ *कृपया पहले हमारे चैनल से जुड़ें!*\n\nआपने *{service}* चुना — अभी जुड़ें और एक्सेस पाएं! 👇",
         "session_ended": "👋 *सहायता चैट समाप्त हो गई।*\n\nहमसे संपर्क करने के लिए धन्यवाद! 🙏",
+        "btn_idealab": "💡 आइडिया लैब — अपना टूल बनाएं",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+क्या आपके पास कुछ बनवाने का विचार है?
+
+✅ कस्टम ट्रेडिंग बॉट
+✅ पर्सनल इंडिकेटर
+✅ ऑटो ट्रेडिंग सिस्टम
+✅ सिग्नल टूल
+✅ कोई भी ट्रेडिंग टूल
+
+💎 हम आपकी जरूरतों के अनुसार बनाते हैं!
+
+यह कैसे काम करता है:
+1️⃣ नीचे अपना विचार भेजें
+2️⃣ हमारी टीम आपसे संपर्क करेगी
+3️⃣ हम मिलकर बनाते हैं
+4️⃣ पूरा होने पर आपको सेवा मिलती है!
+
+👇 *अभी अपना विचार लिखें:*",
+        "idealab_ack": "🎉 *आपके आइडिया के लिए धन्यवाद!*
+
+हमारी टीम इसकी समीक्षा करेगी और जल्द ही आपसे संपर्क करेगी।
+
+💎 हम आपकी मदद करने में खुश हैं:
+• आपका अनोखा बॉट
+• आपका कस्टम इंडिकेटर
+• आपका ट्रेडिंग सिस्टम
+
+🚀 आपका आइडिया हजारों ट्रेडर्स की मदद करने वाला प्रोडक्ट बन सकता है!",
     },
     "ru": {
         "welcome": "👋 Добро пожаловать, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Где торгуют победители!\n\nЧто вы хотите узнать? 👇",
@@ -3163,7 +3442,39 @@ UI = {
         "btn_why_evalon": "🤔 Почему EVALON?",
         "btn_win_alert": "🔔 Уведомление о победе",
         "no_results_history": "📅 *Нет прошлых результатов!*\n\nАдмин опубликует результаты сессий здесь. Загляните позже! ⚡",
+        "choose_service": "🔥 *Выберите услугу* 👇",
+        "join_service_msg": "⚠️ *Сначала присоединитесь к нашему каналу!*\n\nВы выбрали *{service}* — вступите сейчас, чтобы получить доступ! 👇",
         "session_ended": "👋 *Чат поддержки завершен.*\n\nСпасибо за обращение! 🙏",
+        "btn_idealab": "💡 Лаборатория идей — создай свой инструмент",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Есть идея, что вы хотели бы создать?
+
+✅ Индивидуальный торговый бот
+✅ Персональный индикатор
+✅ Автоматическая торговая система
+✅ Инструмент сигналов
+✅ Любой торговый инструмент
+
+💎 Строим по вашим потребностям!
+
+Как это работает:
+1️⃣ Отправьте идею ниже
+2️⃣ Наша команда свяжется с вами
+3️⃣ Строим вместе
+4️⃣ Получаете сервис по завершении!
+
+👇 *Напишите вашу идею сейчас:*",
+        "idealab_ack": "🎉 *Спасибо за вашу идею!*
+
+Наша команда рассмотрит её и свяжется с вами в ближайшее время.
+
+💎 Мы рады помочь вам создать:
+• Ваш уникальный бот
+• Ваш индивидуальный индикатор
+• Вашу торговую систему
+
+🚀 Ваша идея может стать продуктом, помогающим тысячам трейдеров!",
     },
     "es": {
         "welcome": "👋 Bienvenido, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — ¡Donde comercian los ganadores!\n\n¿Qué deseas explorar? 👇",
@@ -3219,7 +3530,39 @@ UI = {
         "btn_why_evalon": "🤔 ¿Por qué EVALON?",
         "btn_win_alert": "🔔 Alerta de victoria",
         "no_results_history": "📅 *¡No hay resultados anteriores aún!*\n\nEl admin publicará resultados aquí. ¡Vuelve pronto! ⚡",
+        "choose_service": "🔥 *Elige tu servicio* 👇",
+        "join_service_msg": "⚠️ *¡Por favor únete a nuestro canal primero!*\n\nElegiste *{service}* — ¡Únete ahora para obtener acceso! 👇",
         "session_ended": "👋 *El chat de soporte ha finalizado.*\n\n¡Gracias por contactarnos! 🙏",
+        "btn_idealab": "💡 Idea Lab — Crea tu herramienta",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+¿Tienes una idea de algo que te gustaría construir?
+
+✅ Bot de trading personalizado
+✅ Indicador personal
+✅ Sistema de trading automático
+✅ Herramienta de señales
+✅ Cualquier herramienta de trading
+
+💎 ¡Construimos según tus necesidades!
+
+Cómo funciona:
+1️⃣ Envía tu idea abajo
+2️⃣ Nuestro equipo te contactará
+3️⃣ Lo construimos juntos
+4️⃣ ¡Recibes tu servicio al completarse!
+
+👇 *Escribe tu idea ahora:*",
+        "idealab_ack": "🎉 *¡Gracias por tu idea!*
+
+Nuestro equipo la revisará y se pondrá en contacto contigo pronto.
+
+💎 Nos encanta ayudarte a construir:
+• Tu bot único
+• Tu indicador personalizado
+• Tu sistema de trading
+
+🚀 ¡Tu idea puede convertirse en un producto que ayude a miles de traders!",
     },
     "fr": {
         "welcome": "👋 Bienvenue, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Là où les gagnants tradent!\n\nQue voulez-vous explorer? 👇",
@@ -3275,7 +3618,39 @@ UI = {
         "btn_why_evalon": "🤔 Pourquoi EVALON?",
         "btn_win_alert": "🔔 Alerte victoire",
         "no_results_history": "📅 *Pas encore de résultats passés!*\n\nL'admin publiera les résultats ici. Revenez bientôt! ⚡",
+        "choose_service": "🔥 *Choisissez votre service* 👇",
+        "join_service_msg": "⚠️ *Veuillez d'abord rejoindre notre canal!*\n\nVous avez choisi *{service}* — Rejoignez maintenant pour obtenir l'accès! 👇",
         "session_ended": "👋 *Le chat de support est terminé.*\n\nMerci de nous avoir contactés! 🙏",
+        "btn_idealab": "💡 Idea Lab — Créez votre outil",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Avez-vous une idée de quelque chose que vous aimeriez construire?
+
+✅ Bot de trading personnalisé
+✅ Indicateur personnel
+✅ Système de trading automatique
+✅ Outil de signaux
+✅ Tout outil de trading
+
+💎 Nous construisons selon vos besoins!
+
+Comment ça fonctionne:
+1️⃣ Envoyez votre idée ci-dessous
+2️⃣ Notre équipe vous contactera
+3️⃣ Nous construisons ensemble
+4️⃣ Vous recevez votre service à la fin!
+
+👇 *Écrivez votre idée maintenant:*",
+        "idealab_ack": "🎉 *Merci pour votre idée!*
+
+Notre équipe l'examinera et vous contactera bientôt.
+
+💎 Nous sommes ravis de vous aider à construire:
+• Votre bot unique
+• Votre indicateur personnalisé
+• Votre système de trading
+
+🚀 Votre idée peut devenir un produit aidant des milliers de traders!",
     },
     "pt": {
         "welcome": "👋 Bem-vindo, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Onde os vencedores negociam!\n\nO que você quer explorar? 👇",
@@ -3331,7 +3706,39 @@ UI = {
         "btn_why_evalon": "🤔 Por que EVALON?",
         "btn_win_alert": "🔔 Alerta de vitória",
         "no_results_history": "📅 *Sem resultados anteriores ainda!*\n\nO admin publicará resultados aqui. Volte em breve! ⚡",
+        "choose_service": "🔥 *Escolha o seu serviço* 👇",
+        "join_service_msg": "⚠️ *Por favor, junte-se ao nosso canal primeiro!*\n\nVocê escolheu *{service}* — Junte-se agora para obter acesso! 👇",
         "session_ended": "👋 *O chat de suporte foi encerrado.*\n\nObrigado por entrar em contato! 🙏",
+        "btn_idealab": "💡 Idea Lab — Crie sua ferramenta",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Você tem uma ideia de algo que gostaria de construir?
+
+✅ Bot de trading personalizado
+✅ Indicador pessoal
+✅ Sistema de trading automático
+✅ Ferramenta de sinais
+✅ Qualquer ferramenta de trading
+
+💎 Construímos de acordo com suas necessidades!
+
+Como funciona:
+1️⃣ Envie sua ideia abaixo
+2️⃣ Nossa equipe entrará em contato
+3️⃣ Construímos juntos
+4️⃣ Você recebe seu serviço ao concluir!
+
+👇 *Escreva sua ideia agora:*",
+        "idealab_ack": "🎉 *Obrigado pela sua ideia!*
+
+Nossa equipe irá revisá-la e entrará em contato em breve.
+
+💎 Temos prazer em ajudá-lo a construir:
+• Seu bot exclusivo
+• Seu indicador personalizado
+• Seu sistema de trading
+
+🚀 Sua ideia pode se tornar um produto que ajuda milhares de traders!",
     },
     "de": {
         "welcome": "👋 Willkommen, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Wo Gewinner handeln!\n\nWas möchten Sie erkunden? 👇",
@@ -3387,7 +3794,39 @@ UI = {
         "btn_why_evalon": "🤔 Warum EVALON?",
         "btn_win_alert": "🔔 Gewinn-Benachrichtigung",
         "no_results_history": "📅 *Noch keine vergangenen Ergebnisse!*\n\nDer Admin wird hier Sitzungsergebnisse posten. Schau später vorbei! ⚡",
+        "choose_service": "🔥 *Wählen Sie Ihren Service* 👇",
+        "join_service_msg": "⚠️ *Bitte treten Sie zuerst unserem Kanal bei!*\n\nSie haben *{service}* gewählt — Treten Sie jetzt bei, um Zugang zu erhalten! 👇",
         "session_ended": "👋 *Der Support-Chat wurde beendet.*\n\nDanke, dass Sie uns kontaktiert haben! 🙏",
+        "btn_idealab": "💡 Idea Lab — Erstelle dein Tool",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Haben Sie eine Idee für etwas, das Sie gerne bauen lassen möchten?
+
+✅ Benutzerdefinierter Trading-Bot
+✅ Persönlicher Indikator
+✅ Automatisches Handelssystem
+✅ Signal-Tool
+✅ Jedes Trading-Tool
+
+💎 Wir bauen nach Ihren Bedürfnissen!
+
+So funktioniert es:
+1️⃣ Senden Sie Ihre Idee unten
+2️⃣ Unser Team wird Sie kontaktieren
+3️⃣ Wir bauen gemeinsam
+4️⃣ Sie erhalten Ihren Service nach Abschluss!
+
+👇 *Schreiben Sie Ihre Idee jetzt:*",
+        "idealab_ack": "🎉 *Danke für deine Idee!*
+
+Unser Team wird sie prüfen und sich bald bei dir melden.
+
+💎 Wir helfen dir gerne beim Aufbau:
+• Deinen einzigartigen Bot
+• Deinen benutzerdefinierten Indikator
+• Dein Handelssystem
+
+🚀 Deine Idee könnte ein Produkt werden, das Tausenden von Tradern hilft!",
     },
     "ur": {
         "welcome": "👋 خوش آمدید، *{name}!*\n\n{urgency}\n\n🏆 *{business}* — جہاں فاتح تجارت کرتے ہیں!\n\nآپ کیا جاننا چاہتے ہیں؟ 👇",
@@ -3443,7 +3882,39 @@ UI = {
         "btn_why_evalon": "🤔 EVALON کیوں؟",
         "btn_win_alert": "🔔 جیت کا الرٹ",
         "no_results_history": "📅 *ابھی تک کوئی پچھلے نتائج نہیں!*\n\nAdmin یہاں سیشن کے نتائج پوسٹ کرے گا۔ بعد میں دیکھیں! ⚡",
+        "choose_service": "🔥 *اپنی سروس چنیں* 👇",
+        "join_service_msg": "⚠️ *براہ کرم پہلے ہمارے چینل میں شامل ہوں!*\n\nآپ نے *{service}* چنا — ابھی شامل ہوں اور رسائی حاصل کریں! 👇",
         "session_ended": "👋 *سپورٹ چیٹ ختم ہو گئی۔*\n\nہم سے رابطہ کرنے کا شکریہ! 🙏",
+        "btn_idealab": "💡 آئیڈیا لیب — اپنا ٹول بنائیں",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+کیا آپ کے پاس کچھ بنوانے کا خیال ہے؟
+
+✅ کسٹم ٹریڈنگ بوٹ
+✅ ذاتی انڈیکیٹر
+✅ آٹو ٹریڈنگ سسٹم
+✅ سگنل ٹول
+✅ کوئی بھی ٹریڈنگ ٹول
+
+💎 ہم آپ کی ضروریات کے مطابق بناتے ہیں!
+
+یہ کیسے کام کرتا ہے:
+1️⃣ نیچے اپنا خیال بھیجیں
+2️⃣ ہماری ٹیم آپ سے رابطہ کرے گی
+3️⃣ ہم مل کر بناتے ہیں
+4️⃣ مکمل ہونے پر آپ کو سروس ملتی ہے!
+
+👇 *ابھی اپنا خیال لکھیں:*",
+        "idealab_ack": "🎉 *آپ کے آئیڈیے کا شکریہ!*
+
+ہماری ٹیم اس کا جائزہ لے گی اور جلد آپ سے رابطہ کرے گی۔
+
+💎 ہم آپ کی مدد کرنے میں خوش ہیں:
+• آپ کا منفرد بوٹ
+• آپ کا کسٹم انڈیکیٹر
+• آپ کا ٹریڈنگ سسٹم
+
+🚀 آپ کا آئیڈیا ہزاروں ٹریڈرز کی مدد کرنے والی پروڈکٹ بن سکتا ہے!",
     },
     "ja": {
         "welcome": "👋 ようこそ、*{name}!*\n\n{urgency}\n\n🏆 *{business}* — 勝者が取引する場所！\n\n何を探しますか？ 👇",
@@ -3499,174 +3970,40 @@ UI = {
         "btn_why_evalon": "🤔 なぜEVALON？",
         "btn_win_alert": "🔔 勝利アラート",
         "no_results_history": "📅 *まだ過去の結果はありません！*\n\nAdminがここにセッション結果を投稿します。後で確認してください！ ⚡",
+        "choose_service": "🔥 *サービスを選んでください* 👇",
+        "join_service_msg": "⚠️ *まず私たちのチャンネルに参加してください！*\n\n*{service}* を選びました — 今すぐ参加してアクセスを取得！ 👇",
         "session_ended": "👋 *サポートチャットが終了しました。*\n\nご連絡ありがとうございました！ 🙏",
+        "btn_idealab": "💡 アイデアラボ — ツールを作ろう",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+作ってほしいものについてアイデアがありますか？
+
+✅ カスタムトレーディングボット
+✅ パーソナルインジケーター
+✅ 自動取引システム
+✅ シグナルツール
+✅ あらゆるトレーディングツール
+
+💎 あなたのニーズに合わせて構築します！
+
+仕組み：
+1️⃣ 以下にアイデアを送信
+2️⃣ チームが連絡します
+3️⃣ 一緒に作ります
+4️⃣ 完成後にサービスを受け取ります！
+
+👇 *今すぐアイデアを書いてください：*",
+        "idealab_ack": "🎉 *アイデアをありがとう！*
+
+チームが確認して、すぐにご連絡いたします。
+
+💎 以下を作るお手伝いをします：
+• あなただけのボット
+• カスタムインジケーター
+• あなたの取引システム
+
+🚀 あなたのアイデアが何千人ものトレーダーを助ける製品になるかもしれません！",
     },
-}
-
-# Add 8 new languages — copy English as base then override key strings
-for _lc, _welcome, _btn_svc, _btn_ref, _btn_lang, _btn_spin, _spin_wait, _join, _support, _session, _referral_msg, _comeback, _rating, _rating_op, _rating_thanks, _price_msg in [
-    ("it", "👋 Benvenuto, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Dove vincono i trader!\n\nCosa vuoi esplorare? 👇",
-     "🏆 I Nostri Servizi", "🎁 Invita e Guadagna", "🌍 Lingua",
-     "🎰 Prova il Tuo Accesso Gratuito — Spin Fortunato!",
-     "⏳ Hai già girato oggi! Torna tra {hours}h {mins}m 🕐",
-     "⚠️ *Unisciti prima al nostro canale!*\n\nUnisciti ora e torna! 👇",
-     "💬 *Richiesta di supporto ricevuta!* ✅\n\nIl nostro team ti contatterà *entro 5 ore.* ⏳",
-     "👋 *Chat di supporto terminata.*\n\nGrazie per averci contattato! 🙏",
-     "🎁 *IL TUO LINK DI RIFERIMENTO*\n\nIl tuo link:\nhttps://t.me/{bot}?start=ref{uid}\n\nI tuoi riferimenti: {count}/{min}\n{bar}\n\nInvita altri {needed} per sbloccare il premio!\n{leaderboard}",
-     "👋 Ciao *{name}!* Ci sei mancato! 😊\n\n🔥 Nuovi segnali e opportunità ti aspettano!\n\n💎 *EVALON WINNERS* ha aggiornamenti entusiasmanti!\n\n👇 Torna ed esplora:",
-     "⭐ *Com'è stata la tua esperienza di supporto?*\n\nValuta il nostro servizio:",
-     "📝 *Grazie per la valutazione!*\n\nCondividi una breve opinione (o scrivi 'skip' per saltare):",
-     "🙏 Grazie per il tuo feedback, *{name}!* ⭐",
-     "💰 *Scopri i Nostri Piani*\n\nVisita il nostro sito per tutti i dettagli 👇"),
-
-    ("ko", "👋 환영합니다, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — 승자들이 거래하는 곳!\n\n무엇을 탐색하시겠습니까? 👇",
-     "🏆 서비스", "🎁 초대하고 수익 얻기", "🌍 언어",
-     "🎰 무료 액세스 시도 — 럭키 스핀!",
-     "⏳ 오늘 이미 돌렸습니다! {hours}h {mins}m 후에 돌아오세요 🕐",
-     "⚠️ *먼저 채널에 참여해주세요!*\n\n지금 참여하고 돌아오세요! 👇",
-     "💬 *지원 요청이 접수되었습니다!* ✅\n\n팀이 *5시간 이내에* 연락드립니다. ⏳",
-     "👋 *지원 채팅이 종료되었습니다.*\n\n연락해 주셔서 감사합니다! 🙏",
-     "🎁 *추천 링크*\n\n링크:\nhttps://t.me/{bot}?start=ref{uid}\n\n추천: {count}/{min}\n{bar}\n\n보상을 받으려면 {needed}명 더 초대하세요!\n{leaderboard}",
-     "👋 안녕하세요 *{name}!* 보고 싶었어요! 😊\n\n🔥 새로운 신호와 기회가 기다립니다!\n\n💎 *EVALON WINNERS* 에 흥미진진한 업데이트가 있습니다!\n\n👇 돌아와서 탐색하세요:",
-     "⭐ *지원 경험은 어떠셨나요?*\n\n서비스를 평가해주세요:",
-     "📝 *평가해주셔서 감사합니다!*\n\n경험에 대한 간단한 의견을 공유하세요 (건너뛰려면 'skip' 입력):",
-     "🙏 피드백 감사합니다, *{name}!* ⭐",
-     "💰 *서비스 살펴보기*\n\n최신 정보는 웹사이트를 방문하세요 👇"),
-
-    ("tr", "👋 Hoş geldiniz, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Kazananların işlem yaptığı yer!\n\nNe keşfetmek istersiniz? 👇",
-     "🏆 Hizmetlerimiz", "🎁 Davet Et ve Kazan", "🌍 Dil",
-     "🎰 Ücretsiz Erişimini Dene — Şanslı Çark!",
-     "⏳ Bugün zaten çevirdiniz! {hours}h {mins}m sonra dönün 🕐",
-     "⚠️ *Lütfen önce kanalımıza katılın!*\n\nŞimdi katılın ve geri dönün! 👇",
-     "💬 *Destek talebi alındı!* ✅\n\nEkibimiz *5 saat içinde* sizinle iletişime geçecek. ⏳",
-     "👋 *Destek sohbeti sona erdi.*\n\nBize ulaştığınız için teşekkürler! 🙏",
-     "🎁 *REFERANS BAĞLANTINIZ*\n\nBağlantınız:\nhttps://t.me/{bot}?start=ref{uid}\n\nReferanslarınız: {count}/{min}\n{bar}\n\nÖdülünüzü açmak için {needed} kişi daha davet edin!\n{leaderboard}",
-     "👋 Merhaba *{name}!* Sizi özledik! 😊\n\n🔥 Yeni sinyaller ve fırsatlar sizi bekliyor!\n\n💎 *EVALON WINNERS* heyecan verici güncellemelere sahip!\n\n👇 Geri dönün ve keşfedin:",
-     "⭐ *Destek deneyiminiz nasıldı?*\n\nHizmetimizi değerlendirin:",
-     "📝 *Değerlendirme için teşekkürler!*\n\nDeneyiminiz hakkında kısa bir görüş paylaşın (geçmek için 'skip' yazın):",
-     "🙏 Geri bildiriminiz için teşekkürler, *{name}!* ⭐",
-     "💰 *Hizmetlerimizi Keşfedin*\n\nTüm detaylar için web sitemizi ziyaret edin 👇"),
-
-    ("fa", "👋 خوش آمدید، *{name}!*\n\n{urgency}\n\n🏆 *{business}* — جایی که برندگان معامله می‌کنند!\n\nمی‌خواهید چه چیزی را کشف کنید؟ 👇",
-     "🏆 خدمات ما", "🎁 دعوت کنید و کسب درآمد کنید", "🌍 زبان",
-     "🎰 دسترسی رایگان خود را امتحان کنید — چرخ شانس!",
-     "⏳ امروز قبلاً چرخاندید! {hours}h {mins}m دیگر برگردید 🕐",
-     "⚠️ *لطفاً ابتدا به کانال ما بپیوندید!*\n\nالان بپیوندید و برگردید! 👇",
-     "💬 *درخواست پشتیبانی دریافت شد!* ✅\n\nتیم ما *ظرف ۵ ساعت* با شما تماس می‌گیرد. ⏳",
-     "👋 *چت پشتیبانی پایان یافت.*\n\nممنون از تماس شما! 🙏",
-     "🎁 *لینک معرفی شما*\n\nلینک شما:\nhttps://t.me/{bot}?start=ref{uid}\n\nمعرفی‌های شما: {count}/{min}\n{bar}\n\n{needed} نفر دیگر دعوت کنید تا جایزه‌تان را باز کنید!\n{leaderboard}",
-     "👋 سلام *{name}!* دلمان برایتان تنگ شده بود! 😊\n\n🔥 سیگنال‌ها و فرصت‌های جدید منتظر شما هستند!\n\n💎 *EVALON WINNERS* به‌روزرسانی‌های هیجان‌انگیز دارد!\n\n👇 برگردید و کشف کنید:",
-     "⭐ *تجربه پشتیبانی شما چگونه بود؟*\n\nلطفاً خدمات ما را ارزیابی کنید:",
-     "📝 *ممنون از ارزیابی شما!*\n\nنظر کوتاهی درباره تجربه‌تان به اشتراک بگذارید (برای رد کردن 'skip' بنویسید):",
-     "🙏 از بازخورد شما متشکریم، *{name}!* ⭐",
-     "💰 *خدمات ما را کشف کنید*\n\nبرای جزئیات کامل از وب‌سایت ما دیدن کنید 👇"),
-
-    ("pl", "👋 Witamy, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Gdzie handlują zwycięzcy!\n\nCo chcesz odkryć? 👇",
-     "🏆 Nasze Usługi", "🎁 Zaproś i Zarabiaj", "🌍 Język",
-     "🎰 Wypróbuj Darmowy Dostęp — Szczęśliwy Spin!",
-     "⏳ Już kręciłeś dziś! Wróć za {hours}h {mins}m 🕐",
-     "⚠️ *Dołącz najpierw do naszego kanału!*\n\nDołącz teraz i wróć! 👇",
-     "💬 *Żądanie wsparcia otrzymane!* ✅\n\nNasz zespół skontaktuje się z Tobą *w ciągu 5 godzin.* ⏳",
-     "👋 *Czat wsparcia zakończony.*\n\nDziękujemy za kontakt! 🙏",
-     "🎁 *TWÓJ LINK POLECAJĄCY*\n\nTwój link:\nhttps://t.me/{bot}?start=ref{uid}\n\nTwoje polecenia: {count}/{min}\n{bar}\n\nZaproś jeszcze {needed} osób, aby odblokować nagrodę!\n{leaderboard}",
-     "👋 Hej *{name}!* Tęskniliśmy za Tobą! 😊\n\n🔥 Nowe sygnały i okazje czekają!\n\n💎 *EVALON WINNERS* ma ekscytujące aktualizacje!\n\n👇 Wróć i odkryj:",
-     "⭐ *Jak było Twoje doświadczenie z obsługą?*\n\nOceń naszą usługę:",
-     "📝 *Dziękujemy za ocenę!*\n\nPodziel się krótką opinią (lub wpisz 'skip', aby pominąć):",
-     "🙏 Dziękujemy za opinię, *{name}!* ⭐",
-     "💰 *Odkryj Nasze Usługi*\n\nOdwiedź naszą stronę, aby zobaczyć wszystkie szczegóły 👇"),
-
-    ("uk", "👋 Ласкаво просимо, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Де торгують переможці!\n\nЩо ви хочете дослідити? 👇",
-     "🏆 Наші Послуги", "🎁 Запросіть і Заробляйте", "🌍 Мова",
-     "🎰 Спробуйте Безкоштовний Доступ — Щасливий Спін!",
-     "⏳ Ви вже крутили сьогодні! Поверніться через {hours}h {mins}m 🕐",
-     "⚠️ *Будь ласка, спочатку приєднайтесь до нашого каналу!*\n\nПриєднайтесь зараз і поверніться! 👇",
-     "💬 *Запит на підтримку отримано!* ✅\n\nНаша команда зв'яжеться з вами *протягом 5 годин.* ⏳",
-     "👋 *Чат підтримки завершено.*\n\nДякуємо за звернення! 🙏",
-     "🎁 *ВАШЕ РЕФЕРАЛЬНЕ ПОСИЛАННЯ*\n\nВаше посилання:\nhttps://t.me/{bot}?start=ref{uid}\n\nВаші реферали: {count}/{min}\n{bar}\n\nЗапросіть ще {needed} для отримання винагороди!\n{leaderboard}",
-     "👋 Привіт *{name}!* Ми скучили за тобою! 😊\n\n🔥 Нові сигнали і можливості чекають!\n\n💎 *EVALON WINNERS* має захоплюючі оновлення!\n\n👇 Повернись і досліджуй:",
-     "⭐ *Яким був ваш досвід підтримки?*\n\nОціните наш сервіс:",
-     "📝 *Дякуємо за оцінку!*\n\nПоділіться коротким відгуком (або напишіть 'skip', щоб пропустити):",
-     "🙏 Дякуємо за відгук, *{name}!* ⭐",
-     "💰 *Досліджуйте Наші Послуги*\n\nВідвідайте наш сайт для всіх деталей 👇"),
-
-    ("kk", "👋 Қош келдіңіз, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Жеңімпаздар сауда жасайтын жер!\n\nНені зерттегіңіз келеді? 👇",
-     "🏆 Біздің Қызметтер", "🎁 Шақырып, Табыс Табыңыз", "🌍 Тіл",
-     "🎰 Тегін Қолжетімділікті Сынаңыз — Бақытты Айналым!",
-     "⏳ Бүгін айналдырдыңыз! {hours}h {mins}m кейін оралыңыз 🕐",
-     "⚠️ *Алдымен арнамызға қосылыңыз!*\n\nҚазір қосылып, оралыңыз! 👇",
-     "💬 *Қолдау сұранысы алынды!* ✅\n\nКоманда *5 сағат ішінде* хабарласады. ⏳",
-     "👋 *Қолдау чаты аяқталды.*\n\nХабарласқаныңызға рахмет! 🙏",
-     "🎁 *РЕФЕРАЛ СІЛТЕМЕҢІЗ*\n\nСілтемеңіз:\nhttps://t.me/{bot}?start=ref{uid}\n\nРефералдарыңыз: {count}/{min}\n{bar}\n\nСыйлықты ашу үшін {needed} адам шақырыңыз!\n{leaderboard}",
-     "👋 Сәлем *{name}!* Сені сағындық! 😊\n\n🔥 Жаңа сигналдар мен мүмкіндіктер күтуде!\n\n💎 *EVALON WINNERS* тартымды жаңартулар ұсынады!\n\n👇 Оралып, зерттеңіз:",
-     "⭐ *Қолдау тәжірибеңіз қандай болды?*\n\nКызметімізді бағалаңыз:",
-     "📝 *Бағалағаныңызға рахмет!*\n\nТәжірибеңіз туралы қысқаша пікір бөлісіңіз (өткізіп жіберу үшін 'skip' жазыңыз):",
-     "🙏 Пікіріңізге рахмет, *{name}!* ⭐",
-     "💰 *Қызметтерімізді Зерттеңіз*\n\nТолық мәліметтер үшін сайтымызды қараңыз 👇"),
-
-    ("cs", "👋 Vítejte, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Kde obchodují vítězové!\n\nCo chcete prozkoumat? 👇",
-     "🏆 Naše Služby", "🎁 Pozvěte a Vydělávejte", "🌍 Jazyk",
-     "🎰 Vyzkoušejte Bezplatný Přístup — Šťastný Spin!",
-     "⏳ Dnes jste již točili! Vraťte se za {hours}h {mins}m 🕐",
-     "⚠️ *Nejprve se připojte k našemu kanálu!*\n\nPřipojte se nyní a vraťte se! 👇",
-     "💬 *Žádost o podporu přijata!* ✅\n\nNáš tým vás bude kontaktovat *do 5 hodin.* ⏳",
-     "👋 *Chat podpory ukončen.*\n\nDěkujeme za kontakt! 🙏",
-     "🎁 *VÁŠ REFERENČNÍ ODKAZ*\n\nVáš odkaz:\nhttps://t.me/{bot}?start=ref{uid}\n\nVaše doporučení: {count}/{min}\n{bar}\n\nPozvěte dalších {needed} pro odemknutí odměny!\n{leaderboard}",
-     "👋 Ahoj *{name}!* Chyběl jsi nám! 😊\n\n🔥 Nové signály a příležitosti čekají!\n\n💎 *EVALON WINNERS* má vzrušující aktualizace!\n\n👇 Vrať se a prozkoumej:",
-     "⭐ *Jak byl váš podpůrný zážitek?*\n\nOhodnoťte naši službu:",
-     "📝 *Děkujeme za hodnocení!*\n\nPodělte se o krátký názor (nebo napište 'skip' pro přeskočení):",
-     "🙏 Děkujeme za zpětnou vazbu, *{name}!* ⭐",
-     "💰 *Prozkoumejte Naše Služby*\n\nNavštivte náš web pro všechny podrobnosti 👇"),
-]:
-    UI[_lc] = dict(UI["en"])  # copy English as base
-    UI[_lc].update({
-        "welcome": _welcome,
-        "btn_services": _btn_svc,
-        "btn_referral": _btn_ref,
-        "btn_language": _btn_lang,
-        "btn_spin": _btn_spin,
-        "spin_wait": _spin_wait,
-        "join_msg": _join,
-        "support_msg": _support,
-        "session_ended": _session,
-        "referral_msg": _referral_msg,
-        "comeback_msg": _comeback,
-        "rating_msg": _rating,
-        "rating_opinion_msg": _rating_op,
-        "rating_thanks": _rating_thanks,
-        "price_msg": _price_msg,
-    })
-
-# ── Update btn_website text for all languages to remove "Pricing" ──
-_website_texts = {
-    "en": "🌐 Website",
-    "sw": "🌐 Website",
-    "ar": "🌐 الموقع",
-    "zh": "🌐 网站",
-    "hi": "🌐 वेबसाइट",
-    "ru": "🌐 Сайт",
-    "es": "🌐 Sitio Web",
-    "fr": "🌐 Site Web",
-    "pt": "🌐 Site",
-    "de": "🌐 Website",
-    "ur": "🌐 ویب سائٹ",
-    "ja": "🌐 ウェブサイト",
-    "it": "🌐 Sito Web",
-    "ko": "🌐 웹사이트",
-    "tr": "🌐 Web Sitesi",
-    "fa": "🌐 وب سایت",
-    "pl": "🌐 Strona",
-    "uk": "🌐 Сайт",
-    "kk": "🌐 Сайт",
-    "cs": "🌐 Web",
-}
-for _lc, _txt in _website_texts.items():
-    if _lc in UI:
-        UI[_lc]["btn_website"] = _txt
-
-# ══════════════════════════════════════════════════════════════
-#  MISSING UI KEYS — Full translations for 8 partial languages
-# ══════════════════════════════════════════════════════════════
-_extra_ui = {
     "it": {
         "btn_signals": "\U0001f4ca Segnali VIP",
         "btn_social": "\U0001f465 Social Trading",
@@ -3709,6 +4046,8 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *Nessun aggiornamento ancora!*\n\nTorna piu tardi. \U0001f514",
         "no_vip": "\U0001f4ca *Nessun risultato VIP oggi!*\n\nUnisciti al canale VIP per segnali in diretta. \u26a1",
         "no_results_history": "\U0001f4c5 *Nessun risultato passato!*\n\nL admin pubblichera i risultati qui. \u26a1",
+        "choose_service": "🔥 *Scegli il tuo servizio* 👇",
+        "join_service_msg": "⚠️ *Per favore unisciti prima al nostro canale!*\n\nHai scelto *{service}* — Unisciti ora per ottenere accesso! 👇",
         "fallback_msg": "\U0001f914 Non ho trovato una risposta.\n\nVuoi parlare con il nostro team di supporto?",
         "comeback_msg": "👋 Ciao *{name}!* Ci sei mancato! 😊\n\n🔥 Nuovi segnali e opportunità ti aspettano!\n\n👇 Torna ed esplora:",
         "auto_clean_msg": "🔄 *Chat aggiornata!*\n\nTocca qui sotto per continuare 👇",
@@ -3722,6 +4061,36 @@ _extra_ui = {
         "btn_poll_pocket": "💰 Pocket Option",
         "btn_poll_both": "✅ Entrambi",
         "welcome_video": "🎬 *Benvenuto in EVALON WINNERS!*\n\nGuarda questa introduzione! 🏆",
+        "btn_idealab": "💡 Idea Lab — Crea il tuo strumento",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Hai un'idea per qualcosa che vorresti costruire?
+
+✅ Bot di trading personalizzato
+✅ Indicatore personale
+✅ Sistema di trading automatico
+✅ Strumento di segnali
+✅ Qualsiasi strumento di trading
+
+💎 Costruiamo secondo le tue esigenze!
+
+Come funziona:
+1️⃣ Invia la tua idea qui sotto
+2️⃣ Il nostro team ti contatterà
+3️⃣ Costruiamo insieme
+4️⃣ Ricevi il tuo servizio al completamento!
+
+👇 *Scrivi la tua idea ora:*",
+        "idealab_ack": "🎉 *Grazie per la tua idea!*
+
+Il nostro team la esaminerà e ti contatterà a breve.
+
+💎 Siamo felici di aiutarti a costruire:
+• Il tuo bot unico
+• Il tuo indicatore personalizzato
+• Il tuo sistema di trading
+
+🚀 La tua idea potrebbe diventare un prodotto che aiuta migliaia di trader!",
     },
     "ko": {
         "btn_signals": "\U0001f4ca VIP \uc2e0\ud638",
@@ -3766,6 +4135,8 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *\uc544\uc9c1 \uc0c8\ub85c\uc6b4 \uc5c5\ub370\uc774\ud2b8\uac00 \uc5c6\uc2b5\ub2c8\ub2e4!*\n\n\ub098\uc911\uc5d0 \ub2e4\uc2dc \ud655\uc778\ud558\uc138\uc694. \U0001f514",
         "no_vip": "\U0001f4ca *\uc624\ub298 VIP \uacb0\uacfc\uac00 \uc544\uc9c1 \uac8c\uc2dc\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4!*\n\nVIP \ucc44\ub110\uc5d0 \ucc38\uc5ec\ud558\uc138\uc694. \u26a1",
         "no_results_history": "\U0001f4c5 *\uc544\uc9c1 \uacfc\uac70 \uacb0\uacfc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4!*\n\n\uad00\ub9ac\uc790\uac00 \uc138\uc158 \uacb0\uacfc\ub97c \uac8c\uc2dc\ud560 \uac83\uc785\ub2c8\ub2e4. \u26a1",
+        "choose_service": "🔥 *서비스를 선택하세요* 👇",
+        "join_service_msg": "⚠️ *먼저 채널에 참가해주세요!*\n\n*{service}* 를 선택했습니다 — 지금 참가하여 액세스를 받으세요! 👇",
         "comeback_msg": "👋 안녕하세요 *{name}!* 보고 싶었어요! 😊\n\n🔥 새 신호와 기회가 기다리고 있습니다!\n\n👇 돌아와서 탐색하세요:",
         "auto_clean_msg": "🔄 *채팅이 새로고침되었습니다!*\n\n계속하려면 아래를 탭하세요 👇",
         "join_pending": "⏳ *요청이 접수되었습니다!*\n\n관리자가 곧 승인합니다. 🙏",
@@ -3778,6 +4149,36 @@ _extra_ui = {
         "btn_poll_pocket": "💰 Pocket Option",
         "btn_poll_both": "✅ 둘 다",
         "welcome_video": "🎬 *EVALON WINNERS에 오신 것을 환영합니다!*\n\n이 소개를 보세요! 🏆",
+        "btn_idealab": "💡 아이디어 랩 — 도구를 만들어보세요",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+만들고 싶은 것에 대한 아이디어가 있으신가요?
+
+✅ 맞춤형 트레이딩 봇
+✅ 개인 인디케이터
+✅ 자동 거래 시스템
+✅ 신호 도구
+✅ 모든 트레이딩 도구
+
+💎 귀하의 필요에 맞게 구축합니다!
+
+작동 방식:
+1️⃣ 아래에 아이디어를 보내세요
+2️⃣ 팀이 연락할 것입니다
+3️⃣ 함께 만듭니다
+4️⃣ 완료 시 서비스를 받습니다!
+
+👇 *지금 아이디어를 적어보세요:*",
+        "idealab_ack": "🎉 *아이디어 감사합니다!*
+
+팀이 검토 후 곧 연락드리겠습니다.
+
+💎 다음을 만드는 데 도움드립니다:
+• 귀하만의 독특한 봇
+• 맞춤형 인디케이터
+• 귀하의 거래 시스템
+
+🚀 귀하의 아이디어가 수천 명의 트레이더를 돕는 제품이 될 수 있습니다!",
     },
     "tr": {
         "btn_signals": "\U0001f4ca VIP Sinyaller",
@@ -3822,6 +4223,8 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *Henuz yeni guncelleme yok!*\n\nDaha sonra tekrar kontrol edin. \U0001f514",
         "no_vip": "\U0001f4ca *Bugun VIP sonucu yayinlanmadi!*\n\nCanli sinyaller icin VIP kanalina katilin. \u26a1",
         "no_results_history": "\U0001f4c5 *Gecmis sonuc yok!*\n\nYonetici oturum sonuclarini buraya yayinlayacak. \u26a1",
+        "choose_service": "🔥 *Hizmetinizi seçin* 👇",
+        "join_service_msg": "⚠️ *Lütfen önce kanalımıza katılın!*\n\n*{service}* seçtiniz — Erişim almak için şimdi katılın! 👇",
         "comeback_msg": "👋 Merhaba *{name}!* Sizi özledik! 😊\n\n🔥 Yeni sinyaller ve firsatlar sizi bekliyor!\n\n👇 Geri donun ve kesfedın:",
         "auto_clean_msg": "🔄 *Sohbet yenilendi!*\n\nDevam etmek icin asagiya dokunun 👇",
         "join_pending": "⏳ *Talep alindi!*\n\nYonetici yakinda onaylayacak. 🙏",
@@ -3834,6 +4237,36 @@ _extra_ui = {
         "btn_poll_pocket": "💰 Pocket Option",
         "btn_poll_both": "✅ Her Ikisi",
         "welcome_video": "🎬 *EVALON WINNERS'a Hosgeldiniz!*\n\nBu tanitimi izleyin! 🏆",
+        "btn_idealab": "💡 Fikir Laboratuvarı — Aracını Yap",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Yapmak istediğiniz bir şey için fikriniz var mı?
+
+✅ Özel Trading Botu
+✅ Kişisel Gösterge
+✅ Otomatik İşlem Sistemi
+✅ Sinyal Aracı
+✅ Herhangi bir Trading Aracı
+
+💎 İhtiyaçlarınıza göre inşa ediyoruz!
+
+Nasıl çalışır:
+1️⃣ Fikrinizi aşağıya gönderin
+2️⃣ Ekibimiz sizinle iletişime geçecek
+3️⃣ Birlikte inşa ediyoruz
+4️⃣ Tamamlandığında hizmetinizi alırsınız!
+
+👇 *Fikrinizi şimdi yazın:*",
+        "idealab_ack": "🎉 *Fikrin için teşekkürler!*
+
+Ekibimiz inceleyecek ve yakında seninle iletişime geçecek.
+
+💎 Şunları inşa etmene yardımcı olmaktan mutluluk duyarız:
+• Eşsiz botun
+• Özel göstergen
+• İşlem sistemin
+
+🚀 Fikrin binlerce trader'a yardım eden bir ürün olabilir!",
     },
     "fa": {
         "btn_signals": "\U0001f4ca \u0633\u06cc\u06af\u0646\u0627\u0644\u200c\u0647\u0627\u06cc VIP",
@@ -3878,6 +4311,8 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *\u0647\u0646\u0648\u0632 \u0628\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06cc \u062c\u062f\u06cc\u062f\u06cc \u0646\u06cc\u0633\u062a!*\n\n\u0628\u0639\u062f\u0627 \u062f\u0648\u0628\u0627\u0631\u0647 \u0628\u0631\u0631\u0633\u06cc \u06a9\u0646\u06cc\u062f. \U0001f514",
         "no_vip": "\U0001f4ca *\u0627\u0645\u0631\u0648\u0632 \u0646\u062a\u06cc\u062c\u0647 VIP \u0645\u0646\u062a\u0634\u0631 \u0646\u0634\u062f\u0647!*\n\n\u0628\u0631\u0627\u06cc \u0633\u06cc\u06af\u0646\u0627\u0644 \u0632\u0646\u062f\u0647 \u0628\u0647 \u06a9\u0627\u0646\u0627\u0644 VIP \u0628\u067e\u06cc\u0648\u0646\u062f\u06cc\u062f. \u26a1",
         "no_results_history": "\U0001f4c5 *\u0647\u0646\u0648\u0632 \u0646\u062a\u06cc\u062c\u0647 \u06af\u0630\u0634\u062a\u0647\u200c\u0627\u06cc \u0646\u06cc\u0633\u062a!*\n\n\u0627\u062f\u0645\u06cc\u0646 \u0646\u062a\u0627\u06cc\u062c \u062c\u0644\u0633\u0627\u062a \u0631\u0627 \u0627\u06cc\u0646\u062c\u0627 \u0645\u0646\u062a\u0634\u0631 \u062e\u0648\u0627\u0647\u062f \u06a9\u0631\u062f. \u26a1",
+        "choose_service": "🔥 *سرویس خود را انتخاب کنید* 👇",
+        "join_service_msg": "⚠️ *لطفاً ابتدا به کانال ما بپیوندید!*\n\n*{service}* را انتخاب کردید — همین الان بپیوندید و دسترسی بگیرید! 👇",
         "comeback_msg": "👋 سلام *{name}!* دلمان برایتان تنگ شده بود! 😊\n\n🔥 سیگنال‌ها و فرصت‌های جدید منتظر شما هستند!\n\n👇 برگردید و کشف کنید:",
         "auto_clean_msg": "🔄 *چت تازه‌سازی شد!*\n\nبرای ادامه پایین را لمس کنید 👇",
         "join_pending": "⏳ *درخواست دریافت شد!*\n\nادمین به زودی تأیید خواهد کرد. 🙏",
@@ -3890,6 +4325,36 @@ _extra_ui = {
         "btn_poll_pocket": "💰 Pocket Option",
         "btn_poll_both": "✅ هر دو",
         "welcome_video": "🎬 *به EVALON WINNERS خوش آمدید!*\n\nاین معرفی را تماشا کنید! 🏆",
+        "btn_idealab": "💡 آزمایشگاه ایده — ابزار خود را بسازید",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+آیا ایده‌ای برای چیزی که می‌خواهید ساخته شود دارید؟
+
+✅ ربات معاملاتی سفارشی
+✅ اندیکاتور شخصی
+✅ سیستم معاملاتی خودکار
+✅ ابزار سیگنال
+✅ هر ابزار معاملاتی
+
+💎 بر اساس نیازهای شما می‌سازیم!
+
+نحوه کار:
+1️⃣ ایده خود را در زیر ارسال کنید
+2️⃣ تیم ما با شما تماس می‌گیرد
+3️⃣ با هم می‌سازیم
+4️⃣ پس از اتمام سرویس را دریافت می‌کنید!
+
+👇 *ایده خود را همین الان بنویسید:*",
+        "idealab_ack": "🎉 *از ایده شما متشکریم!*
+
+تیم ما آن را بررسی کرده و به زودی با شما تماس می‌گیرد.
+
+💎 خوشحال می‌شویم به شما در ساخت کمک کنیم:
+• ربات منحصربه‌فرد شما
+• اندیکاتور سفارشی شما
+• سیستم معاملاتی شما
+
+🚀 ایده شما می‌تواند محصولی شود که به هزاران معامله‌گر کمک کند!",
     },
     "pl": {
         "btn_signals": "\U0001f4ca Sygna\u0142y VIP",
@@ -3916,7 +4381,64 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *Brak nowych aktualizacji!*\n\nSprawdź ponownie później. \U0001f514",
         "no_vip": "\U0001f4ca *Dzi\u015b nie opublikowano wynik\u00f3w VIP!*\n\nDo\u0142\u0105cz do kana\u0142u VIP po sygna\u0142y na \u017cywo. \u26a1",
         "no_results_history": "\U0001f4c5 *Brak poprzednich wynik\u00f3w!*\n\nAdmin opublikuje tu wyniki sesji. \u26a1",
+        "choose_service": "🔥 *Wybierz swoją usługę* 👇",
+        "join_service_msg": "⚠️ *Najpierw dołącz do naszego kanału!*\n\nWybrałeś *{service}* — Dołącz teraz, aby uzyskać dostęp! 👇",
         "spin_spinning": "\U0001f3b0 Kr\u0119ci si\u0119...",
+        "btn_referral": "🎁 Zaproś i Zarabiaj", "btn_language": "🌍 Język",
+        "btn_website": "🌐 Strona i Ceny", "btn_spin": "🎰 Koło Fortuny",
+        "welcome": "👋 Witaj, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Gdzie wygrywają traderzy!\n\nCo chcesz poznać? 👇",
+        "services_msg": "🏆 *NASZE USŁUGI*\n\nWybierz usługę, aby dowiedzieć się więcej 👇",
+        "join_msg": "⚠️ *Najpierw dołącz do naszego kanału!*\n\nDołącz teraz i wróć! 👇",
+        "support_msg": "💬 *Zgłoszenie supportu odebrane!* ✅\n\nNasz team skontaktuje się z Tobą *w ciągu 5 godzin.* ⏳\n\nTrzymaj bota otwartego! 🙏",
+        "session_ended": "👋 *Czat supportu zakończony.*\n\nDziękujemy za kontakt! 🙏",
+        "rating_msg": "⭐ *Jak oceniasz nasze wsparcie?*\n\nOceń naszą usługę:",
+        "rating_opinion_msg": "📝 *Dziękujemy za ocenę!*\n\nPodziel się krótką opinią (lub napisz 'skip'):",
+        "rating_thanks": "🙏 Dziękujemy za opinię, *{name}!* ⭐",
+        "comeback_msg": "👋 Hej *{name}!* Tęskniliśmy za Tobą! 😊\n\n🔥 Nowe sygnały i okazje czekają!\n\n👇 Wróć i odkryj:",
+        "auto_clean_msg": "🔄 *Czat odświeżony!*\n\nDotknij poniżej, aby kontynuować 👇",
+        "join_pending": "⏳ *Zgłoszenie odebrane!*\n\nAdmin zatwierdzi wkrótce. 🙏",
+        "spin_wait": "⏳ Już kręciłeś dziś! Wróć za {hours}h {mins}min 🕐",
+        "referral_msg": "🎁 *TWÓJ LINK POLECAJĄCY*\n\nLink:\nhttps://t.me/{bot}?start=ref{uid}\n\nPolecenia: {count}/{min}\n{bar}\n\nZaproś {needed} więcej osób!\n{leaderboard}",
+        "price_msg": "💰 *Ceny i Plany*\n\nOdwiedź naszą stronę 👇",
+        "poll_msg": "📊 *Szybkie pytanie!*\n\nJakiej platformy używasz?",
+        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
+        "btn_poll_both": "✅ Obu", "welcome_video": "🎬 *Witaj w EVALON WINNERS!* 🏆",
+        "btn_challenge": "💪 Challenge",
+        "btn_goal": "🎯 Set Goal",
+        "btn_mood": "😊 My Mood",
+        "btn_services": "🏆 Nasze Usługi",
+        "btn_why_evalon": "🤔 Why EVALON?",
+        "btn_win_alert": "🔔 Win Alert",
+        "btn_idealab": "💡 Laboratorium Pomysłów — Zbuduj narzędzie",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Masz pomysł na coś, co chciałbyś zbudować?
+
+✅ Niestandardowy bot tradingowy
+✅ Osobisty wskaźnik
+✅ Automatyczny system handlowy
+✅ Narzędzie sygnałów
+✅ Dowolne narzędzie tradingowe
+
+💎 Budujemy według Twoich potrzeb!
+
+Jak to działa:
+1️⃣ Wyślij swój pomysł poniżej
+2️⃣ Nasz zespół skontaktuje się z Tobą
+3️⃣ Budujemy razem
+4️⃣ Otrzymujesz usługę po ukończeniu!
+
+👇 *Napisz swój pomysł teraz:*",
+        "idealab_ack": "🎉 *Dziękujemy za Twój pomysł!*
+
+Nasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.
+
+💎 Chętnie pomożemy Ci zbudować:
+• Twój unikalny bot
+• Twój niestandardowy wskaźnik
+• Twój system handlowy
+
+🚀 Twój pomysł może stać się produktem pomagającym tysiącom traderów!",
     },
     "uk": {
         "btn_signals": "\U0001f4ca VIP \u0421\u0438\u0433\u043d\u0430\u043b\u0438",
@@ -3943,7 +4465,64 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *\u0429\u0435 \u043d\u0435\u043c\u0430\u0454 \u043d\u043e\u0432\u0438\u0445 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u044c!*\n\n\u041f\u0435\u0440\u0435\u0432\u0456\u0440\u0442\u0435 \u043f\u0456\u0437\u043d\u0456\u0448\u0435. \U0001f514",
         "no_vip": "\U0001f4ca *\u0421\u044c\u043e\u0433\u043e\u0434\u043d\u0456 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u0456\u0432 VIP \u043d\u0435\u043c\u0430\u0454!*\n\n\u041f\u0440\u0438\u0454\u0434\u043d\u0430\u0439\u0442\u0435\u0441\u044c \u0434\u043e VIP \u043a\u0430\u043d\u0430\u043b\u0443. \u26a1",
         "no_results_history": "\U0001f4c5 *\u0429\u0435 \u043d\u0435\u043c\u0430\u0454 \u043c\u0438\u043d\u0443\u043b\u0438\u0445 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u0456\u0432!*\n\n\u0410\u0434\u043c\u0456\u043d \u043e\u043f\u0443\u0431\u043b\u0456\u043a\u0443\u0454 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u0438 \u0441\u0435\u0441\u0456\u0439 \u0442\u0443\u0442. \u26a1",
+        "choose_service": "🔥 *Оберіть свою послугу* 👇",
+        "join_service_msg": "⚠️ *Спочатку приєднайтесь до нашого каналу!*\n\nВи обрали *{service}* — Приєднайтесь зараз для отримання доступу! 👇",
         "spin_spinning": "\U0001f3b0 \u041e\u0431\u0435\u0440\u0442\u0430\u0454\u0442\u044c\u0441\u044f...",
+        "btn_referral": "🎁 Запроси та Заробляй", "btn_language": "🌍 Мова",
+        "btn_website": "🌐 Сайт та Ціни", "btn_spin": "🎰 Колесо Фортуни",
+        "welcome": "👋 Ласкаво просимо, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Де перемагають трейдери!\n\nЩо хочете досліджувати? 👇",
+        "services_msg": "🏆 *НАШІ ПОСЛУГИ*\n\nОберіть послугу для детальнішої інформації 👇",
+        "join_msg": "⚠️ *Спочатку приєднайтесь до нашого каналу!*\n\nПриєднайтесь зараз і повертайтесь! 👇",
+        "support_msg": "💬 *Запит на підтримку отримано!* ✅\n\nНаша команда зв'яжеться з вами *протягом 5 годин.* ⏳\n\nТримайте бота відкритим! 🙏",
+        "session_ended": "👋 *Чат підтримки завершено.*\n\nДякуємо за звернення! 🙏",
+        "rating_msg": "⭐ *Як вам досвід підтримки?*\n\nОцініть наш сервіс:",
+        "rating_opinion_msg": "📝 *Дякуємо за оцінку!*\n\nПоділіться короткою думкою (або напишіть 'skip'):",
+        "rating_thanks": "🙏 Дякуємо за відгук, *{name}!* ⭐",
+        "comeback_msg": "👋 Привіт *{name}!* Ми сумували! 😊\n\n🔥 Нові сигнали та можливості чекають!\n\n👇 Повертайтесь:",
+        "auto_clean_msg": "🔄 *Чат оновлено!*\n\nТоркніться нижче, щоб продовжити 👇",
+        "join_pending": "⏳ *Запит отримано!*\n\nАдмін незабаром підтвердить. 🙏",
+        "spin_wait": "⏳ Ви вже крутили сьогодні! Повертайтесь через {hours}г {mins}хв 🕐",
+        "referral_msg": "🎁 *ВАШЕ РЕФЕРАЛЬНЕ ПОСИЛАННЯ*\n\nПосилання:\nhttps://t.me/{bot}?start=ref{uid}\n\nРеферали: {count}/{min}\n{bar}\n\nЗапросіть ще {needed} осіб!\n{leaderboard}",
+        "price_msg": "💰 *Ціни та Плани*\n\nВідвідайте наш сайт 👇",
+        "poll_msg": "📊 *Швидке питання!*\n\nЯку платформу ви в основному використовуєте?",
+        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
+        "btn_poll_both": "✅ Обидві", "welcome_video": "🎬 *Ласкаво просимо до EVALON WINNERS!* 🏆",
+        "btn_challenge": "💪 Challenge",
+        "btn_goal": "🎯 Set Goal",
+        "btn_mood": "😊 My Mood",
+        "btn_services": "🏆 Наші послуги",
+        "btn_why_evalon": "🤔 Why EVALON?",
+        "btn_win_alert": "🔔 Win Alert",
+        "btn_idealab": "💡 Лабораторія ідей — створи свій інструмент",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Є ідея для чогось, що ви хотіли б побудувати?
+
+✅ Індивідуальний торговий бот
+✅ Персональний індикатор
+✅ Автоматична торгова система
+✅ Інструмент сигналів
+✅ Будь-який торговий інструмент
+
+💎 Будуємо за вашими потребами!
+
+Як це працює:
+1️⃣ Надішліть ідею нижче
+2️⃣ Наша команда зв'яжеться з вами
+3️⃣ Будуємо разом
+4️⃣ Отримуєте сервіс після завершення!
+
+👇 *Напишіть вашу ідею зараз:*",
+        "idealab_ack": "🎉 *Дякуємо за вашу ідею!*
+
+Наша команда розгляне її і зв'яжеться з вами найближчим часом.
+
+💎 Ми раді допомогти вам створити:
+• Ваш унікальний бот
+• Ваш індивідуальний індикатор
+• Вашу торгову систему
+
+🚀 Ваша ідея може стати продуктом, що допомагає тисячам трейдерів!",
     },
     "kk": {
         "btn_signals": "\U0001f4ca VIP \u0421\u0438\u0433\u043d\u0430\u043b\u0434\u0430\u0440",
@@ -3970,7 +4549,64 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *\u04d8\u043b\u0456 \u0436\u0430\u04a3\u0430 \u0436\u0430\u04a3\u0430\u0440\u0442\u0443\u043b\u0430\u0440 \u0436\u043e\u049b!*\n\n\u041a\u0435\u0439\u0456\u043d\u0440\u0435\u043a \u049b\u0430\u0439\u0442\u0430 \u0442\u0435\u043a\u0441\u0435\u0440\u0456\u04a3\u0456\u0437. \U0001f514",
         "no_vip": "\U0001f4ca *\u0411\u04af\u0433\u0456\u043d VIP \u043d\u04d9\u0442\u0438\u0436\u0435\u043b\u0435\u0440 \u04d9\u043b\u0456 \u0436\u0430\u0440\u0438\u044f\u043b\u0430\u043d\u0431\u0430\u0493\u0430\u043d!*\n\nVIP \u0430\u0440\u043d\u0430\u0441\u044b\u043d\u0430 \u049b\u043e\u0441\u044b\u043b\u044b\u04a3\u044b\u0437. \u26a1",
         "no_results_history": "\U0001f4c5 *\u04e8\u0442\u043a\u0435\u043d \u043d\u04d9\u0442\u0438\u0436\u0435\u043b\u0435\u0440 \u04d9\u043b\u0456 \u0436\u043e\u049b!*\n\n\u0410\u0434\u043c\u0438\u043d \u0441\u0435\u0441\u0441\u0438\u044f \u043d\u04d9\u0442\u0438\u0436\u0435\u043b\u0435\u0440\u0456\u043d \u043e\u0441\u044b\u043d\u0434\u0430 \u0436\u0430\u0440\u0438\u044f\u043b\u0430\u0439\u0434\u044b. \u26a1",
+        "choose_service": "🔥 *Қызметіңізді таңдаңыз* 👇",
+        "join_service_msg": "⚠️ *Алдымен арнамызға қосылыңыз!*\n\n*{service}* таңдадыңыз — Қазір қосылып, рұқсат алыңыз! 👇",
         "spin_spinning": "\U0001f3b0 \u0410\u0439\u043d\u0430\u043b\u0443\u0434\u0430...",
+        "btn_referral": "🎁 Шақыр және Тап", "btn_language": "🌍 Тіл",
+        "btn_website": "🌐 Сайт және Бағалар", "btn_spin": "🎰 Бақыт Дөңгелегі",
+        "welcome": "👋 Қош келдіңіз, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Жеңімпаздар сауда жасайтын жер!\n\nНені зерттегіңіз келеді? 👇",
+        "services_msg": "🏆 *БІЗДІҢ ҚЫЗМЕТТЕР*\n\nТолығырақ білу үшін қызметті таңдаңыз 👇",
+        "join_msg": "⚠️ *Алдымен арнамызға қосылыңыз!*\n\nҚазір қосылып, оралыңыз! 👇",
+        "support_msg": "💬 *Қолдау сұрауы қабылданды!* ✅\n\nКомандамыз *5 сағат ішінде* хабарласады. ⏳\n\nБотты ашық ұстаңыз! 🙏",
+        "session_ended": "👋 *Қолдау чаты аяқталды.*\n\nБізге хабарласқаныңыз үшін рахмет! 🙏",
+        "rating_msg": "⭐ *Қолдау тәжірибеңіз қандай болды?*\n\nҚызметімізді бағалаңыз:",
+        "rating_opinion_msg": "📝 *Бағалағаныңыз үшін рахмет!*\n\nТәжірибеңіз туралы қысқаша пікір айтыңыз ('skip' жазуға болады):",
+        "rating_thanks": "🙏 Пікіріңіз үшін рахмет, *{name}!* ⭐",
+        "comeback_msg": "👋 Сәлем *{name}!* Сізді сағындық! 😊\n\n🔥 Жаңа сигналдар мен мүмкіндіктер күтуде!\n\n👇 Оралыңыз:",
+        "auto_clean_msg": "🔄 *Чат жаңартылды!*\n\nЖалғастыру үшін төменге басыңыз 👇",
+        "join_pending": "⏳ *Сұрау қабылданды!*\n\nАдминистратор жақында растайды. 🙏",
+        "spin_wait": "⏳ Бүгін айналдырдыңыз! {hours}с {mins}м-ден кейін оралыңыз 🕐",
+        "referral_msg": "🎁 *СІЗДІҢ РЕФЕРАЛ СІЛТЕМЕҢІЗ*\n\nСілтемеңіз:\nhttps://t.me/{bot}?start=ref{uid}\n\nРефералдар: {count}/{min}\n{bar}\n\nТағы {needed} адам шақырыңыз!\n{leaderboard}",
+        "price_msg": "💰 *Бағалар және Жоспарлар*\n\nАқтуалды бағалар үшін сайтымызға кіріңіз 👇",
+        "poll_msg": "📊 *Жылдам сұрақ!*\n\nНегізінен қандай платформаны пайдаланасыз?",
+        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
+        "btn_poll_both": "✅ Екеуі де", "welcome_video": "🎬 *EVALON WINNERS-ке қош келдіңіз!* 🏆",
+        "btn_challenge": "💪 Challenge",
+        "btn_goal": "🎯 Set Goal",
+        "btn_mood": "😊 My Mood",
+        "btn_services": "🏆 Біздің қызметтер",
+        "btn_why_evalon": "🤔 Why EVALON?",
+        "btn_win_alert": "🔔 Win Alert",
+        "btn_idealab": "💡 Идея Зертханасы — Өз құралыңды жасаңыз",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Жасағыңыз келетін нәрсе туралы идеяңыз бар ма?
+
+✅ Арнайы сауда боты
+✅ Жеке индикатор
+✅ Автоматты сауда жүйесі
+✅ Сигнал құралы
+✅ Кез келген сауда құралы
+
+💎 Сіздің қажеттіліктеріңізге сай жасаймыз!
+
+Қалай жұмыс істейді:
+1️⃣ Идеяңызды төменде жіберіңіз
+2️⃣ Командамыз сізбен байланысады
+3️⃣ Бірге жасаймыз
+4️⃣ Аяқталғаннан кейін қызметті аласыз!
+
+👇 *Идеяңызды қазір жазыңыз:*",
+        "idealab_ack": "🎉 *Идеяңыз үшін рахмет!*
+
+Командамыз оны қарап, жақында сізбен байланысады.
+
+💎 Мыналарды жасауға көмектесуге қуаныштымыз:
+• Сіздің бірегей ботыңыз
+• Сіздің арнайы индикаторыңыз
+• Сіздің сауда жүйеңіз
+
+🚀 Сіздің идеяңыз мыңдаған трейдерлерге көмектесетін өнімге айналуы мүмкін!",
     },
     "cs": {
         "btn_signals": "\U0001f4ca VIP Sign\u00e1ly",
@@ -3997,80 +4633,9 @@ _extra_ui = {
         "no_news": "\U0001f4e2 *Zat\u00edm \u017e\u00e1dn\u00e9 nov\u00e9 aktualizace!*\n\nZkuste to znovu pozd\u011bji. \U0001f514",
         "no_vip": "\U0001f4ca *Dnes nejsou zve\u0159ejn\u011bny \u017e\u00e1dn\u00e9 VIP v\u00fdsledky!*\n\nP\u0159ipojte se k VIP kan\u00e1lu pro \u017eiv\u00e9 sign\u00e1ly. \u26a1",
         "no_results_history": "\U0001f4c5 *Zat\u00edm \u017e\u00e1dn\u00e9 minul\u00e9 v\u00fdsledky!*\n\nAdmin sem zve\u0159ejn\u00ed v\u00fdsledky relac\u00ed. \u26a1",
+        "choose_service": "🔥 *Vyberte si svou službu* 👇",
+        "join_service_msg": "⚠️ *Nejprve se připojte k našemu kanálu!*\n\nVybrali jste *{service}* — Připojte se nyní pro získání přístupu! 👇",
         "spin_spinning": "\U0001f3b0 To\u010d\u00ed se...",
-    },
-}
-
-for _lc, _keys in _extra_ui.items():
-    if _lc in UI:
-        UI[_lc].update(_keys)
-
-# ── Add missing critical keys for non-core languages ──────────────────────────
-_missing_keys = {
-    "pl": {
-        "btn_referral": "🎁 Zaproś i Zarabiaj", "btn_language": "🌍 Język",
-        "btn_website": "🌐 Strona i Ceny", "btn_spin": "🎰 Koło Fortuny",
-        "welcome": "👋 Witaj, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Gdzie wygrywają traderzy!\n\nCo chcesz poznać? 👇",
-        "services_msg": "🏆 *NASZE USŁUGI*\n\nWybierz usługę, aby dowiedzieć się więcej 👇",
-        "join_msg": "⚠️ *Najpierw dołącz do naszego kanału!*\n\nDołącz teraz i wróć! 👇",
-        "support_msg": "💬 *Zgłoszenie supportu odebrane!* ✅\n\nNasz team skontaktuje się z Tobą *w ciągu 5 godzin.* ⏳\n\nTrzymaj bota otwartego! 🙏",
-        "session_ended": "👋 *Czat supportu zakończony.*\n\nDziękujemy za kontakt! 🙏",
-        "rating_msg": "⭐ *Jak oceniasz nasze wsparcie?*\n\nOceń naszą usługę:",
-        "rating_opinion_msg": "📝 *Dziękujemy za ocenę!*\n\nPodziel się krótką opinią (lub napisz 'skip'):",
-        "rating_thanks": "🙏 Dziękujemy za opinię, *{name}!* ⭐",
-        "comeback_msg": "👋 Hej *{name}!* Tęskniliśmy za Tobą! 😊\n\n🔥 Nowe sygnały i okazje czekają!\n\n👇 Wróć i odkryj:",
-        "auto_clean_msg": "🔄 *Czat odświeżony!*\n\nDotknij poniżej, aby kontynuować 👇",
-        "join_pending": "⏳ *Zgłoszenie odebrane!*\n\nAdmin zatwierdzi wkrótce. 🙏",
-        "spin_wait": "⏳ Już kręciłeś dziś! Wróć za {hours}h {mins}min 🕐",
-        "referral_msg": "🎁 *TWÓJ LINK POLECAJĄCY*\n\nLink:\nhttps://t.me/{bot}?start=ref{uid}\n\nPolecenia: {count}/{min}\n{bar}\n\nZaproś {needed} więcej osób!\n{leaderboard}",
-        "price_msg": "💰 *Ceny i Plany*\n\nOdwiedź naszą stronę 👇",
-        "poll_msg": "📊 *Szybkie pytanie!*\n\nJakiej platformy używasz?",
-        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
-        "btn_poll_both": "✅ Obu", "welcome_video": "🎬 *Witaj w EVALON WINNERS!* 🏆",
-    },
-    "uk": {
-        "btn_referral": "🎁 Запроси та Заробляй", "btn_language": "🌍 Мова",
-        "btn_website": "🌐 Сайт та Ціни", "btn_spin": "🎰 Колесо Фортуни",
-        "welcome": "👋 Ласкаво просимо, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Де перемагають трейдери!\n\nЩо хочете досліджувати? 👇",
-        "services_msg": "🏆 *НАШІ ПОСЛУГИ*\n\nОберіть послугу для детальнішої інформації 👇",
-        "join_msg": "⚠️ *Спочатку приєднайтесь до нашого каналу!*\n\nПриєднайтесь зараз і повертайтесь! 👇",
-        "support_msg": "💬 *Запит на підтримку отримано!* ✅\n\nНаша команда зв'яжеться з вами *протягом 5 годин.* ⏳\n\nТримайте бота відкритим! 🙏",
-        "session_ended": "👋 *Чат підтримки завершено.*\n\nДякуємо за звернення! 🙏",
-        "rating_msg": "⭐ *Як вам досвід підтримки?*\n\nОцініть наш сервіс:",
-        "rating_opinion_msg": "📝 *Дякуємо за оцінку!*\n\nПоділіться короткою думкою (або напишіть 'skip'):",
-        "rating_thanks": "🙏 Дякуємо за відгук, *{name}!* ⭐",
-        "comeback_msg": "👋 Привіт *{name}!* Ми сумували! 😊\n\n🔥 Нові сигнали та можливості чекають!\n\n👇 Повертайтесь:",
-        "auto_clean_msg": "🔄 *Чат оновлено!*\n\nТоркніться нижче, щоб продовжити 👇",
-        "join_pending": "⏳ *Запит отримано!*\n\nАдмін незабаром підтвердить. 🙏",
-        "spin_wait": "⏳ Ви вже крутили сьогодні! Повертайтесь через {hours}г {mins}хв 🕐",
-        "referral_msg": "🎁 *ВАШЕ РЕФЕРАЛЬНЕ ПОСИЛАННЯ*\n\nПосилання:\nhttps://t.me/{bot}?start=ref{uid}\n\nРеферали: {count}/{min}\n{bar}\n\nЗапросіть ще {needed} осіб!\n{leaderboard}",
-        "price_msg": "💰 *Ціни та Плани*\n\nВідвідайте наш сайт 👇",
-        "poll_msg": "📊 *Швидке питання!*\n\nЯку платформу ви в основному використовуєте?",
-        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
-        "btn_poll_both": "✅ Обидві", "welcome_video": "🎬 *Ласкаво просимо до EVALON WINNERS!* 🏆",
-    },
-    "kk": {
-        "btn_referral": "🎁 Шақыр және Тап", "btn_language": "🌍 Тіл",
-        "btn_website": "🌐 Сайт және Бағалар", "btn_spin": "🎰 Бақыт Дөңгелегі",
-        "welcome": "👋 Қош келдіңіз, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Жеңімпаздар сауда жасайтын жер!\n\nНені зерттегіңіз келеді? 👇",
-        "services_msg": "🏆 *БІЗДІҢ ҚЫЗМЕТТЕР*\n\nТолығырақ білу үшін қызметті таңдаңыз 👇",
-        "join_msg": "⚠️ *Алдымен арнамызға қосылыңыз!*\n\nҚазір қосылып, оралыңыз! 👇",
-        "support_msg": "💬 *Қолдау сұрауы қабылданды!* ✅\n\nКомандамыз *5 сағат ішінде* хабарласады. ⏳\n\nБотты ашық ұстаңыз! 🙏",
-        "session_ended": "👋 *Қолдау чаты аяқталды.*\n\nБізге хабарласқаныңыз үшін рахмет! 🙏",
-        "rating_msg": "⭐ *Қолдау тәжірибеңіз қандай болды?*\n\nҚызметімізді бағалаңыз:",
-        "rating_opinion_msg": "📝 *Бағалағаныңыз үшін рахмет!*\n\nТәжірибеңіз туралы қысқаша пікір айтыңыз ('skip' жазуға болады):",
-        "rating_thanks": "🙏 Пікіріңіз үшін рахмет, *{name}!* ⭐",
-        "comeback_msg": "👋 Сәлем *{name}!* Сізді сағындық! 😊\n\n🔥 Жаңа сигналдар мен мүмкіндіктер күтуде!\n\n👇 Оралыңыз:",
-        "auto_clean_msg": "🔄 *Чат жаңартылды!*\n\nЖалғастыру үшін төменге басыңыз 👇",
-        "join_pending": "⏳ *Сұрау қабылданды!*\n\nАдминистратор жақында растайды. 🙏",
-        "spin_wait": "⏳ Бүгін айналдырдыңыз! {hours}с {mins}м-ден кейін оралыңыз 🕐",
-        "referral_msg": "🎁 *СІЗДІҢ РЕФЕРАЛ СІЛТЕМЕҢІЗ*\n\nСілтемеңіз:\nhttps://t.me/{bot}?start=ref{uid}\n\nРефералдар: {count}/{min}\n{bar}\n\nТағы {needed} адам шақырыңыз!\n{leaderboard}",
-        "price_msg": "💰 *Бағалар және Жоспарлар*\n\nАқтуалды бағалар үшін сайтымызға кіріңіз 👇",
-        "poll_msg": "📊 *Жылдам сұрақ!*\n\nНегізінен қандай платформаны пайдаланасыз?",
-        "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
-        "btn_poll_both": "✅ Екеуі де", "welcome_video": "🎬 *EVALON WINNERS-ке қош келдіңіз!* 🏆",
-    },
-    "cs": {
         "btn_referral": "🎁 Pozvi a Vydělávej", "btn_language": "🌍 Jazyk",
         "btn_website": "🌐 Web a Ceny", "btn_spin": "🎰 Kolo Štěstí",
         "welcome": "👋 Vítejte, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Kde vítězí tradeři!\n\nCo chcete prozkoumat? 👇",
@@ -4090,90 +4655,430 @@ _missing_keys = {
         "poll_msg": "📊 *Rychlá otázka!*\n\nJakou platformu hlavně používáte?",
         "btn_poll_quotex": "📊 Quotex", "btn_poll_pocket": "💰 Pocket Option",
         "btn_poll_both": "✅ Obě", "welcome_video": "🎬 *Vítejte v EVALON WINNERS!* 🏆",
+        "btn_challenge": "💪 Challenge",
+        "btn_goal": "🎯 Set Goal",
+        "btn_mood": "😊 My Mood",
+        "btn_services": "🏆 Naše Služby",
+        "btn_why_evalon": "🤔 Why EVALON?",
+        "btn_win_alert": "🔔 Win Alert",
+        "btn_idealab": "💡 Idea Lab — Vytvořte svůj nástroj",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
+
+Máte nápad na něco, co byste rádi vytvořili?
+
+✅ Vlastní obchodní bot
+✅ Osobní indikátor
+✅ Automatický obchodní systém
+✅ Nástroj signálů
+✅ Jakýkoliv obchodní nástroj
+
+💎 Stavíme podle vašich potřeb!
+
+Jak to funguje:
+1️⃣ Pošlete svůj nápad níže
+2️⃣ Náš tým vás bude kontaktovat
+3️⃣ Stavíme společně
+4️⃣ Po dokončení obdržíte svou službu!
+
+👇 *Napište svůj nápad nyní:*",
+        "idealab_ack": "🎉 *Děkujeme za váš nápad!*
+
+Náš tým ho zkontroluje a brzy vás bude kontaktovat.
+
+💎 Rádi vám pomůžeme vytvořit:
+• Váš jedinečný bot
+• Váš vlastní indikátor
+• Váš obchodní systém
+
+🚀 Váš nápad by se mohl stát produktem pomáhajícím tisícům obchodníků!",
     },
 }
-for _lc, _keys in _missing_keys.items():
-    if _lc in UI:
-        UI[_lc].update(_keys)
+# ══════════════════════════════════════════════════════════════
+#  IDEA LAB TRANSLATIONS — All languages
+# ══════════════════════════════════════════════════════════════
 
-
-
-# ── Referral discount messages ─────────────────────────────────
-REFERRAL_DISCOUNT_MSG = {
-    "en": (
-        "🎉 *CONGRATULATIONS {name}!* 🏆\n\n"
-        "You have successfully referred *{count} people* to EVALON WINNERS!\n\n"
-        "🎁 *YOUR REWARD: 5% DISCOUNT!*\n\n"
-        "You have earned a *5% discount* on ANY of our services!\n\n"
-        "💡 But it gets better — keep inviting:\n"
-        "• 10 referrals → 10% discount\n"
-        "• 20 referrals → 20% discount\n"
-        "• 50 referrals → 50% discount\n"
-        "• 100 referrals → 70% discount 🔥\n\n"
-        "The more you invite, the more you save!\n\n"
-        "👇 Contact our team to redeem your discount:"
-    ),
-    "sw": (
-        "🎉 *HONGERA {name}!* 🏆\n\n"
-        "Umefanikiwa kuwalika *watu {count}* kwenye EVALON WINNERS!\n\n"
-        "🎁 *ZAWADI YAKO: PUNGUZO LA 5%!*\n\n"
-        "Umepata *punguzo la 5%* kwenye HUDUMA YOYOTE yetu!\n\n"
-        "💡 Lakini inazidi kuwa nzuri — endelea kuwaandika:\n"
-        "• Watu 10 → punguzo la 10%\n"
-        "• Watu 20 → punguzo la 20%\n"
-        "• Watu 50 → punguzo la 50%\n"
-        "• Watu 100 → punguzo la 70% 🔥\n\n"
-        "Unavyowaalika watu wengi zaidi, ndivyo unavyookoa zaidi!\n\n"
-        "👇 Wasiliana na timu yetu kupata punguzo lako:"
-    ),
+IDEALAB_TEXTS = {
+    "btn_idealab": {
+        "en": "💡 Idea Lab — Build Your Tool",
+        "sw": "💡 Idea Lab — Tengeneza Chombo Chako",
+        "ar": "💡 مختبر الأفكار — أنشئ أداتك",
+        "zh": "💡 创意实验室 — 打造您的工具",
+        "hi": "💡 आइडिया लैब — अपना टूल बनाएं",
+        "ru": "💡 Лаборатория идей — Создай свой инструмент",
+        "es": "💡 Laboratorio de Ideas — Construye tu herramienta",
+        "fr": "💡 Laboratoire d'Idées — Créez votre outil",
+        "pt": "💡 Laboratório de Ideias — Crie sua ferramenta",
+        "de": "💡 Ideen-Labor — Baue dein Werkzeug",
+        "ur": "💡 آئیڈیا لیب — اپنا ٹول بنائیں",
+        "ja": "💡 アイデアラボ — ツールを作ろう",
+        "it": "💡 Laboratorio Idee — Costruisci il tuo strumento",
+        "ko": "💡 아이디어 랩 — 나만의 툴 만들기",
+        "tr": "💡 Fikir Laboratuvarı — Aracını İnşa Et",
+        "fa": "💡 آزمایشگاه ایده — ابزار خود را بسازید",
+        "pl": "💡 Laboratorium Pomysłów — Zbuduj swoje narzędzie",
+        "uk": "💡 Лабораторія ідей — Створи свій інструмент",
+        "kk": "💡 Идея зертханасы — Өз құралыңызды жасаңыз",
+        "cs": "💡 Laboratoř nápadů — Vytvoř svůj nástroj",
+    },
+    "idealab_prompt": {
+        "en": (
+            "💡 *EVALON IDEA LAB* 🚀\n\n"
+            "Do you have an idea for something you'd like built?\n\n"
+            "✅ Custom Trading Bot\n✅ Personal Indicator\n✅ Auto Trading System\n"
+            "✅ Signal Tool\n✅ Any Trading Tool\n\n"
+            "💎 We build it for you!\n\n"
+            "*How it works:*\n1️⃣ Type your idea below\n2️⃣ Our team reviews it\n"
+            "3️⃣ We contact you\n4️⃣ You get your tool!\n\n👇 *Write your idea now:*"
+        ),
+        "sw": (
+            "💡 *EVALON IDEA LAB* 🚀\n\n"
+            "Je, una wazo la kitu ungependa kutengenezwa?\n\n"
+            "✅ Bot ya Biashara ya Kibinafsi\n✅ Indicator Yako Maalum\n"
+            "✅ Mfumo wa Biashara Otomatiki\n✅ Chombo cha Signals\n"
+            "✅ Chombo Chochote cha Biashara\n\n"
+            "💎 Tunatengeneza kwa mahitaji yako!\n\n"
+            "*Jinsi inavyofanya kazi:*\n1️⃣ Tuma wazo lako hapa chini\n"
+            "2️⃣ Timu yetu italiangalia\n3️⃣ Tutawasiliana nawe\n"
+            "4️⃣ Unapata chombo chako!\n\n👇 *Andika wazo lako sasa:*"
+        ),
+        "ar": (
+            "💡 *مختبر أفكار EVALON* 🚀\n\n"
+            "هل لديك فكرة لشيء تريد بناءه؟\n\n"
+            "✅ بوت تداول مخصص\n✅ مؤشر شخصي\n✅ نظام تداول تلقائي\n"
+            "✅ أداة إشارات\n✅ أي أداة تداول\n\n"
+            "💎 نبنيه لك!\n\n"
+            "*كيف يعمل:*\n1️⃣ اكتب فكرتك أدناه\n2️⃣ يراجعها فريقنا\n"
+            "3️⃣ نتواصل معك\n4️⃣ تحصل على أداتك!\n\n👇 *اكتب فكرتك الآن:*"
+        ),
+        "zh": (
+            "💡 *EVALON 创意实验室* 🚀\n\n"
+            "您有想要构建的想法吗？\n\n"
+            "✅ 自定义交易机器人\n✅ 个人指标\n✅ 自动交易系统\n"
+            "✅ 信号工具\n✅ 任何交易工具\n\n"
+            "💎 我们为您构建！\n\n"
+            "*如何运作：*\n1️⃣ 在下方输入您的想法\n2️⃣ 我们的团队审查\n"
+            "3️⃣ 我们联系您\n4️⃣ 您获得工具！\n\n👇 *立即写下您的想法：*"
+        ),
+        "hi": (
+            "💡 *EVALON आइडिया लैब* 🚀\n\n"
+            "क्या आपके पास कोई आइडिया है जो आप बनवाना चाहते हैं?\n\n"
+            "✅ कस्टम ट्रेडिंग बॉट\n✅ पर्सनल इंडिकेटर\n✅ ऑटो ट्रेडिंग सिस्टम\n"
+            "✅ सिग्नल टूल\n✅ कोई भी ट्रेडिंग टूल\n\n"
+            "💎 हम आपके लिए बनाते हैं!\n\n"
+            "*यह कैसे काम करता है:*\n1️⃣ नीचे अपना आइडिया लिखें\n"
+            "2️⃣ हमारी टीम इसे देखती है\n3️⃣ हम आपसे संपर्क करते हैं\n"
+            "4️⃣ आपको आपका टूल मिलता है!\n\n👇 *अभी अपना आइडिया लिखें:*"
+        ),
+        "ru": (
+            "💡 *Лаборатория идей EVALON* 🚀\n\n"
+            "Есть идея, что хотите создать?\n\n"
+            "✅ Торговый бот на заказ\n✅ Личный индикатор\n✅ Автоматическая система\n"
+            "✅ Инструмент сигналов\n✅ Любой торговый инструмент\n\n"
+            "💎 Мы создадим это для вас!\n\n"
+            "*Как это работает:*\n1️⃣ Напишите идею ниже\n"
+            "2️⃣ Команда рассматривает\n3️⃣ Мы связываемся с вами\n"
+            "4️⃣ Вы получаете инструмент!\n\n👇 *Напишите идею сейчас:*"
+        ),
+        "es": (
+            "💡 *Laboratorio de Ideas EVALON* 🚀\n\n"
+            "¿Tienes una idea de algo que quieras construir?\n\n"
+            "✅ Bot de trading personalizado\n✅ Indicador personal\n"
+            "✅ Sistema de trading automático\n✅ Herramienta de señales\n"
+            "✅ Cualquier herramienta de trading\n\n"
+            "💎 ¡Lo construimos para ti!\n\n"
+            "*Cómo funciona:*\n1️⃣ Escribe tu idea abajo\n"
+            "2️⃣ Nuestro equipo la revisa\n3️⃣ Te contactamos\n"
+            "4️⃣ ¡Obtienes tu herramienta!\n\n👇 *Escribe tu idea ahora:*"
+        ),
+        "fr": (
+            "💡 *Laboratoire d'Idées EVALON* 🚀\n\n"
+            "Avez-vous une idée de quelque chose que vous aimeriez créer?\n\n"
+            "✅ Bot de trading personnalisé\n✅ Indicateur personnel\n"
+            "✅ Système de trading automatique\n✅ Outil de signaux\n"
+            "✅ Tout outil de trading\n\n"
+            "💎 Nous le construisons pour vous!\n\n"
+            "*Comment ça marche:*\n1️⃣ Tapez votre idée ci-dessous\n"
+            "2️⃣ Notre équipe la révise\n3️⃣ Nous vous contactons\n"
+            "4️⃣ Vous obtenez votre outil!\n\n👇 *Écrivez votre idée maintenant:*"
+        ),
+        "pt": (
+            "💡 *Laboratório de Ideias EVALON* 🚀\n\n"
+            "Tem uma ideia de algo que gostaria de construir?\n\n"
+            "✅ Bot de trading personalizado\n✅ Indicador pessoal\n"
+            "✅ Sistema de trading automático\n✅ Ferramenta de sinais\n"
+            "✅ Qualquer ferramenta de trading\n\n"
+            "💎 Construímos para você!\n\n"
+            "*Como funciona:*\n1️⃣ Escreva sua ideia abaixo\n"
+            "2️⃣ Nossa equipe revisa\n3️⃣ Entramos em contato\n"
+            "4️⃣ Você recebe sua ferramenta!\n\n👇 *Escreva sua ideia agora:*"
+        ),
+        "de": (
+            "💡 *EVALON Ideen-Labor* 🚀\n\n"
+            "Hast du eine Idee für etwas, das du bauen möchtest?\n\n"
+            "✅ Individueller Trading-Bot\n✅ Persönlicher Indikator\n"
+            "✅ Automatisches Trading-System\n✅ Signal-Tool\n"
+            "✅ Jedes Trading-Tool\n\n"
+            "💎 Wir bauen es für dich!\n\n"
+            "*So funktioniert es:*\n1️⃣ Schreibe deine Idee unten\n"
+            "2️⃣ Unser Team prüft sie\n3️⃣ Wir kontaktieren dich\n"
+            "4️⃣ Du erhältst dein Tool!\n\n👇 *Schreibe jetzt deine Idee:*"
+        ),
+        "ur": (
+            "💡 *EVALON آئیڈیا لیب* 🚀\n\n"
+            "کیا آپ کے پاس کوئی ایسا آئیڈیا ہے جو آپ بنوانا چاہتے ہیں؟\n\n"
+            "✅ کسٹم ٹریڈنگ بوٹ\n✅ ذاتی انڈیکیٹر\n✅ آٹو ٹریڈنگ سسٹم\n"
+            "✅ سگنل ٹول\n✅ کوئی بھی ٹریڈنگ ٹول\n\n"
+            "💎 ہم آپ کے لیے بناتے ہیں!\n\n"
+            "*یہ کیسے کام کرتا ہے:*\n1️⃣ نیچے اپنا آئیڈیا لکھیں\n"
+            "2️⃣ ہماری ٹیم اسے دیکھتی ہے\n3️⃣ ہم آپ سے رابطہ کرتے ہیں\n"
+            "4️⃣ آپ کو ٹول ملتا ہے!\n\n👇 *ابھی اپنا آئیڈیا لکھیں:*"
+        ),
+        "ja": (
+            "💡 *EVALONアイデアラボ* 🚀\n\n"
+            "作ってほしいものがありますか？\n\n"
+            "✅ カスタム取引ボット\n✅ パーソナルインジケーター\n"
+            "✅ 自動取引システム\n✅ シグナルツール\n✅ あらゆる取引ツール\n\n"
+            "💎 あなたのために作ります！\n\n"
+            "*仕組み：*\n1️⃣ 以下にアイデアを入力\n"
+            "2️⃣ チームが確認\n3️⃣ ご連絡します\n"
+            "4️⃣ ツールを受け取る！\n\n👇 *今すぐアイデアを書いてください：*"
+        ),
+        "it": (
+            "💡 *Laboratorio Idee EVALON* 🚀\n\n"
+            "Hai un'idea per qualcosa che vorresti costruire?\n\n"
+            "✅ Bot di trading personalizzato\n✅ Indicatore personale\n"
+            "✅ Sistema di trading automatico\n✅ Strumento segnali\n"
+            "✅ Qualsiasi strumento di trading\n\n"
+            "💎 Lo costruiamo per te!\n\n"
+            "*Come funziona:*\n1️⃣ Scrivi la tua idea sotto\n"
+            "2️⃣ Il team la esamina\n3️⃣ Ti contattamo\n"
+            "4️⃣ Ottieni il tuo strumento!\n\n👇 *Scrivi la tua idea ora:*"
+        ),
+        "ko": (
+            "💡 *EVALON 아이디어 랩* 🚀\n\n"
+            "만들고 싶은 아이디어가 있으신가요?\n\n"
+            "✅ 맞춤형 트레이딩 봇\n✅ 개인 인디케이터\n"
+            "✅ 자동 트레이딩 시스템\n✅ 신호 도구\n✅ 모든 트레이딩 도구\n\n"
+            "💎 우리가 만들어 드립니다!\n\n"
+            "*작동 방식:*\n1️⃣ 아래에 아이디어 입력\n"
+            "2️⃣ 팀이 검토\n3️⃣ 연락드립니다\n"
+            "4️⃣ 도구를 받으세요!\n\n👇 *지금 아이디어를 작성하세요:*"
+        ),
+        "tr": (
+            "💡 *EVALON Fikir Laboratuvarı* 🚀\n\n"
+            "Oluşturulmasını istediğin bir fikrin var mı?\n\n"
+            "✅ Özel ticaret botu\n✅ Kişisel gösterge\n"
+            "✅ Otomatik ticaret sistemi\n✅ Sinyal aracı\n"
+            "✅ Herhangi bir ticaret aracı\n\n"
+            "💎 Senin için inşa ediyoruz!\n\n"
+            "*Nasıl çalışır:*\n1️⃣ Fikrini aşağıya yaz\n"
+            "2️⃣ Ekibimiz inceler\n3️⃣ Seninle iletişime geçiyoruz\n"
+            "4️⃣ Aracını alırsın!\n\n👇 *Şimdi fikrini yaz:*"
+        ),
+        "fa": (
+            "💡 *آزمایشگاه ایده EVALON* 🚀\n\n"
+            "آیا ایده‌ای دارید که می‌خواهید ساخته شود؟\n\n"
+            "✅ ربات معاملاتی سفارشی\n✅ اندیکاتور شخصی\n"
+            "✅ سیستم معاملاتی خودکار\n✅ ابزار سیگنال\n"
+            "✅ هر ابزار معاملاتی\n\n"
+            "💎 ما آن را برای شما می‌سازیم!\n\n"
+            "*چگونه کار می‌کند:*\n1️⃣ ایده خود را در زیر بنویسید\n"
+            "2️⃣ تیم ما بررسی می‌کند\n3️⃣ با شما تماس می‌گیریم\n"
+            "4️⃣ ابزار خود را دریافت می‌کنید!\n\n👇 *ایده خود را الان بنویسید:*"
+        ),
+        "pl": (
+            "💡 *Laboratorium Pomysłów EVALON* 🚀\n\n"
+            "Masz pomysł na coś, co chciałbyś zbudować?\n\n"
+            "✅ Niestandardowy bot handlowy\n✅ Osobisty wskaźnik\n"
+            "✅ Automatyczny system handlowy\n✅ Narzędzie sygnałów\n"
+            "✅ Dowolne narzędzie handlowe\n\n"
+            "💎 Budujemy to dla ciebie!\n\n"
+            "*Jak to działa:*\n1️⃣ Napisz swój pomysł poniżej\n"
+            "2️⃣ Nasz zespół go przegląda\n3️⃣ Kontaktujemy się z tobą\n"
+            "4️⃣ Otrzymujesz swoje narzędzie!\n\n👇 *Napisz swój pomysł teraz:*"
+        ),
+        "uk": (
+            "💡 *Лабораторія ідей EVALON* 🚀\n\n"
+            "Є ідея для чогось, що ти хочеш створити?\n\n"
+            "✅ Торговий бот на замовлення\n✅ Особистий індикатор\n"
+            "✅ Автоматична торгова система\n✅ Інструмент сигналів\n"
+            "✅ Будь-який торговий інструмент\n\n"
+            "💎 Ми створимо це для тебе!\n\n"
+            "*Як це працює:*\n1️⃣ Напиши ідею нижче\n"
+            "2️⃣ Команда розглядає\n3️⃣ Ми зв'язуємося з тобою\n"
+            "4️⃣ Отримуєш інструмент!\n\n👇 *Напиши ідею зараз:*"
+        ),
+        "kk": (
+            "💡 *EVALON Идея зертханасы* 🚀\n\n"
+            "Жасалуын қалайтын идеяңыз бар ма?\n\n"
+            "✅ Арнайы сауда боты\n✅ Жеке индикатор\n"
+            "✅ Автоматты сауда жүйесі\n✅ Сигнал құралы\n"
+            "✅ Кез келген сауда құралы\n\n"
+            "💎 Біз сіз үшін жасаймыз!\n\n"
+            "*Қалай жұмыс істейді:*\n1️⃣ Идеяңызды төменге жазыңыз\n"
+            "2️⃣ Командамыз қарайды\n3️⃣ Сізбен хабарласамыз\n"
+            "4️⃣ Құралыңызды аласыз!\n\n👇 *Идеяңызды қазір жазыңыз:*"
+        ),
+        "cs": (
+            "💡 *Laboratoř nápadů EVALON* 🚀\n\n"
+            "Máte nápad na něco, co byste chtěli vytvořit?\n\n"
+            "✅ Vlastní obchodní bot\n✅ Osobní indikátor\n"
+            "✅ Automatický obchodní systém\n✅ Nástroj signálů\n"
+            "✅ Jakýkoli obchodní nástroj\n\n"
+            "💎 Vytvoříme to pro vás!\n\n"
+            "*Jak to funguje:*\n1️⃣ Napište svůj nápad níže\n"
+            "2️⃣ Náš tým ho posoudí\n3️⃣ Kontaktujeme vás\n"
+            "4️⃣ Získáte svůj nástroj!\n\n👇 *Napište svůj nápad nyní:*"
+        ),
+    },
+    "idealab_ack": {
+        "en": (
+            "🎉 *Thank you for your idea!*\n\n"
+            "Our team will review it and contact you soon.\n\n"
+            "💎 We're excited to help you build:\n"
+            "• Your unique bot\n• Your custom indicator\n• Your trading system\n\n"
+            "🚀 Your idea could become a tool that helps thousands of traders!"
+        ),
+        "sw": (
+            "🎉 *Asante kwa wazo lako!*\n\n"
+            "Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.\n\n"
+            "💎 Tunafurahi kukusaidia kutengeneza:\n"
+            "• Bot yako ya kipekee\n• Indicator yako maalum\n• Mfumo wako wa trading\n\n"
+            "🚀 Wazo lako linaweza kuwa bidhaa inayowasaidia maelfu ya wafanyabiashara!"
+        ),
+        "ar": (
+            "🎉 *شكراً على فكرتك!*\n\n"
+            "سيراجعها فريقنا ويتواصل معك قريباً.\n\n"
+            "💎 يسعدنا مساعدتك في بناء:\n"
+            "• بوتك الفريد\n• مؤشرك المخصص\n• نظام التداول الخاص بك\n\n"
+            "🚀 فكرتك قد تصبح أداة تساعد آلاف المتداولين!"
+        ),
+        "zh": (
+            "🎉 *感谢您的想法！*\n\n"
+            "我们的团队将审查它并很快与您联系。\n\n"
+            "💎 我们很高兴帮助您构建：\n"
+            "• 您独特的机器人\n• 您的自定义指标\n• 您的交易系统\n\n"
+            "🚀 您的想法可能成为帮助数千名交易者的工具！"
+        ),
+        "hi": (
+            "🎉 *आपके आइडिया के लिए धन्यवाद!*\n\n"
+            "हमारी टीम इसे देखेगी और जल्द ही आपसे संपर्क करेगी।\n\n"
+            "💎 हम आपकी मदद करने के लिए उत्साहित हैं:\n"
+            "• आपका अनोखा बॉट\n• आपका कस्टम इंडिकेटर\n• आपका ट्रेडिंग सिस्टम\n\n"
+            "🚀 आपका आइडिया हजारों ट्रेडर्स की मदद करने वाला टूल बन सकता है!"
+        ),
+        "ru": (
+            "🎉 *Спасибо за идею!*\n\n"
+            "Команда рассмотрит её и свяжется с вами.\n\n"
+            "💎 Мы рады помочь вам создать:\n"
+            "• Ваш уникальный бот\n• Ваш индикатор\n• Вашу торговую систему\n\n"
+            "🚀 Ваша идея может стать инструментом для тысяч трейдеров!"
+        ),
+        "es": (
+            "🎉 *¡Gracias por tu idea!*\n\n"
+            "Nuestro equipo la revisará y te contactará pronto.\n\n"
+            "💎 Estamos emocionados de ayudarte a construir:\n"
+            "• Tu bot único\n• Tu indicador personalizado\n• Tu sistema de trading\n\n"
+            "🚀 ¡Tu idea podría convertirse en una herramienta que ayude a miles!"
+        ),
+        "fr": (
+            "🎉 *Merci pour votre idée!*\n\n"
+            "Notre équipe la examinera et vous contactera bientôt.\n\n"
+            "💎 Nous sommes ravis de vous aider à construire:\n"
+            "• Votre bot unique\n• Votre indicateur personnalisé\n• Votre système de trading\n\n"
+            "🚀 Votre idée pourrait devenir un outil qui aide des milliers!"
+        ),
+        "pt": (
+            "🎉 *Obrigado pela sua ideia!*\n\n"
+            "Nossa equipe irá revisá-la e entrar em contato em breve.\n\n"
+            "💎 Estamos animados para ajudá-lo a construir:\n"
+            "• Seu bot único\n• Seu indicador personalizado\n• Seu sistema de trading\n\n"
+            "🚀 Sua ideia pode se tornar uma ferramenta que ajuda milhares!"
+        ),
+        "de": (
+            "🎉 *Danke für deine Idee!*\n\n"
+            "Unser Team wird sie prüfen und sich bald melden.\n\n"
+            "💎 Wir freuen uns, dir beim Aufbau zu helfen:\n"
+            "• Deinen einzigartigen Bot\n• Deinen Indikator\n• Dein Trading-System\n\n"
+            "🚀 Deine Idee könnte ein Tool werden, das Tausenden hilft!"
+        ),
+        "ur": (
+            "🎉 *آپ کے آئیڈیا کا شکریہ!*\n\n"
+            "ہماری ٹیم اسے دیکھے گی اور جلد آپ سے رابطہ کرے گی۔\n\n"
+            "💎 ہم آپ کی مدد کرنے کے لیے پرجوش ہیں:\n"
+            "• آپ کا منفرد بوٹ\n• آپ کا کسٹم انڈیکیٹر\n• آپ کا ٹریڈنگ سسٹم\n\n"
+            "🚀 آپ کا آئیڈیا ہزاروں ٹریڈرز کی مدد کرنے والا ٹول بن سکتا ہے!"
+        ),
+        "ja": (
+            "🎉 *アイデアをありがとうございます！*\n\n"
+            "チームが確認し、近日中にご連絡します。\n\n"
+            "💎 以下の構築をお手伝いできることを嬉しく思います：\n"
+            "• あなた独自のボット\n• カスタムインジケーター\n• トレーディングシステム\n\n"
+            "🚀 あなたのアイデアは何千人ものトレーダーを助けるツールになるかもしれません！"
+        ),
+        "it": (
+            "🎉 *Grazie per la tua idea!*\n\n"
+            "Il nostro team la esaminerà e ti contatterà presto.\n\n"
+            "💎 Siamo entusiasti di aiutarti a costruire:\n"
+            "• Il tuo bot unico\n• Il tuo indicatore personalizzato\n• Il tuo sistema di trading\n\n"
+            "🚀 La tua idea potrebbe diventare uno strumento che aiuta migliaia!"
+        ),
+        "ko": (
+            "🎉 *아이디어 감사합니다!*\n\n"
+            "팀이 검토하고 곧 연락드리겠습니다.\n\n"
+            "💎 다음을 구축하는 데 도움드리게 되어 기쁩니다:\n"
+            "• 나만의 봇\n• 커스텀 인디케이터\n• 트레이딩 시스템\n\n"
+            "🚀 당신의 아이디어는 수천 명의 트레이더를 돕는 도구가 될 수 있습니다!"
+        ),
+        "tr": (
+            "🎉 *Fikrin için teşekkürler!*\n\n"
+            "Ekibimiz inceleyecek ve yakında seninle iletişime geçecek.\n\n"
+            "💎 Şunları oluşturmana yardımcı olmaktan heyecan duyuyoruz:\n"
+            "• Benzersiz botun\n• Özel göstergen\n• Trading sistemin\n\n"
+            "🚀 Fikrin binlerce yatırımcıya yardımcı olan bir araç olabilir!"
+        ),
+        "fa": (
+            "🎉 *ممنون از ایده شما!*\n\n"
+            "تیم ما آن را بررسی کرده و به زودی با شما تماس می‌گیرد.\n\n"
+            "💎 خوشحال می‌شویم به شما در ساخت کمک کنیم:\n"
+            "• ربات منحصر به فرد شما\n• اندیکاتور سفارشی\n• سیستم معاملاتی\n\n"
+            "🚀 ایده شما می‌تواند ابزاری شود که به هزاران معامله‌گر کمک کند!"
+        ),
+        "pl": (
+            "🎉 *Dziękujemy za twój pomysł!*\n\n"
+            "Nasz zespół go przejrzy i wkrótce się z tobą skontaktuje.\n\n"
+            "💎 Jesteśmy podekscytowani, aby pomóc ci zbudować:\n"
+            "• Twój unikalny bot\n• Twój wskaźnik\n• Twój system handlowy\n\n"
+            "🚀 Twój pomysł może stać się narzędziem pomagającym tysiącom!"
+        ),
+        "uk": (
+            "🎉 *Дякуємо за твою ідею!*\n\n"
+            "Команда розгляне її і зв'яжеться з тобою.\n\n"
+            "💎 Ми раді допомогти тобі створити:\n"
+            "• Твій унікальний бот\n• Твій індикатор\n• Твою торгову систему\n\n"
+            "🚀 Твоя ідея може стати інструментом для тисяч трейдерів!"
+        ),
+        "kk": (
+            "🎉 *Идеяңыз үшін рахмет!*\n\n"
+            "Командамыз оны қарастырып, жақын арада хабарласады.\n\n"
+            "💎 Мыналарды жасауға көмектесуге қуаныштымыз:\n"
+            "• Бірегей ботыңыз\n• Арнайы индикаторыңыз\n• Сауда жүйеңіз\n\n"
+            "🚀 Идеяңыз мыңдаған трейдерлерге көмек беретін құралға айналуы мүмкін!"
+        ),
+        "cs": (
+            "🎉 *Děkujeme za váš nápad!*\n\n"
+            "Náš tým ho posoudí a brzy vás kontaktuje.\n\n"
+            "💎 Jsme nadšeni, že vám pomůžeme vytvořit:\n"
+            "• Váš jedinečný bot\n• Váš indikátor\n• Váš obchodní systém\n\n"
+            "🚀 Váš nápad by se mohl stát nástrojem, který pomáhá tisícům obchodníků!"
+        ),
+    },
 }
-# Use English for other languages
-for _lc in ["ar","zh","hi","ru","es","fr","pt","de","ur","ja","it","ko","tr","fa","pl","uk","kk","cs"]:
-    REFERRAL_DISCOUNT_MSG[_lc] = REFERRAL_DISCOUNT_MSG["en"]
-
-# ── Onboarding messages (new users only, once) ─────────────────
-ONBOARDING_VIDEO = "BAACAgQAAxkBAAID3WoKFvd6vxGTQBe9wd-2Gbh3uCMgAALEIAACgwZRUOtEi7uuFxmIOwQ"
-
-ONBOARDING_TEXT = {
-    "en": (
-        "🤖 Hello *{name}*, Welcome to *Evalon Winners* 🚀\n\n"
-        "I am a smart trading system created to help traders access useful tools, "
-        "learning resources and different trading services for Binary Trading. 📈\n\n"
-        "Inside, you will find systems designed to help you improve and grow your trading journey. 🔥\n\n"
-        "My goal is to give traders one place with everything they need.\n\n"
-        "From learning market analysis, understanding strategies, using trading tools "
-        "and exploring better ways to improve trading knowledge and experience. 📊\n\n"
-        "*Evalon Winners Trader* is made for both beginners and experienced traders.\n\n"
-        "Whether you want to learn more, improve your strategy or explore smart trading systems, "
-        "you are in the right place. 🚀✨\n\n"
-        "Thank you for joining us.\n\n"
-        "All services are ready inside our system and waiting for you to explore.\n\n"
-        "*Press Continue to proceed* 🚀"
-    ),
-    "sw": (
-        "🤖 Habari *{name}*, Karibu *Evalon Winners* 🚀\n\n"
-        "Mimi ni mfumo wa biashara mahiri uliotengenezwa kusaidia wafanyabiashara kupata "
-        "zana muhimu, rasilimali za kujifunza na huduma mbalimbali za biashara ya Binary. 📈\n\n"
-        "Ndani, utapata mifumo iliyoundwa kukusaidia kuboresha na kukuza safari yako ya biashara. 🔥\n\n"
-        "Lengo langu ni kuwapa wafanyabiashara mahali pamoja na kila wanachohitaji.\n\n"
-        "Kuanzia kujifunza uchambuzi wa soko, kuelewa mikakati, kutumia zana za biashara "
-        "na kuchunguza njia bora za kuboresha maarifa na uzoefu wa biashara. 📊\n\n"
-        "*Evalon Winners Trader* imetengenezwa kwa wanaoanza na wafanyabiashara wenye uzoefu.\n\n"
-        "Iwe unataka kujifunza zaidi, kuboresha mkakati wako au kuchunguza mifumo ya biashara mahiri, "
-        "uko mahali pazuri. 🚀✨\n\n"
-        "Asante kwa kujiunga nasi.\n\n"
-        "Huduma zote zipo tayari ndani ya mfumo wetu na zinakusubiri kuzichunguza.\n\n"
-        "*Bonyeza Endelea kuendelea* 🚀"
-    ),
-}
-for _lc in ["ar","zh","hi","ru","es","fr","pt","de","ur","ja","it","ko","tr","fa","pl","uk","kk","cs"]:
-    ONBOARDING_TEXT[_lc] = ONBOARDING_TEXT["en"]
-
-def get_onboarding_text(lang, name):
-    text = ONBOARDING_TEXT.get(lang, ONBOARDING_TEXT["en"])
-    return text.format(name=escape_md(name))
 
 def ui(key, lang):
+    # Check IDEALAB_TEXTS first for idealab keys
+    if key in IDEALAB_TEXTS:
+        return IDEALAB_TEXTS[key].get(lang, IDEALAB_TEXTS[key]["en"])
     return UI.get(lang, UI["en"]).get(key, UI["en"].get(key, key))
 
 def get_lang(context, user_id=None):
@@ -4425,9 +5330,13 @@ async def auto_clean_chat(context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             protect_content=True,
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")],
-                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
-                [InlineKeyboardButton(ui("btn_restart", lang), callback_data="main_menu")],
+                [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                 InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                 InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                 InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
             ]))
         track_msg(chat_id, msg.message_id)
     except Exception as e:
@@ -4465,8 +5374,13 @@ async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown",
                 protect_content=True,
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
-                    [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+                    [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                     InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                    [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                    [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                     InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
+                    [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                     InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
                 ]))
         except:
             msg = await context.bot.send_message(
@@ -4474,7 +5388,12 @@ async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown",
                 protect_content=True,
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
+                    [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
+                     InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
+                    [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+                    [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
+                     InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
+                    [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
                 ]))
         track_msg(chat_id, msg.message_id)
     except Exception as e:
@@ -4531,6 +5450,26 @@ def main_menu(lang):
     rows = [
         [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
         ref_row,
+    ]
+    # Auto Trading Bot promo button — only shown if admin has added promos via /setautobot
+    try:
+        if has_autobot_promos():
+            _autobot_btn = {
+                "en": "🤖 Auto Trading Bot — Watch Now!", "sw": "🤖 Auto Trading Bot — Tazama Sasa!",
+                "ar": "🤖 بوت التداول التلقائي — شاهد الآن!", "zh": "🤖 自动交易机器人 — 立即观看!",
+                "hi": "🤖 ऑटो ट्रेडिंग बॉट — अभी देखें!", "ru": "🤖 Авто Бот — Смотреть!",
+                "es": "🤖 Bot de Trading Auto — ¡Ver Ahora!", "fr": "🤖 Bot de Trading Auto — Voir!",
+                "pt": "🤖 Bot de Trading Auto — Ver Agora!", "de": "🤖 Auto-Trading-Bot — Jetzt Ansehen!",
+                "ur": "🤖 آٹو ٹریڈنگ بوٹ — ابھی دیکھیں!", "ja": "🤖 自動取引ボット — 今すぐ見る!",
+                "it": "🤖 Bot di Trading Auto — Guarda!", "ko": "🤖 자동 거래 봇 — 지금 보기!",
+                "tr": "🤖 Otomatik Bot — Şimdi İzle!", "fa": "🤖 ربات خودکار — همین الان ببینید!",
+                "pl": "🤖 Bot Automatyczny — Obejrzyj!", "uk": "🤖 Авто Бот — Дивитись!",
+                "kk": "🤖 Авто Бот — Қазір Көру!", "cs": "🤖 Automatický Bot — Podívat se!",
+            }
+            rows.append([InlineKeyboardButton(_autobot_btn.get(lang, _autobot_btn["en"]), callback_data="do_autobot_promo")])
+    except:
+        pass
+    rows += [
         [InlineKeyboardButton(ui("btn_whats_new", lang), callback_data="do_whats_new"),
          InlineKeyboardButton(ui("btn_vip_results", lang), callback_data="do_vip_results")],
         [InlineKeyboardButton(ui("btn_tip", lang), callback_data="do_tip"),
@@ -4552,6 +5491,7 @@ def services_menu(lang):
         [InlineKeyboardButton(ui("btn_indicator", lang), callback_data="svc_indicator"),
          InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
         [InlineKeyboardButton(ui("btn_freebot", lang), callback_data="svc_freebot")],
+        [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
         [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
         [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
         [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
@@ -4633,6 +5573,35 @@ def join_keyboard(lang):
         [InlineKeyboardButton(_joined_btn.get(lang, "✅ I've Joined!"), callback_data="check_join")],
     ])
 
+def new_user_service_keyboard():
+    """Service buttons shown to new users BEFORE join gate — lets them pick first, then join."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("💎 VIP Non-Martingale Signals", callback_data="new_svc_signals")],
+        [InlineKeyboardButton("🤖 Auto Trading Bot — All Brokers", callback_data="new_svc_autobot")],
+        [InlineKeyboardButton("📈 Non-Repainting Indicator — FREE", callback_data="new_svc_indicator")],
+        [InlineKeyboardButton("👥 Social Copy Trading — Pocket Option", callback_data="new_svc_social")],
+        [InlineKeyboardButton("🆓 Free Manual Bots — All Brokers", callback_data="new_svc_freebot")],
+        [InlineKeyboardButton("🎥 Free Video Learning Materials", callback_data="new_svc_video")],
+        [InlineKeyboardButton("💰 Money Management — FREE", callback_data="new_svc_money")],
+        [InlineKeyboardButton("🎯 Personal Trading Sessions", callback_data="new_svc_personal")],
+    ])
+
+def join_keyboard_with_service(lang, service_name):
+    """Join gate keyboard that shows the service name the user chose."""
+    _joined_btn = {
+        "en": "✅ I've Joined!", "sw": "✅ Nimejiunga!", "ar": "✅ لقد انضممت!",
+        "zh": "✅ 我已加入!", "hi": "✅ मैं जुड़ गया!", "ru": "✅ Я вступил!",
+        "es": "✅ ¡Me uní!", "fr": "✅ J'ai rejoint!", "pt": "✅ Já entrei!",
+        "de": "✅ Ich bin beigetreten!", "ur": "✅ میں شامل ہو گیا!", "ja": "✅ 参加しました!",
+        "it": "✅ Mi sono unito!", "ko": "✅ 참가했습니다!", "tr": "✅ Katıldım!",
+        "fa": "✅ پیوستم!", "pl": "✅ Dołączyłem!", "uk": "✅ Я приєднався!",
+        "kk": "✅ Мен қосылдым!", "cs": "✅ Připojil jsem se!",
+    }
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(ui("btn_join", lang), url=MAIN_CHANNEL_LINK)],
+        [InlineKeyboardButton(_joined_btn.get(lang, "✅ I've Joined!"), callback_data="check_join")],
+    ])
+
 def support_keyboard(lang):
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
@@ -4640,23 +5609,10 @@ def support_keyboard(lang):
     ])
 
 def broadcast_keyboard(lang):
-    join_texts = {
-        "en": "🚀 Join Us Now",
-        "sw": "🚀 Jiunge Nasi Sasa",
-        "ar": "🚀 انضم إلينا الآن",
-        "zh": "🚀 立即加入我们",
-        "hi": "🚀 अभी हमसे जुड़ें",
-        "ru": "🚀 Присоединяйтесь сейчас",
-        "es": "🚀 Únete ahora",
-        "fr": "🚀 Rejoignez-nous maintenant",
-        "pt": "🚀 Junte-se a nós agora",
-        "de": "🚀 Jetzt mitmachen",
-        "ur": "🚀 ابھی ہم سے جڑیں",
-        "ja": "🚀 今すぐ参加",
-    }
-    btn_text = join_texts.get(lang, join_texts["en"])
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(btn_text, callback_data="menu_services")],
+        [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
+        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+        [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
     ])
 
 def rating_keyboard():
@@ -4819,7 +5775,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not await is_member(context, user.id):
         msg = await send_protected_text(
-            context, cid, ui("join_msg", lang), join_keyboard(lang))
+            context, cid, ui("choose_service", lang), new_user_service_keyboard())
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -4923,55 +5879,77 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown")
         return
 
+    # Pre-load all user langs in ONE DB query — avoids N DB calls inside loop
+    all_user_info = {u["user_id"]: u.get("lang", "en") or "en" for u in get_all_users_info()}
+
     progress_msg = await update.message.reply_text(
         f"📢 *Broadcasting to {total} users...*\n\n⏳ Please wait...",
         parse_mode="Markdown")
 
     src_chat = update.effective_chat.id
 
+    # Extract text once outside loop (preserves newlines + formatting)
+    text_to_send = None
+    if context.args:
+        raw = update.message.text or ""
+        space = raw.find(" ")
+        text_to_send = raw[space+1:].strip() if space != -1 else raw.strip()
+
+    BATCH_SIZE = 25  # send 25 at once then brief pause — fast but Telegram-safe
+
     for i, uid in enumerate(all_users):
         try:
-            u_info = get_user_info(uid)
-            user_lang = u_info.get("lang", "en") or "en"
-            kb = broadcast_keyboard(user_lang)
+            user_lang = all_user_info.get(uid, "en")
 
             if replied_msg:
-                # Use copy_message to PRESERVE exact formatting, entities, bold etc.
-                if replied_msg.photo or replied_msg.video or replied_msg.document \
-                        or replied_msg.audio or replied_msg.animation or replied_msg.voice \
-                        or replied_msg.sticker:
-                    # Media: copy preserves caption + formatting exactly
+                if replied_msg.video:
+                    # Video with caption → buttons; video only → no buttons
+                    has_caption = bool(replied_msg.caption and replied_msg.caption.strip())
+                    kb = broadcast_keyboard(user_lang) if has_caption else None
                     await context.bot.copy_message(
                         chat_id=uid,
                         from_chat_id=src_chat,
                         message_id=replied_msg.message_id,
-                        reply_markup=kb if not replied_msg.sticker else None)
-                elif replied_msg.text:
-                    # Text: copy_message preserves bold/italic/links exactly
-                    await context.bot.copy_message(
-                        chat_id=uid,
-                        from_chat_id=src_chat,
-                        message_id=replied_msg.message_id,
+                        protect_content=True,
                         reply_markup=kb)
-            elif context.args:
-                # Extract full text after /broadcast preserving newlines
-                raw = update.message.text or ""
-                space = raw.find(" ")
-                text_to_send = raw[space+1:] if space != -1 else raw
+                elif replied_msg.photo or replied_msg.document or replied_msg.audio \
+                        or replied_msg.animation or replied_msg.voice or replied_msg.sticker:
+                    # All other media: protect only, no buttons
+                    await context.bot.copy_message(
+                        chat_id=uid,
+                        from_chat_id=src_chat,
+                        message_id=replied_msg.message_id,
+                        protect_content=True,
+                        reply_markup=None)
+                elif replied_msg.text:
+                    # Text reply: protect + buttons
+                    kb = broadcast_keyboard(user_lang)
+                    await context.bot.copy_message(
+                        chat_id=uid,
+                        from_chat_id=src_chat,
+                        message_id=replied_msg.message_id,
+                        protect_content=True,
+                        reply_markup=kb)
+            elif text_to_send:
+                # Direct text — preserve formatting with Markdown
+                text_kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton(ui("btn_services", user_lang), callback_data="menu_services"),
+                     InlineKeyboardButton(ui("btn_support", user_lang), callback_data="do_support")],
+                ])
                 await context.bot.send_message(
                     chat_id=uid,
                     text=text_to_send,
-                    parse_mode=None,
-                    reply_markup=kb)
+                    parse_mode="Markdown",
+                    reply_markup=text_kb)
 
             sent += 1
 
-            # Rate limiting: Telegram allows ~30 msgs/sec to different chats
-            # Sleep 0.04s = ~25/sec — safe and fast
-            await asyncio.sleep(0.04)
+            # Batch pacing: every 25 msgs sleep 1s — ~25/sec avg, avoids flood 429
+            if (i + 1) % BATCH_SIZE == 0:
+                await asyncio.sleep(1)
 
-            # Update progress every 50 users
-            if (i + 1) % 50 == 0:
+            # Update progress every 100 users
+            if (i + 1) % 100 == 0:
                 try:
                     await progress_msg.edit_text(
                         f"📢 *Broadcasting...*\n\n"
@@ -4984,7 +5962,14 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except TelegramError as e:
             failed += 1
             err_str = str(e).lower()
-            if "bot was blocked" in err_str or "user is deactivated" in err_str or "chat not found" in err_str:
+            if "retry" in err_str or "flood" in err_str:
+                # Telegram flood wait — respect it
+                try:
+                    wait_time = int(re.search(r"retry after (\d+)", err_str).group(1))
+                except:
+                    wait_time = 5
+                await asyncio.sleep(wait_time)
+            elif "bot was blocked" in err_str or "user is deactivated" in err_str or "chat not found" in err_str:
                 try:
                     mark_blocked_user(uid)
                 except:
@@ -5206,20 +6191,99 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Check join
+    # ── New user service flow: user picks service BEFORE joining ──
+    if data.startswith("new_svc_"):
+        svc_map = {
+            "new_svc_signals":   ("💎 VIP Non-Martingale Signals",          "svc_signals"),
+            "new_svc_autobot":   ("🤖 Auto Trading Bot — All Brokers",      "svc_autobot"),
+            "new_svc_indicator": ("📈 Non-Repainting Indicator — FREE",     "svc_indicator"),
+            "new_svc_social":    ("👥 Social Copy Trading — Pocket Option", "svc_social"),
+            "new_svc_freebot":   ("🆓 Free Manual Bots — All Brokers",      "svc_freebot"),
+            "new_svc_video":     ("🎥 Free Video Learning Materials",       "svc_video"),
+            "new_svc_money":     ("💰 Money Management — FREE",             "svc_money"),
+            "new_svc_personal":  ("🎯 Personal Trading Sessions",           "svc_personal"),
+        }
+        service_name, pending_svc = svc_map.get(data, ("Our Service", "menu_services"))
+        context.user_data["pending_service"] = pending_svc
+        join_text = ui("join_service_msg", lang).format(service=service_name)
+        await safe_delete(context, cid, query.message.message_id)
+        await delete_all_bot_msgs(context, cid)
+        msg = await send_protected_text(
+            context, cid, join_text,
+            join_keyboard_with_service(lang, service_name))
+        track_msg(cid, msg.message_id)
+        return
+
     if data == "check_join":
         await typing_action(cid, context, 1.0)
         if await is_member(context, user.id):
             await safe_delete(context, cid, query.message.message_id)
             await delete_all_bot_msgs(context, cid)
             visit_count = context.user_data.get("visit_count", 1)
-            welcome_text = build_welcome_text(lang, user.first_name, visit_count)
             update_streak(user.id)
-            msg = await send_welcome_media(
-                context, cid, welcome_text, main_menu(lang))
-            context.user_data["last_bot_msg_id"] = msg.message_id
-            track_msg(cid, msg.message_id)
+            # If user came from new_svc_ flow, send them straight to that service
+            pending = context.user_data.pop("pending_service", None)
+            if pending:
+                context.user_data["visit_count"] = visit_count
+                # Re-trigger the service button as if they pressed it from main menu
+                class _FakeQuery:
+                    pass
+                fake_data = pending
+                # Just show main menu and let them navigate — service will be one tap away
+                welcome_text = build_welcome_text(lang, user.first_name, visit_count)
+                msg = await send_welcome_media(
+                    context, cid, welcome_text, main_menu(lang))
+                context.user_data["last_bot_msg_id"] = msg.message_id
+                track_msg(cid, msg.message_id)
+                # Send a quick note pointing them to the service
+                _joined_svc_msg = {
+                    "en": "✅ *You have joined!* Tap *Services* to get your {svc}! 🎉",
+                    "sw": "✅ *Umejiunga!* Bonyeza *Services* kupata {svc} yako! 🎉",
+                    "ar": "✅ *لقد انضممت!* اضغط على *الخدمات* للحصول على {svc}! 🎉",
+                    "zh": "✅ *您已加入！* 点击 *服务* 获取您的 {svc}！🎉",
+                    "hi": "✅ *आप जुड़ गए!* अपना {svc} पाने के लिए *Services* दबाएं! 🎉",
+                    "ru": "✅ *Вы вступили!* Нажмите *Services*, чтобы получить {svc}! 🎉",
+                    "es": "✅ *¡Te has unido!* Toca *Services* para obtener tu {svc}! 🎉",
+                    "fr": "✅ *Vous avez rejoint!* Appuyez sur *Services* pour obtenir {svc}! 🎉",
+                    "pt": "✅ *Você entrou!* Toque em *Services* para obter seu {svc}! 🎉",
+                    "de": "✅ *Sie sind beigetreten!* Tippe auf *Services* für dein {svc}! 🎉",
+                    "ur": "✅ *آپ شامل ہو گئے!* اپنا {svc} پانے کے لیے *Services* دبائیں! 🎉",
+                    "ja": "✅ *参加しました！* {svc} を取得するには *Services* をタップ！🎉",
+                    "it": "✅ *Sei entrato!* Tocca *Services* per ottenere il tuo {svc}! 🎉",
+                    "ko": "✅ *가입했습니다!* {svc}를 받으려면 *Services*를 탭하세요! 🎉",
+                    "tr": "✅ *Katıldınız!* {svc} almak için *Services*'e dokunun! 🎉",
+                    "fa": "✅ *عضو شدید!* برای دریافت {svc} روی *Services* ضربه بزنید! 🎉",
+                    "pl": "✅ *Dołączyłeś!* Dotknij *Services*, aby otrzymać swój {svc}! 🎉",
+                    "uk": "✅ *Ви приєдналися!* Натисніть *Services*, щоб отримати {svc}! 🎉",
+                    "kk": "✅ *Қосылдыңыз!* {svc} алу үшін *Services* түймесін басыңыз! 🎉",
+                    "cs": "✅ *Přidali jste se!* Klepněte na *Services* a získejte svůj {svc}! 🎉",
+                }
+                _svc_label = pending.replace('svc_', '').upper()
+                _joined_text = _joined_svc_msg.get(lang, _joined_svc_msg["en"]).format(svc=_svc_label)
+                await context.bot.send_message(
+                    chat_id=cid,
+                    text=_joined_text,
+                    parse_mode="Markdown")
+            else:
+                welcome_text = build_welcome_text(lang, user.first_name, visit_count)
+                msg = await send_welcome_media(
+                    context, cid, welcome_text, main_menu(lang))
+                context.user_data["last_bot_msg_id"] = msg.message_id
+                track_msg(cid, msg.message_id)
         else:
-            await query.answer("❌ Please join first!", show_alert=True)
+            _join_first = {
+                "en": "❌ Please join first!", "sw": "❌ Tafadhali jiunge kwanza!",
+                "ar": "❌ يرجى الانضمام أولاً!", "zh": "❌ 请先加入！",
+                "hi": "❌ कृपया पहले जुड़ें!", "ru": "❌ Сначала вступите!",
+                "es": "❌ ¡Únete primero!", "fr": "❌ Rejoignez d'abord!",
+                "pt": "❌ Por favor, entre primeiro!", "de": "❌ Bitte zuerst beitreten!",
+                "ur": "❌ پہلے شامل ہوں!", "ja": "❌ まず参加してください！",
+                "it": "❌ Unisciti prima!", "ko": "❌ 먼저 가입하세요!",
+                "tr": "❌ Önce katılın!", "fa": "❌ لطفاً اول عضو شوید!",
+                "pl": "❌ Najpierw dołącz!", "uk": "❌ Спочатку приєднайтесь!",
+                "kk": "❌ Алдымен қосылыңыз!", "cs": "❌ Nejprve se připojte!",
+            }
+            await query.answer(_join_first.get(lang, _join_first["en"]), show_alert=True)
         return
 
     # FIX: User skips text opinion — MUST be BEFORE rate_ check to avoid int("skip") crash
@@ -5341,6 +6405,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         track_msg(cid, msg.message_id)
         schedule_fomo(context, cid, lang, "Free Manual Bot")
 
+    elif data == "svc_idealab":
+        # Show Idea Lab prompt and mark user as awaiting idea submission
+        awaiting_idea_lab[user.id] = True
+        prompt = ui("idealab_prompt", lang)
+        msg = await send_protected_text(
+            context, cid, prompt,
+            InlineKeyboardMarkup([
+                [InlineKeyboardButton(ui("btn_back", lang), callback_data="menu_services")],
+            ]))
+        context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
+
     # ── CLAIM DISCOUNT — validates referral count first ───────
     elif data == "claim_discount":
         ref_count = get_referral_count(user.id)
@@ -5411,6 +6487,84 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
+
+    elif data == "do_autobot_promo":
+        await delete_all_bot_msgs(context, cid)
+        all_promos = get_all_autobot_promos()
+        if not all_promos:
+            _coming_soon = {
+                "en": "Coming soon!", "sw": "Inakuja hivi karibuni!",
+                "ar": "قريباً!", "zh": "即将推出!", "hi": "जल्द आ रहा है!",
+                "ru": "Скоро!", "es": "¡Próximamente!", "fr": "Bientôt!",
+                "pt": "Em breve!", "de": "Demnächst!", "ur": "جلد آ رہا ہے!",
+                "ja": "近日公開!", "it": "Prossimamente!", "ko": "곧 출시됩니다!",
+                "tr": "Yakında!", "fa": "به زودی!", "pl": "Wkrótce!",
+                "uk": "Незабаром!", "kk": "Жақында!", "cs": "Brzy!",
+            }
+            await query.answer(_coming_soon.get(lang, "Coming soon!"), show_alert=True)
+            return
+        # Pick random promo, different from last shown
+        last_promo_id = context.user_data.get("last_autobot_promo_id")
+        available = [p for p in all_promos if p["id"] != last_promo_id] or all_promos
+        promo = random.choice(available)
+        context.user_data["last_autobot_promo_id"] = promo["id"]
+        ftype = promo.get("media_type", "text")
+        caption = promo.get("caption") or "🤖 *Auto Trading Bot — EVALON*"
+        header = f"🤖 *AUTO TRADING BOT — EVALON*\n\n{caption}"
+        # Navigation button if multiple promos
+        nav_row = []
+        if len(all_promos) > 1:
+            _watch_next = {
+                "en": "🔄 Watch Next", "sw": "🔄 Tazama Inayofuata",
+                "ar": "🔄 التالي", "zh": "🔄 下一个",
+                "hi": "🔄 अगला देखें", "ru": "🔄 Следующее",
+                "es": "🔄 Ver Siguiente", "fr": "🔄 Voir Suivant",
+                "pt": "🔄 Ver Próximo", "de": "🔄 Nächstes Ansehen",
+                "ur": "🔄 اگلا دیکھیں", "ja": "🔄 次を見る",
+                "it": "🔄 Prossimo", "ko": "🔄 다음 보기",
+                "tr": "🔄 Sonrakini İzle", "fa": "🔄 بعدی را ببینید",
+                "pl": "🔄 Następny", "uk": "🔄 Дивитись Далі",
+                "kk": "🔄 Келесіні Көру", "cs": "🔄 Zobrazit Další",
+            }
+            nav_row = [InlineKeyboardButton(_watch_next.get(lang, _watch_next["en"]), callback_data="do_autobot_promo")]
+        # 2 buttons: Services + Contact Admin
+        action_rows = [
+            [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+             InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+            [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
+        ]
+        kb_rows = ([nav_row] if nav_row else []) + action_rows
+        kb = InlineKeyboardMarkup(kb_rows)
+        try:
+            if ftype == "video" and promo.get("media_id"):
+                msg = await context.bot.send_video(
+                    chat_id=cid, video=promo["media_id"],
+                    caption=header, parse_mode="Markdown",
+                    protect_content=True, reply_markup=kb)
+            elif ftype == "photo" and promo.get("media_id"):
+                msg = await context.bot.send_photo(
+                    chat_id=cid, photo=promo["media_id"],
+                    caption=header, parse_mode="Markdown",
+                    protect_content=True, reply_markup=kb)
+            else:
+                msg = await send_protected_text(context, cid, header, kb)
+            track_msg(cid, msg.message_id)
+        except Exception as e:
+            logger.warning(f"autobot_promo failed: {e}")
+            _error_msg = {
+                "en": "⚠️ Error loading content", "sw": "⚠️ Hitilafu kupakia maudhui",
+                "ar": "⚠️ خطأ في تحميل المحتوى", "zh": "⚠️ 加载内容出错",
+                "hi": "⚠️ सामग्री लोड करने में त्रुटि", "ru": "⚠️ Ошибка загрузки",
+                "es": "⚠️ Error al cargar contenido", "fr": "⚠️ Erreur de chargement",
+                "pt": "⚠️ Erro ao carregar conteúdo", "de": "⚠️ Fehler beim Laden",
+                "ur": "⚠️ مواد لوڈ کرنے میں خرابی", "ja": "⚠️ コンテンツの読み込みエラー",
+                "it": "⚠️ Errore nel caricamento", "ko": "⚠️ 콘텐츠 로드 오류",
+                "tr": "⚠️ İçerik yüklenirken hata", "fa": "⚠️ خطا در بارگذاری محتوا",
+                "pl": "⚠️ Błąd ładowania treści", "uk": "⚠️ Помилка завантаження",
+                "kk": "⚠️ Мазмұнды жүктеу қатесі", "cs": "⚠️ Chyba načítání obsahu",
+            }
+            await query.answer(_error_msg.get(lang, _error_msg["en"]), show_alert=True)
+        return
 
     elif data == "do_referral":
         ref_count = get_referral_count(user.id)
@@ -6100,28 +7254,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if msg:
             track_msg(cid, msg.message_id)
-
-        # Silently notify admin — no sound, just data tracking
-        name = escape_md(user.full_name)
-        username_str = escape_md(user.username or "NA")
-        # Get total spins for this user
-        from_db = get_top_spinners(limit=100)
-        user_spins = next((r[3] for r in from_db if r[0] == user.id), 1)
-        for aid in ADMIN_IDS:
-            try:
-                await context.bot.send_message(
-                    chat_id=aid,
-                    text=(
-                        f"🎰 *Spin Activity*\n\n"
-                        f"👤 {name} @{username_str}\n"
-                        f"🆔 `{user.id}` | 🌍 {lang}\n"
-                        f"🔢 Total spins: *{user_spins}*\n\n"
-                        f"_Use /spinners to see most active players_"
-                    ),
-                    parse_mode="Markdown",
-                    disable_notification=True)  # Silent notification
-            except:
-                pass
+        # NO admin notification for spins — use /spinners to see activity
 
     # Admin: Connect
     elif data.startswith("con:"):
@@ -6232,9 +7365,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"✅ *Approved!*\n👤 {safe_name}",
                     parse_mode="Markdown")
                 try:
+                    _user_lang = get_user_info(uid).get("lang", "en")
+                    _approved_msg = {
+                        "en": "🎉 You have been *approved!* Welcome! 🚀",
+                        "sw": "🎉 Umeidhibitiwa! *Karibu!* 🚀",
+                        "ar": "🎉 تمت *الموافقة* عليك! مرحباً! 🚀",
+                        "zh": "🎉 您已被*批准*！欢迎！🚀",
+                        "hi": "🎉 आपको *स्वीकृत* कर लिया गया! स्वागत है! 🚀",
+                        "ru": "🎉 Вы *одобрены!* Добро пожаловать! 🚀",
+                        "es": "🎉 ¡Has sido *aprobado!* ¡Bienvenido! 🚀",
+                        "fr": "🎉 Vous avez été *approuvé!* Bienvenue! 🚀",
+                        "pt": "🎉 Você foi *aprovado!* Bem-vindo! 🚀",
+                        "de": "🎉 Sie wurden *genehmigt!* Willkommen! 🚀",
+                        "ur": "🎉 آپ کو *منظور* کر لیا گیا! خوش آمدید! 🚀",
+                        "ja": "🎉 *承認されました！* ようこそ！🚀",
+                        "it": "🎉 Sei stato *approvato!* Benvenuto! 🚀",
+                        "ko": "🎉 *승인되었습니다!* 환영합니다! 🚀",
+                        "tr": "🎉 *Onaylandınız!* Hoş geldiniz! 🚀",
+                        "fa": "🎉 شما *تأیید شدید!* خوش آمدید! 🚀",
+                        "pl": "🎉 Zostałeś *zatwierdzony!* Witamy! 🚀",
+                        "uk": "🎉 Вас *схвалено!* Ласкаво просимо! 🚀",
+                        "kk": "🎉 Сіз *бекітілдіңіз!* Қош келдіңіз! 🚀",
+                        "cs": "🎉 Byl jste *schválen!* Vítejte! 🚀",
+                    }
                     await context.bot.send_message(
                         chat_id=uid,
-                        text="🎉 You have been *approved!* Welcome! 🚀",
+                        text=_approved_msg.get(_user_lang, _approved_msg["en"]),
                         parse_mode="Markdown",
                         protect_content=True)
                 except:
@@ -6596,6 +7752,55 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{ui('rating_thanks', lang).format(name=escape_md(user.first_name))}\n\n{welcome_text}",
             main_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
+        track_msg(cid, msg.message_id)
+        return
+
+    # IDEA LAB: Capture user's idea submission
+    if user.id in awaiting_idea_lab and message.text:
+        idea_text = message.text.strip()
+        awaiting_idea_lab.pop(user.id)
+
+        await delete_user_msg(message)
+        await delete_all_bot_msgs(context, cid)
+
+        # Notify admin with full user details + idea
+        now = datetime.now().strftime("%d/%m/%Y %H:%M")
+        safe_name = escape_md(user.full_name)
+        username_str = f"@{escape_md(user.username)}" if user.username else "no username"
+        admin_text = (
+            f"💡 *NEW IDEA LAB SUBMISSION*\n\n"
+            f"👤 *{safe_name}*\n"
+            f"🔗 {username_str}\n"
+            f"🆔 `{user.id}`\n"
+            f"🌍 Lang: {lang}\n"
+            f"🕐 {now}\n\n"
+            f"📝 *Idea:*\n{escape_md(idea_text)}"
+        )
+        for aid in ADMIN_IDS:
+            try:
+                await context.bot.send_message(
+                    chat_id=aid,
+                    text=admin_text,
+                    parse_mode="Markdown",
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            "💬 Reply to User",
+                            callback_data=f"con:{user.id}:{lang}"
+                        )
+                    ]])
+                )
+            except Exception as e:
+                logger.warning(f"Idea Lab admin notify failed: {e}")
+
+        # Send acknowledgement to user
+        await typing_action(cid, context, 1.2)
+        ack = ui("idealab_ack", lang)
+        msg = await send_protected_text(
+            context, cid, ack,
+            InlineKeyboardMarkup([
+                [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
+                [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
+            ]))
         track_msg(cid, msg.message_id)
         return
 
@@ -7832,6 +9037,107 @@ async def setwelcome_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode="Markdown")
 
 
+
+
+async def setautobot_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Add Auto Trading Bot promo videos/photos (gallery — like /addstory):
+    - Reply to video/photo + /setautobot [caption]
+    - /setautobot Your promo text here
+    - /setautobot list — show all promos with IDs
+    - /setautobot delete <id> — remove specific promo
+    - /setautobot reset — remove ALL promos (hides button)
+    """
+    if not is_admin(update.effective_user.id):
+        return
+    msg = update.message
+    replied = msg.reply_to_message
+    _raw = (update.message.text or "").strip()
+    _sp  = _raw.find(" ")
+    first_arg = context.args[0].lower() if context.args else ""
+
+    # List all promos
+    if first_arg == "list":
+        promos = get_all_autobot_promos()
+        if not promos:
+            await msg.reply_text("📋 *No autobot promos yet.*", parse_mode="Markdown")
+            return
+        lines = ["📋 *AUTOBOT PROMOS:*\n"]
+        for p in promos:
+            lines.append(f"🆔 `{p['id']}` — {p['media_type']} — _{p['created_at']}_\n{p['caption'][:60] if p['caption'] else '—'}\n")
+        await msg.reply_text("\n".join(lines), parse_mode="Markdown")
+        return
+
+    # Delete specific promo
+    if first_arg == "delete" and len(context.args) >= 2:
+        try:
+            pid = int(context.args[1])
+            if delete_autobot_promo(pid):
+                count = len(get_all_autobot_promos())
+                await msg.reply_text(
+                    f"✅ *Promo #{pid} deleted!*\n\n{'Button still visible — ' + str(count) + ' promos remain.' if count else '⚠️ No promos left — button hidden from welcome screen.'}",
+                    parse_mode="Markdown")
+            else:
+                await msg.reply_text(f"❌ Promo #{pid} not found.", parse_mode="Markdown")
+        except ValueError:
+            await msg.reply_text("❌ Usage: `/setautobot delete <id>`", parse_mode="Markdown")
+        return
+
+    # Reset — delete all
+    if first_arg == "reset":
+        promos = get_all_autobot_promos()
+        for p in promos:
+            delete_autobot_promo(p["id"])
+        await msg.reply_text(
+            "✅ *All autobot promos deleted!*\n\nButton hidden from welcome screen.",
+            parse_mode="Markdown")
+        return
+
+    # Add video
+    if replied and replied.video:
+        caption = (_raw[_sp+1:] if _sp != -1 and context.args else None) or replied.caption or "🤖 *Auto Trading Bot — EVALON*\n\nWatch how it works! 👇"
+        sid = add_autobot_promo(caption, media_id=replied.video.file_id, media_type="video")
+        total = len(get_all_autobot_promos())
+        await msg.reply_text(
+            f"✅ *Video promo added!*\nID: `{sid}` | Total: {total}\n\nButton now appears on welcome screen.\n\n/setautobot list — see all\n/setautobot delete {sid} — remove this one",
+            parse_mode="Markdown")
+        return
+
+    # Add photo
+    if replied and replied.photo:
+        caption = (_raw[_sp+1:] if _sp != -1 and context.args else None) or replied.caption or "🤖 *Auto Trading Bot — EVALON*\n\nSee it in action! 👇"
+        sid = add_autobot_promo(caption, media_id=replied.photo[-1].file_id, media_type="photo")
+        total = len(get_all_autobot_promos())
+        await msg.reply_text(
+            f"✅ *Photo promo added!*\nID: `{sid}` | Total: {total}\n\nButton now appears on welcome screen.\n\n/setautobot list — see all\n/setautobot delete {sid} — remove this one",
+            parse_mode="Markdown")
+        return
+
+    # Add text
+    if context.args and first_arg not in ("list", "delete", "reset"):
+        text_val = _raw[_sp+1:] if _sp != -1 else ""
+        if text_val:
+            sid = add_autobot_promo(text_val, media_id=None, media_type="text")
+            total = len(get_all_autobot_promos())
+            await msg.reply_text(
+                f"✅ *Text promo added!*\nID: `{sid}` | Total: {total}\n\n/setautobot list — see all",
+                parse_mode="Markdown")
+            return
+
+    # Help message
+    total = len(get_all_autobot_promos())
+    status = f"✅ *{total} promo(s) active* — button visible on welcome screen" if total else "❌ *No promos* — button hidden"
+    await msg.reply_text(
+        f"🤖 *Auto Trading Bot Promos*\n\n{status}\n\n"
+        f"*Commands:*\n"
+        f"• Reply to video/photo + `/setautobot caption` — add promo\n"
+        f"• `/setautobot Your text here` — add text promo\n"
+        f"• `/setautobot list` — see all promos\n"
+        f"• `/setautobot delete <id>` — remove one\n"
+        f"• `/setautobot reset` — remove all\n\n"
+        f"Users see *🔄 Watch Next* button to cycle through all promos.",
+        parse_mode="Markdown")
+
 async def setpocketlink_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Set Pocket Option bot link: /setpocketlink https://t.me/YourPocketBot
@@ -8295,6 +9601,7 @@ def main():
     app.add_handler(CommandHandler("blockedusers", blockedusers_command))
     app.add_handler(CommandHandler("setpocketlink", setpocketlink_command))
     app.add_handler(CommandHandler("setwelcome", setwelcome_command))
+    app.add_handler(CommandHandler("setautobot", setautobot_command))
     app.add_handler(CommandHandler("history", history_command))
     app.add_handler(CommandHandler("setresult", setresult_command))
     app.add_handler(CommandHandler("users", users_command))
@@ -8329,7 +9636,7 @@ def main():
                 logger.warning(f"Self-ping failed: {e}")
     threading.Thread(target=self_ping, daemon=True).start()
 
-    print(f"✅ {BUSINESS_NAME} Bot v6.9 is LIVE!")
+    print(f"✅ {BUSINESS_NAME} Bot v7.1 — Idea Lab LIVE!")
     print("📋 Type /help in bot for all admin commands")
     app.run_polling(
         allowed_updates=Update.ALL_TYPES,
