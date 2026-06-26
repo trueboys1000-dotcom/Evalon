@@ -242,6 +242,7 @@ def init_db():
     conn.close()
     init_spin_db()
     init_autobot_db()
+    init_ideas_db()
     init_dynamic_db()
     init_feedback_db()
     init_media_db()
@@ -4899,7 +4900,7 @@ def lang_keyboard():
          InlineKeyboardButton("🇨🇿 Čeština", callback_data="lang_cs")],
     ])
 
-def main_menu(lang):
+def main_menu(lang, user_id=None):
     # Referral row — add Stories button only if admin has posted stories
     ref_row = [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral")]
     try:
@@ -4910,7 +4911,11 @@ def main_menu(lang):
     rows = [
         [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
         ref_row,
+        [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
     ]
+    # Admin button — visible to admins only
+    if user_id and is_admin(user_id):
+        rows.insert(0, [InlineKeyboardButton("⚙️ Admin Panel", callback_data="admin_panel")])
     # Auto Trading Bot promo button — only shown if admin has added promos via /setautobot
     try:
         if has_autobot_promos():
@@ -4939,6 +4944,7 @@ def main_menu(lang):
         [InlineKeyboardButton(ui("btn_results_history", lang), callback_data="do_results_history"),
          InlineKeyboardButton(ui("btn_profile", lang), callback_data="do_profile")],
         [InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")],
+        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
         [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
         [InlineKeyboardButton(ui("btn_language", lang), callback_data="change_lang")],
     ]
@@ -5247,7 +5253,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = build_welcome_text(lang, user.first_name, visit_count)
 
     msg = await send_welcome_media(
-        context, cid, welcome_text, main_menu(lang))
+        context, cid, welcome_text, main_menu(lang, user_id=cid))
     context.user_data["last_bot_msg_id"] = msg.message_id
     track_msg(cid, msg.message_id)
 
@@ -5374,13 +5380,14 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         reply_markup=kb)
                 elif replied_msg.photo or replied_msg.document or replied_msg.audio \
                         or replied_msg.animation or replied_msg.voice or replied_msg.sticker:
-                    # All other media: protect only, no buttons
+                    # All other media: protect + buttons (localized per user)
+                    kb = broadcast_keyboard(user_lang)
                     await context.bot.copy_message(
                         chat_id=uid,
                         from_chat_id=src_chat,
                         message_id=replied_msg.message_id,
                         protect_content=True,
-                        reply_markup=None)
+                        reply_markup=kb)
                 elif replied_msg.text:
                     # Text reply: protect + buttons
                     kb = broadcast_keyboard(user_lang)
@@ -5692,7 +5699,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Just show main menu and let them navigate — service will be one tap away
                 welcome_text = build_welcome_text(lang, user.first_name, visit_count)
                 msg = await send_welcome_media(
-                    context, cid, welcome_text, main_menu(lang))
+                    context, cid, welcome_text, main_menu(lang, user_id=cid))
                 context.user_data["last_bot_msg_id"] = msg.message_id
                 track_msg(cid, msg.message_id)
                 # Send a quick note pointing them to the service
@@ -5727,7 +5734,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 welcome_text = build_welcome_text(lang, user.first_name, visit_count)
                 msg = await send_welcome_media(
-                    context, cid, welcome_text, main_menu(lang))
+                    context, cid, welcome_text, main_menu(lang, user_id=cid))
                 context.user_data["last_bot_msg_id"] = msg.message_id
                 track_msg(cid, msg.message_id)
         else:
@@ -5756,7 +5763,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = await send_welcome_media(
         context, cid,
             f"{ui('rating_thanks', lang).format(name=escape_md(user.first_name))}\n\n{welcome_text}",
-            main_menu(lang))
+            main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -5799,7 +5806,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "main_menu":
         welcome_text = build_welcome_text(lang, user.first_name)
         msg = await send_welcome_media(
-        context, cid, welcome_text, main_menu(lang))
+        context, cid, welcome_text, main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
@@ -6593,6 +6600,97 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardMarkup([[InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")]]))
         track_msg(cid, msg.message_id)
 
+    elif data.startswith("del_idea:"):
+        if not is_admin(user.id):
+            return
+        idea_id = int(data.split(":")[1])
+        delete_idea(idea_id)
+        try:
+            await query.message.edit_text(
+                f"🗑 *Idea #{idea_id} deleted.*",
+                parse_mode="Markdown")
+        except:
+            pass
+
+    elif data == "admin_panel":
+        if not is_admin(user.id):
+            return
+        panel_text = (
+            "⚙️ *EVALON WINNERS — ADMIN PANEL*\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📊 *STATISTICS & USERS*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/stats` — Total users, active, new today\n"
+            "`/users` — List ALL users\n"
+            "`/users john` — Search by name/username/ID\n"
+            "`/blockedusers` — Users who blocked bot\n"
+            "`/history USER_ID` — Last 50 messages\n"
+            "`/userchart USER_ID` — Daily activity chart\n"
+            "`/getid` _(reply to photo/video)_ — Get file_id\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📢 *BROADCAST*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/broadcast Ujumbe` — Send to ALL users\n"
+            "`/broadcast` _(reply to photo/video)_ — Send media\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🆕 *DYNAMIC CONTENT*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/setnews Ujumbe` — Set What's New\n"
+            "`/setvip Ujumbe` — Set VIP Results\n"
+            "`/clearnews` — Clear What's New\n"
+            "`/clearvip` — Clear VIP Results\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "📈 *RESULTS HISTORY*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/results Maandishi` — Save result\n"
+            "`/setresult` — Save current VIP as result\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "💬 *SUPPORT & IDEAS*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/sessions` — View & manage active sessions\n"
+            "`/ideas` — View all Idea Lab submissions\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🎰 *SPIN WHEEL*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/spinners` — Top 10 spinners\n"
+            "`/givespin USER_ID DISCOUNT SERVICE`\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "⭐ *STORIES & FEEDBACK*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/addstory` — Add success story\n"
+            "`/liststories` — View all stories\n"
+            "`/deletestory ID` — Delete story\n"
+            "`/feedback N` — Send N fake reviews\n"
+            "`/feedbackadd Name | 🇳🇬 | Text`\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "🔧 *BOT SETTINGS*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/setwelcome` _(reply to video/photo)_\n"
+            "`/setwelcome reset` — Restore default\n"
+            "`/setpocketlink URL` — Set Pocket bot link\n"
+            "`/addphoto` _(reply to photo)_\n"
+            "`/addbot Name | Link | Desc`\n"
+            "`/delbot ID` — Remove bot\n"
+            "`/setautobot` _(reply to video/photo)_\n"
+            "`/setautobot list/delete/reset`\n\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "👁 *PREVIEW & TOOLS*\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "`/preview` — Preview new-user flow\n"
+            "`/preview sw` — Preview in any language\n"
+            "`/help` — Show this panel"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+        ])
+        await safe_delete(context, cid, query.message.message_id)
+        await delete_all_bot_msgs(context, cid)
+        msg = await context.bot.send_message(
+            chat_id=cid, text=panel_text,
+            parse_mode="Markdown",
+            reply_markup=kb)
+        track_msg(cid, msg.message_id)
+
     elif data == "do_spin":
         if not can_spin_today(user.id):
             hours, mins = get_next_spin_time(user.id)
@@ -6945,7 +7043,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "onboarding_done":
         # Legacy support — just show main menu
         welcome_text = build_welcome_text(lang, user.first_name)
-        msg = await send_welcome_media(context, cid, welcome_text, main_menu(lang))
+        msg = await send_welcome_media(context, cid, welcome_text, main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
 
@@ -7175,7 +7273,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await typing_action(cid, context, 1.0)
         welcome_text = build_welcome_text(lang, user.first_name)
         update_streak(user.id)
-        msg = await send_welcome_media(context, cid, welcome_text, main_menu(lang))
+        msg = await send_welcome_media(context, cid, welcome_text, main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
@@ -7210,7 +7308,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = await send_welcome_media(
         context, cid,
             f"{ui('rating_thanks', lang).format(name=escape_md(user.first_name))}\n\n{welcome_text}",
-            main_menu(lang))
+            main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -7220,7 +7318,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         idea_text = message.text.strip()
         awaiting_idea_lab.pop(user.id)
 
-        await delete_user_msg(message)
+        await delete_user_msg(message)   # delete user's msg on their side
         await delete_all_bot_msgs(context, cid)
 
         # Notify admin with full user details + idea
@@ -7236,21 +7334,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🕐 {now}\n\n"
             f"📝 *Idea:*\n{escape_md(idea_text)}"
         )
+        # Save idea to DB (admin views via /ideas button)
+        save_idea(user.id, user.full_name, user.username or "", lang, idea_text)
+        new_count = get_new_ideas_count()
+        # Notify admin — simple ping only, no full idea text
         for aid in ADMIN_IDS:
             try:
                 await context.bot.send_message(
                     chat_id=aid,
-                    text=admin_text,
-                    parse_mode="Markdown",
-                    reply_markup=InlineKeyboardMarkup([[
-                        InlineKeyboardButton(
-                            "💬 Reply to User",
-                            callback_data=f"con:{user.id}:{lang}"
-                        )
-                    ]])
+                    text=f"💡 *New Idea Lab submission!*\n\n👤 {escape_md(user.full_name)} (`{user.id}`)\n📊 Total new ideas: *{new_count}*\n\nUse /ideas to view all.",
+                    parse_mode="Markdown"
                 )
             except Exception as e:
-                logger.warning(f"Idea Lab admin notify failed: {e}")
+                logger.warning(f"Idea Lab admin ping failed: {e}")
 
         # Send acknowledgement to user
         await typing_action(cid, context, 1.2)
@@ -7316,7 +7412,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "support","help","price","referral","free bot","manual"
     ]):
         welcome_text = build_welcome_text(lang, user.first_name)
-        await reply_with_welcome(welcome_text, main_menu(lang))
+        await reply_with_welcome(welcome_text, main_menu(lang, user_id=cid))
 
     elif any(w in low for w in [
         "signal","signals","vip","alert","ishara","forex signal","win rate","binary signal"
@@ -7419,7 +7515,6 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     /preview        — Preview current bot flow (English)
     /preview sw     — Preview in Swahili
-    /preview en     — Preview in English
     Works for all 20 supported languages.
     """
     if not is_admin(update.effective_user.id):
@@ -7438,7 +7533,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"👁 *PREVIEW MODE*\n\n"
         f"🌍 Language: `{lang}`\n"
-        f"📱 Showing current bot flow (7 steps)...\n\n"
+        f"📱 Showing full bot flow (6 steps)...\n\n"
         f"_This is exactly what new users see_",
         parse_mode="Markdown")
 
@@ -7457,10 +7552,10 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=lang_keyboard())
     await asyncio.sleep(1.2)
 
-    # ── STEP 2: Join gate ──────────────────────────────────────
+    # ── STEP 2: Channel Join Gate ──────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n_(User must join before continuing)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n_(User must join channel before continuing)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -7470,25 +7565,25 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=join_keyboard(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 3: Welcome screen ─────────────────────────────────
+    # ── STEP 3: Welcome video + main menu ─────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Welcome + Main Menu*\n_(After broker selection)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Welcome Screen + Main Menu*\n_(Shown after joining channel)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     welcome_text = build_welcome_text(lang, user.first_name)
     try:
-        await send_welcome_media(context, cid, welcome_text, main_menu(lang))
+        await send_welcome_media(context, cid, welcome_text, main_menu(lang, user_id=cid))
     except Exception as e:
         await context.bot.send_message(
             chat_id=cid, text=welcome_text,
-            parse_mode="Markdown", reply_markup=main_menu(lang))
+            parse_mode="Markdown", reply_markup=main_menu(lang, user_id=cid))
     await asyncio.sleep(1.2)
 
-    # ── STEP 5: Services menu ──────────────────────────────────
+    # ── STEP 4: Services menu ──────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Services Menu*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Services Menu*\n_(When user taps Services button)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -7498,27 +7593,27 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=services_menu(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 6: Free Bot menu ──────────────────────────────────
+    # ── STEP 5: Free Bot menu ──────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Free Bot Menu*\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Free Bot Menu*\n_(When user taps Free Bot button)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
-    _freebot_txt = {
-        "sw": "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE!\n\n✅ Mawakala WOTE\n✅ Rahisi kutumia\n\nChagua broker yako 👇",
-        "en": "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot!\n\n✅ Works on ALL brokers\n✅ Easy to use\n\nChoose your broker 👇",
-    }
+    _freebot_txt = ui("freebot_msg", lang) if "freebot_msg" in UI.get(lang, {}) else (
+        "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE!\n\n✅ Mawakala WOTE\n✅ Rahisi kutumia\n\nChagua broker yako 👇" if lang == "sw"
+        else "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot!\n\n✅ Works on ALL brokers\n✅ Easy to use\n\nChoose your broker 👇"
+    )
     await context.bot.send_message(
         chat_id=cid,
-        text=_freebot_txt.get(lang, _freebot_txt["en"]),
+        text=_freebot_txt,
         parse_mode="Markdown",
         reply_markup=freebot_menu(lang))
     await asyncio.sleep(1.2)
 
-    # ── STEP 7: Spin wheel ─────────────────────────────────────
+    # ── STEP 6: Lucky Spin ─────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 7: Lucky Spin*\n_(1x per day — 5% win chance)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Lucky Spin Wheel*\n_(1x per day — 5% win chance)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
     await asyncio.sleep(0.4)
     await context.bot.send_message(
@@ -7537,7 +7632,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "━━━━━━━━━━━━━━━━━━\n"
             "✅ *PREVIEW COMPLETE!*\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-            f"🌍 Language: `{lang}` | 7 steps shown\n\n"
+            f"🌍 Language: `{lang}` | 6 steps shown\n\n"
             "📌 Other languages:\n"
             "• `/preview sw` — Swahili\n"
             "• `/preview ar` — Arabic\n"
@@ -7547,6 +7642,7 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🗑 Delete these messages when done."
         ),
         parse_mode="Markdown")
+
 
 # ══════════════════════════════════════════════════════════════
 #  /spinners — Admin sees most active spinners to pick winners
@@ -7739,23 +7835,27 @@ async def setresult_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     src_chat = update.effective_chat.id
+    ok = False
     if replied and replied.photo:
         cap = text_val or replied.caption or ""
-        save_result(today, cap, media_id=replied.photo[-1].file_id, media_type="photo",
+        ok = save_result(today, cap, media_id=replied.photo[-1].file_id, media_type="photo",
                     src_chat_id=src_chat, src_message_id=replied.message_id)
     elif replied and replied.video:
         cap = text_val or replied.caption or ""
-        save_result(today, cap, media_id=replied.video.file_id, media_type="video",
+        ok = save_result(today, cap, media_id=replied.video.file_id, media_type="video",
                     src_chat_id=src_chat, src_message_id=replied.message_id)
     elif text_val:
-        save_result(today, text_val)
+        ok = save_result(today, text_val)
     else:
         # Save current VIP content
         vip = get_dynamic_content("vip")
         if vip and (vip.get("text") or vip.get("file_id")):
             label = f"📅 {today}\n\n{vip.get('text') or ''}"
-            save_result(today, label.strip(), media_id=vip.get("file_id"), media_type=vip.get("file_type"))
-            await msg.reply_text("✅ Current VIP session saved to *Past Results*!", parse_mode="Markdown")
+            ok = save_result(today, label.strip(), media_id=vip.get("file_id"), media_type=vip.get("file_type"))
+            if ok:
+                await msg.reply_text("✅ Current VIP session saved to *Past Results*!", parse_mode="Markdown")
+            else:
+                await msg.reply_text("❌ Failed to save — check Render logs for 'save_result failed'.", parse_mode="Markdown")
         else:
             await msg.reply_text(
                 "❌ Usage:\n"
@@ -7765,7 +7865,10 @@ async def setresult_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown")
         return
 
-    await msg.reply_text("✅ Result saved to *Past Results History*!", parse_mode="Markdown")
+    if ok:
+        await msg.reply_text("✅ Result saved to *Past Results History*!", parse_mode="Markdown")
+    else:
+        await msg.reply_text("❌ Failed to save — check Render logs for 'save_result failed'.", parse_mode="Markdown")
 
 
 async def setvip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -7924,99 +8027,109 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "━━━━━━━━━━━━━━━━━━\n"
         "📊 *STATISTICS & USERS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/stats` — Jumla ya users, active, wapya leo, top referrers\n"
-        "`/users` — Orodha ya users WOTE (jina + ID)\n"
-        "`/users john` — Tafuta user kwa jina, username, au ID\n"
-        "`/blockedusers` — Users waliozuia bot\n"
-        "`/history USER_ID` — Ujumbe 50 wa mwisho na user huyo\n"
-        "`/history USER_ID 100` — Ujumbe 100\n"
-        "`/history USER_ID all` — Ujumbe WOTE tangu siku ya kwanza\n"
-        "`/userchart USER_ID` — Chart ya shughuli za kila siku\n"
-        "`/getid` _(reply to photo/video)_ — Pata file_id\n\n"
+        "`/stats` — Total users, active, new today, top referrers\n"
+        "`/users` — List of ALL users (name + ID)\n"
+        "`/users john` — Search user by name, username, or ID\n"
+        "`/blockedusers` — Users who blocked the bot\n"
+        "`/history USER_ID` — Last 50 messages with that user\n"
+        "`/history USER_ID 100` — 100 messages\n"
+        "`/history USER_ID all` — ALL messages since day one\n"
+        "`/userchart USER_ID` — Daily activity chart\n"
+        "`/getid` _(reply to photo/video)_ — Get file_id\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "📢 *BROADCAST*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/broadcast Ujumbe wako` — Tuma text kwa users WOTE\n"
-        "`/broadcast` _(reply to photo/video/file)_ — Tuma media kwa wote\n"
-        "✅ Bold, italic, links — zinahifadhiwa exactly kama ulivyoandika\n"
-        "✅ Progress inaonyeshwa kila users 50\n\n"
+        "`/broadcast Your message` — Send text to ALL users\n"
+        "`/broadcast` _(reply to photo/video/file)_ — Send media to all\n"
+        "✅ Bold, italic, links — preserved exactly as you wrote them\n"
+        "✅ Progress shown every 50 users\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🆕 *DYNAMIC CONTENT*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/setnews Ujumbe wako` — Weka What's New ya leo\n"
-        "`/setnews` _(reply to photo/video)_ — Weka na picha/video\n"
-        "`/setvip Leo: 8/10 zilishinda!` — Weka VIP Results\n"
-        "`/setvip` _(reply to photo/video)_ — Weka na media\n"
-        "`/clearnews` — Futa What's New content\n"
-        "`/clearvip` — Futa VIP Results content\n\n"
+        "`/setnews Your message` — Set today's What's New\n"
+        "`/setnews` _(reply to photo/video)_ — Set with photo/video\n"
+        "`/setvip Today: 8/10 won!` — Set VIP Results\n"
+        "`/setvip` _(reply to photo/video)_ — Set with media\n"
+        "`/clearnews` — Clear What's New content\n"
+        "`/clearvip` — Clear VIP Results content\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "📈 *RESULTS HISTORY*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/results Leo 8/10 zilishinda!` — Hifadhi matokeo ya session\n"
-        "`/results` _(reply to photo/video)_ — Hifadhi na media\n"
-        "`/setresult` — Hifadhi VIP content ya sasa kama result\n"
-        "`/setresult Maandishi` _(au reply to photo)_ — Hifadhi na label\n"
+        "`/results Today 8/10 won!` — Save session result\n"
+        "`/results` _(reply to photo/video)_ — Save with media\n"
+        "`/setresult` — Save current VIP content as a result\n"
+        "`/setresult Text` _(or reply to photo)_ — Save with label\n"
     )
 
     msg2 = (
         "━━━━━━━━━━━━━━━━━━\n"
         "💬 *SUPPORT SESSIONS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/sessions` — Ona na simamia support sessions zinazoendelea\n"
-        "🟢 Connect — Anza mazungumzo na user\n"
-        "🔴 End Chat — Maliza session + tuma rating\n"
-        "_Reply kwenye ujumbe ulioforwardiwa = jibu user_\n\n"
+        "`/sessions` — View & manage ongoing support sessions\n"
+        "`/ideas` — View all Idea Lab submissions\n"
+        "🟢 Connect — Start chatting with a user\n"
+        "🔴 End Chat — End session + send rating\n"
+        "_Reply to a forwarded message = reply to the user_\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🎰 *SPIN WHEEL*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/spinners` — Top 10 wanaospin zaidi\n"
-        "`/givespin USER_ID DISCOUNT SERVICE` — Toa tuzo\n"
-        "   Mfano: `/givespin 123456789 30 signals`\n"
+        "`/spinners` — Top 10 most active spinners\n"
+        "`/givespin USER_ID DISCOUNT SERVICE` — Give a reward\n"
+        "   Example: `/givespin 123456789 30 signals`\n"
         "   Services: `signals` `social` `indicator` `autobot` `any`\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "⭐ *SUCCESS STORIES*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/addstory Maandishi yako` — Ongeza story ya maandishi\n"
-        "`/addstory` _(reply to photo/video)_ — Ongeza story na media\n"
-        "`/liststories` — Ona stories zote na IDs zao\n"
-        "`/deletestory ID` — Futa story kwa ID\n"
-        "_Stories button inaonekana main menu tu ukiwa na story 1+_\n\n"
+        "`/addstory Your text` — Add a text story\n"
+        "`/addstory` _(reply to photo/video)_ — Add story with media\n"
+        "`/liststories` — View all stories and their IDs\n"
+        "`/deletestory ID` — Delete a story by ID\n"
+        "_Stories button only appears on main menu with 1+ story_\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "🔧 *BOT SETTINGS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/setwelcome` _(reply to video/photo)_ — Badilisha welcome screen\n"
-        "`/setwelcome reset` — Rudisha welcome video ya default\n"
-        "`/setpocketlink` https://t.me/YourBot — Weka link ya Pocket Option bot\n"
-        "`/addphoto` _(reply to photo)_ — Ongeza picha kwenye service images pool\n"
-        "`/addbot Jina | Link | Maelezo` — Ongeza bot kwenye Free Bots menu\n"
-        "`/addbot` — Ona bots zote zilizoongezwa\n"
-        "`/delbot ID` — Futa bot kutoka menu\n\n"
+        "`/setwelcome` _(reply to video/photo)_ — Change welcome screen\n"
+        "`/setwelcome reset` — Restore default welcome video\n"
+        "`/setpocketlink` https://t.me/YourBot — Set Pocket Option bot link\n"
+        "`/addphoto` _(reply to photo)_ — Add photo to service images pool\n"
+        "`/addbot Name | Link | Description` — Add bot to Free Bots menu\n"
+        "`/addbot` — View all added bots\n"
+        "`/delbot ID` — Remove bot from menu\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "🤖 *AUTO TRADING BOT PROMO*\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "`/setautobot` _(reply to video/photo + caption)_ — Add promo\n"
+        "`/setautobot Your text` — Add a text promo\n"
+        "`/setautobot list` — View all promos and their IDs\n"
+        "`/setautobot delete ID` — Remove one promo\n"
+        "`/setautobot reset` — Remove ALL promos (hides button)\n"
+        "_'🤖 Auto Trading Bot' button appears on welcome menu with 1+ promo_\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "⭐ *FAKE FEEDBACK*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/feedback` — Tuma feedback 5 za mchanganyiko\n"
-        "`/feedback 70` — Tuma feedback 70\n"
-        "`/feedbackadd Jina | 🇳🇬 | Maandishi` — Ongeza feedback yako\n"
-        "`/feedbacklist` — Ona feedback zote za custom\n"
-        "`/feedbackdlt` — Futa feedback ZOTE za custom\n\n"
+        "`/feedback` — Send 5 mixed feedback messages\n"
+        "`/feedback 70` — Send 70 feedback messages\n"
+        "`/feedbackadd Name | 🇳🇬 | Text` — Add your own feedback\n"
+        "`/feedbacklist` — View all custom feedback\n"
+        "`/feedbackdlt` — Delete ALL custom feedback\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "👁 *PREVIEW & TOOLS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "`/preview` — Ona flow kamili ya user mpya (English, steps 8)\n"
-        "`/preview sw` — Preview kwa lugha yoyote (sw/ar/hi/fr...)\n"
-        "`/help` — Onyesha commands hizi\n\n"
+        "`/preview` — View full new-user flow (English, 8 steps)\n"
+        "`/preview sw` — Preview in any language (sw/ar/hi/fr...)\n"
+        "`/help` — Show these commands\n\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "💡 *VIDOKEZO*\n"
+        "💡 *TIPS*\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "• `/setnews` na `/setvip` zinafanya kazi mara moja — huhitaji redeploy\n"
-        "• `/users` kisha `/history ID` = njia rahisi ya kuona mazungumzo\n"
-        "• `/spinners` kila wiki — chagua washindi 1-2 wa tuzo\n"
-        "• Broadcast: reply kwenye ujumbe wowote + `/broadcast` = inatumwa exactly"
+        "• `/setnews` and `/setvip` take effect instantly — no redeploy needed\n"
+        "• `/users` then `/history ID` = easy way to view conversations\n"
+        "• `/spinners` weekly — pick 1-2 prize winners\n"
+        "• Broadcast: reply to any message + `/broadcast` = sent exactly as-is"
     )
 
-    await update.message.reply_text(msg1, parse_mode=None)
+    await update.message.reply_text(msg1, parse_mode="Markdown")
     await asyncio.sleep(0.3)
-    await update.message.reply_text(msg2, parse_mode=None)
+    await update.message.reply_text(msg2, parse_mode="Markdown")
 
 
 async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -8155,6 +8268,87 @@ async def feedbacklist_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     await update.message.reply_text(text, parse_mode="Markdown")
 
+
+def init_ideas_db():
+    """Store Idea Lab submissions"""
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS idea_submissions (
+            id          SERIAL PRIMARY KEY,
+            user_id     BIGINT NOT NULL,
+            user_name   TEXT,
+            username    TEXT,
+            lang        TEXT DEFAULT 'en',
+            idea_text   TEXT NOT NULL,
+            status      TEXT DEFAULT 'new',
+            submitted_at TEXT DEFAULT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def save_idea(user_id, user_name, username, lang, idea_text):
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        now = __import__('datetime').datetime.now().strftime("%d/%m/%Y %H:%M")
+        c.execute("""
+            INSERT INTO idea_submissions (user_id, user_name, username, lang, idea_text, submitted_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (user_id, user_name, username, lang, idea_text, now))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.warning(f"save_idea failed: {e}")
+        return False
+
+def get_all_ideas(limit=50):
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("""
+            SELECT id, user_id, user_name, username, lang, idea_text, status, submitted_at
+            FROM idea_submissions ORDER BY id DESC LIMIT %s
+        """, (limit,))
+        rows = c.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning(f"get_all_ideas failed: {e}")
+        return []
+
+def mark_idea_read(idea_id):
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("UPDATE idea_submissions SET status='read' WHERE id=%s", (idea_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"mark_idea_read failed: {e}")
+
+def delete_idea(idea_id):
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("DELETE FROM idea_submissions WHERE id=%s", (idea_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"delete_idea failed: {e}")
+
+def get_new_ideas_count():
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM idea_submissions WHERE status='new'")
+        count = c.fetchone()[0]
+        conn.close()
+        return count
+    except:
+        return 0
 
 def init_media_db():
     """Store admin-added photos/videos and bot links"""
@@ -8628,6 +8822,54 @@ async def setpocketlink_command(update: Update, context: ContextTypes.DEFAULT_TY
         parse_mode="Markdown")
 
 
+async def ideas_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/ideas — View all Idea Lab submissions"""
+    if not is_admin(update.effective_user.id):
+        return
+
+    ideas = get_all_ideas(50)
+    new_count = get_new_ideas_count()
+
+    if not ideas:
+        await update.message.reply_text(
+            "💡 *No ideas submitted yet.*\n\nUsers submit ideas via the 💡 Idea Lab button.",
+            parse_mode="Markdown")
+        return
+
+    await update.message.reply_text(
+        f"💡 *IDEA LAB SUBMISSIONS*\n\n"
+        f"📊 Total: *{len(ideas)}* | 🆕 New: *{new_count}*\n\n"
+        f"_Tap an idea to reply to user_",
+        parse_mode="Markdown")
+
+    for row in ideas:
+        idea_id, uid, uname, uusername, lang, idea_text, status, submitted_at = row
+        icon = "🆕" if status == "new" else "✅"
+        uun = f"@{uusername}" if uusername else "no username"
+        safe_name = escape_md(uname or str(uid))
+        short_idea = idea_text[:200] + ("..." if len(idea_text) > 200 else "")
+
+        text = (
+            f"{icon} *Idea #{idea_id}*\n"
+            f"👤 {safe_name} ({uun})\n"
+            f"🆔 `{uid}` | 🌍 {lang} | 🕐 {submitted_at or '?'}\n\n"
+            f"📝 {escape_md(short_idea)}"
+        )
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("💬 Reply to User", callback_data=f"con:{uid}:{lang}"),
+             InlineKeyboardButton("🗑 Delete", callback_data=f"del_idea:{idea_id}")],
+        ])
+        try:
+            sent = await update.message.reply_text(text, parse_mode="Markdown", reply_markup=kb)
+            # Store in reply_map so admin can also text-reply
+            reply_map[sent.message_id] = uid
+            # Mark as read
+            mark_idea_read(idea_id)
+        except Exception as e:
+            logger.warning(f"ideas_command send failed: {e}")
+        await __import__('asyncio').sleep(0.3)
+
+
 async def blockedusers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show list of users who have blocked the bot — /blockedusers"""
     if not is_admin(update.effective_user.id):
@@ -8654,10 +8896,10 @@ async def blockedusers_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /history USER_ID       — Ujumbe 50 wa mwisho
-    /history USER_ID 100   — Ujumbe 100
-    /history USER_ID all   — Ujumbe WOTE tangu mwanzo
-    Kila ujumbe unatumwa peke yake kama chat halisi.
+    /history USER_ID       — Last 50 messages
+    /history USER_ID 100   — Last 100 messages
+    /history USER_ID all   — ALL messages since the start
+    Each message is sent separately, like a real chat.
     """
     if not is_admin(update.effective_user.id):
         return
@@ -8690,7 +8932,7 @@ async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not msgs:
         await update.message.reply_text(
-            f"📭 Hakuna historia ya chat kwa `{uid}`.",
+            f"📭 No chat history with `{uid}`.",
             parse_mode="Markdown")
         return
 
@@ -8702,9 +8944,9 @@ async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💬 *CHAT HISTORY*\n"
         f"👤 {safe_name} ({escape_md(uun)})\n"
         f"🆔 `{uid}`\n"
-        f"📊 Ujumbe: *{len(msgs)}*\n"
+        f"📊 Messages: *{len(msgs)}*\n"
         f"─────────────────────\n"
-        f"_Ujumbe wote hapa chini_ 👇",
+        f"_All messages below_ 👇",
         parse_mode="Markdown")
 
     await asyncio.sleep(0.5)
@@ -8767,13 +9009,13 @@ async def history_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Footer
     await update.message.reply_text(
-        f"✅ *Mwisho wa historia* — ujumbe {len(msgs)}",
+        f"✅ *End of history* — {len(msgs)} messages",
         parse_mode="Markdown")
 
 
 
 # ══════════════════════════════════════════════════════════════
-#  /users — Orodha ya users wote: jina + ID
+#  /users — List of all users: name + ID
 # ══════════════════════════════════════════════════════════════
 
 def get_all_users_list():
@@ -8795,8 +9037,8 @@ def get_all_users_list():
 
 async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /users        — Orodha ya users wote (jina + ID)
-    /users john   — Tafuta kwa jina au username
+    /users        — List of all users (name + ID)
+    /users john   — Search by name or username
     """
     if not is_admin(update.effective_user.id):
         return
@@ -8804,7 +9046,7 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     search = " ".join(context.args).lower().strip() if context.args else ""
 
     await update.message.reply_text(
-        f"⏳ Inatafuta{'...' if not search else f' *{escape_md(search)}*...'}",
+        f"⏳ Searching{'...' if not search else f' for *{escape_md(search)}*...'}",
         parse_mode="Markdown")
 
     all_users = get_all_users_list()
@@ -8825,7 +9067,7 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not filtered:
         await update.message.reply_text(
-            f"📭 Hakuna user anayepatikana na '*{escape_md(search)}*'",
+            f"📭 No user found matching '*{escape_md(search)}*'",
             parse_mode="Markdown")
         return
 
@@ -8840,7 +9082,7 @@ async def users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if page == 1:
             header = (
                 f"👥 *USERS LIST*\n"
-                f"📊 Jumla: *{total}*"
+                f"📊 Total: *{total}*"
             )
             if search:
                 header += f"\n🔍 Search: `{escape_md(search)}`"
@@ -9058,6 +9300,7 @@ def main():
     app.add_handler(CommandHandler("addbot", addbot_command))
     app.add_handler(CommandHandler("delbot", delbot_command))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("ideas", ideas_command))
     app.add_handler(CommandHandler("blockedusers", blockedusers_command))
     app.add_handler(CommandHandler("setpocketlink", setpocketlink_command))
     app.add_handler(CommandHandler("setwelcome", setwelcome_command))
