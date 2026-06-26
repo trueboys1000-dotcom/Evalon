@@ -4715,9 +4715,10 @@ async def delete_support_msgs(context, chat_id):
             await safe_delete(context, chat_id, msg_id)
         support_msg_ids[chat_id] = []
 
-async def typing_action(chat_id, context, seconds=1.5):
+async def typing_action(chat_id, context, seconds=0):
     await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-    await asyncio.sleep(seconds)
+    if seconds > 0:
+        await asyncio.sleep(seconds)
 
 async def is_member(context, user_id):
     try:
@@ -5446,7 +5447,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     wait_time = int(re.search(r"retry after (\d+)", err_str).group(1))
                 except:
                     wait_time = 5
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(wait_time)  # respect Telegram flood wait
             elif "bot was blocked" in err_str or "user is deactivated" in err_str or "chat not found" in err_str:
                 try:
                     mark_blocked_user(uid)
@@ -5650,7 +5651,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         register_user(user, lang=new_lang)
         await safe_delete(context, cid, query.message.message_id)
         await delete_all_bot_msgs(context, cid)
-        await typing_action(cid, context, 1.5)
+        await typing_action(cid, context, 0)
 
         if not await is_member(context, user.id):
             msg = await send_protected_text(
@@ -5693,7 +5694,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if data == "check_join":
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
         if await is_member(context, user.id):
             await safe_delete(context, cid, query.message.message_id)
             await delete_all_bot_msgs(context, cid)
@@ -5769,7 +5770,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         awaiting_rating_opinion.pop(user.id, None)
         await safe_delete(context, cid, query.message.message_id)
         await delete_all_bot_msgs(context, cid)
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
         welcome_text = build_welcome_text(lang, user.first_name)
         msg = await send_welcome_media(
         context, cid,
@@ -5784,7 +5785,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         stars = int(data[5:])
         star_display = "⭐" * stars
         await safe_delete(context, cid, query.message.message_id)
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
 
         # Notify admin of star rating
         name = escape_md(user.full_name)
@@ -5812,7 +5813,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Navigation buttons
     await safe_delete(context, cid, query.message.message_id)
     await delete_all_bot_msgs(context, cid)
-    await typing_action(cid, context, 1.5)
+    await typing_action(cid, context, 0)
 
     if data == "main_menu":
         welcome_text = build_welcome_text(lang, user.first_name)
@@ -7147,7 +7148,6 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         await context.bot.send_chat_action(
             chat_id=target_uid, action=ChatAction.TYPING)
-        await asyncio.sleep(1.5)
         if message.photo:
             sent = await context.bot.send_photo(
                 chat_id=target_uid, photo=message.photo[-1].file_id,
@@ -7220,7 +7220,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message.text and message.text.strip() == "🏆 START 🏆":
         await delete_user_msg(message)
         await delete_all_bot_msgs(context, cid)
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
         welcome_text = build_welcome_text(lang, user.first_name)
         update_streak(user.id)
         msg = await send_welcome_media(context, cid, welcome_text, main_menu(lang, user_id=cid))
@@ -7253,7 +7253,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except:
                 pass
 
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
         welcome_text = build_welcome_text(lang, user.first_name)
         msg = await send_welcome_media(
         context, cid,
@@ -7299,7 +7299,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logger.warning(f"Idea Lab admin ping failed: {e}")
 
         # Send acknowledgement to user
-        await typing_action(cid, context, 1.2)
+        await typing_action(cid, context, 0)
         ack = ui("idealab_ack", lang)
         msg = await send_protected_text(
             context, cid, ack,
@@ -7321,7 +7321,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Media from non-support users
     if message.photo or message.video or message.voice or message.document or message.sticker:
-        await typing_action(cid, context, 1.0)
+        await typing_action(cid, context, 0)
         await delete_all_bot_msgs(context, cid)
         msg = await send_protected_text(
             context, cid, ui("msg_received", lang), support_keyboard(lang))
@@ -7335,7 +7335,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = message.text.strip()
     low  = text.lower()
 
-    await typing_action(cid, context, 1.8)
+    await typing_action(cid, context, 0)
     await delete_all_bot_msgs(context, cid)
 
     async def reply_with_photo(img, caption, keyboard):
@@ -8108,10 +8108,9 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown")
 
     feedbacks = get_mixed_feedback(count)
-    await asyncio.sleep(0.5)
-
+    
     for i, (name, flag, text) in enumerate(feedbacks, 1):
-        await asyncio.sleep(0.9)
+        pass  # no delay
         msg_text = f"{flag} *{escape_md(name)}*\n\n_{escape_md(text)}_\n\n⭐⭐⭐⭐⭐"
         try:
             await context.bot.send_message(
