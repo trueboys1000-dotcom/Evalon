@@ -3000,35 +3000,8 @@ UI = {
         "choose_service": "🔥 *Choose Your Service* 👇",
         "join_service_msg": "⚠️ *Please join our channel first!*\n\nYou chose *{service}* — Join now to get access! 👇",
         "btn_idealab": "💡 Idea Lab — Build Your Tool",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Do you have an idea for something you'd like built?
-
-✅ Custom Trading Bot
-✅ Personal Indicator
-✅ Auto Trading System
-✅ Signal Tool
-✅ Any Trading Tool
-
-💎 We build according to your needs!
-
-How it works:
-1️⃣ Send your idea below
-2️⃣ Our team will contact you
-3️⃣ We build it together
-4️⃣ You receive your service when complete!
-
-👇 *Write your idea now:*",
-        "idealab_ack": "🎉 *Thank you for your idea!*
-
-Our team will review it and contact you shortly.
-
-💎 We look forward to helping you build:
-• Your unique bot
-• Your custom indicator
-• Your trading system
-
-🚀 Your idea could become a product helping thousands of traders!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nDo you have an idea for something you'd like built?\n\n✅ Custom Trading Bot\n✅ Personal Indicator\n✅ Auto Trading System\n✅ Signal Tool\n✅ Any Trading Tool\n\n💎 We build according to your needs!\n\nHow it works:\n1️⃣ Send your idea below\n2️⃣ Our team will contact you\n3️⃣ We build it together\n4️⃣ You receive your service when complete!\n\n👇 *Write your idea now:*",
+        "idealab_ack": "🎉 *Thank you for your idea!*\n\nOur team will review it and contact you shortly.\n\n💎 We look forward to helping you build:\n• Your unique bot\n• Your custom indicator\n• Your trading system\n\n🚀 Your idea could become a product helping thousands of traders!",
     },
     "sw": {
         "welcome": "👋 Karibu, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Mahali pa washindi!\n\nUnataka kuchunguza nini? 👇",
@@ -3094,35 +3067,8 @@ Our team will review it and contact you shortly.
         "choose_service": "🔥 *Chagua Huduma Yako* 👇",
         "join_service_msg": "⚠️ *Tafadhali jiunge na channel yetu kwanza!*\n\nUlichagua *{service}* — Jiunge sasa upate ufikiaji! 👇",
         "btn_idealab": "💡 Idea Lab — Tengeneza Chombo Chako",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Je, una wazo la kitu ungependa kutengenezwa?
-
-✅ Custom Trading Bot
-✅ Personal Indicator
-✅ Auto Trading System
-✅ Signal Tool
-✅ Any Trading Tool
-
-💎 Tunatengeneza kwa mahitaji yako!
-
-Jinsi inavyofanya kazi:
-1️⃣ Tuma wazo lako hapa chini
-2️⃣ Timu yetu itawasiliana nawe
-3️⃣ Tunatengeneza pamoja
-4️⃣ Unapata huduma yako ukamilike!
-
-👇 *Andika wazo lako sasa:*",
-        "idealab_ack": "🎉 *Asante kwa wazo lako!*
-
-Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
-
-💎 Tunafurahi kukusaidia kutengeneza:
-• Bot yako ya kipekee
-• Indicator yako maalum
-• Mfumo wako wa trading
-
-🚀 Wazo lako linaweza kuwa bidhaa inayowasaidia maelfu ya wafanyabiashara!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nJe, una wazo la kitu ungependa kutengenezwa?\n\n✅ Custom Trading Bot\n✅ Personal Indicator\n✅ Auto Trading System\n✅ Signal Tool\n✅ Any Trading Tool\n\n💎 Tunatengeneza kwa mahitaji yako!\n\nJinsi inavyofanya kazi:\n1️⃣ Tuma wazo lako hapa chini\n2️⃣ Timu yetu itawasiliana nawe\n3️⃣ Tunatengeneza pamoja\n4️⃣ Unapata huduma yako ukamilike!\n\n👇 *Andika wazo lako sasa:*",
+        "idealab_ack": "🎉 *Asante kwa wazo lako!*\n\nTimu yetu italiangalia na kuwasiliana nawe hivi karibuni.\n\n💎 Tunafurahi kukusaidia kutengeneza:\n• Bot yako ya kipekee\n• Indicator yako maalum\n• Mfumo wako wa trading\n\n🚀 Wazo lako linaweza kuwa bidhaa inayowasaidia maelfu ya wafanyabiashara!",
     },
     "ar": {
         "welcome": "👋 مرحباً، *{name}!*\n\n{urgency}\n\n🏆 *{business}* — حيث يتداول الفائزون!\n\nماذا تريد أن تستكشف؟ 👇",
@@ -3182,35 +3128,8 @@ Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
         "join_service_msg": "⚠️ *يرجى الانضمام إلى قناتنا أولاً!*\n\nلقد اخترت *{service}* — انضم الآن للحصول على الوصول! 👇",
         "session_ended": "👋 *انتهت جلسة الدعم.*\n\nشكراً للتواصل معنا! 🙏",
         "btn_idealab": "💡 مختبر الأفكار — ابنِ أداتك",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-هل لديك فكرة لشيء تريد بناءه؟
-
-✅ بوت تداول مخصص
-✅ مؤشر شخصي
-✅ نظام تداول آلي
-✅ أداة إشارات
-✅ أي أداة تداول
-
-💎 نبني وفق احتياجاتك!
-
-كيف يعمل:
-1️⃣ أرسل فكرتك أدناه
-2️⃣ سيتواصل معك فريقنا
-3️⃣ نبنيها معاً
-4️⃣ تحصل على خدمتك عند الاكتمال!
-
-👇 *اكتب فكرتك الآن:*",
-        "idealab_ack": "🎉 *شكراً على فكرتك!*
-
-سيراجعها فريقنا ويتواصل معك قريباً.
-
-💎 يسعدنا مساعدتك في بناء:
-• بوتك الفريد
-• مؤشرك المخصص
-• نظام التداول الخاص بك
-
-🚀 يمكن أن تصبح فكرتك منتجاً يساعد آلاف المتداولين!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nهل لديك فكرة لشيء تريد بناءه؟\n\n✅ بوت تداول مخصص\n✅ مؤشر شخصي\n✅ نظام تداول آلي\n✅ أداة إشارات\n✅ أي أداة تداول\n\n💎 نبني وفق احتياجاتك!\n\nكيف يعمل:\n1️⃣ أرسل فكرتك أدناه\n2️⃣ سيتواصل معك فريقنا\n3️⃣ نبنيها معاً\n4️⃣ تحصل على خدمتك عند الاكتمال!\n\n👇 *اكتب فكرتك الآن:*",
+        "idealab_ack": "🎉 *شكراً على فكرتك!*\n\nسيراجعها فريقنا ويتواصل معك قريباً.\n\n💎 يسعدنا مساعدتك في بناء:\n• بوتك الفريد\n• مؤشرك المخصص\n• نظام التداول الخاص بك\n\n🚀 يمكن أن تصبح فكرتك منتجاً يساعد آلاف المتداولين!",
     },
     "zh": {
         "welcome": "👋 欢迎，*{name}!*\n\n{urgency}\n\n🏆 *{business}* — 赢家交易的地方！\n\n您想探索什么？ 👇",
@@ -3270,35 +3189,8 @@ Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
         "join_service_msg": "⚠️ *请先加入我们的频道！*\n\n您选择了 *{service}* — 立即加入以获取访问权限！ 👇",
         "session_ended": "👋 *支持聊天已结束。*\n\n感谢您联系我们！ 🙏",
         "btn_idealab": "💡 创意实验室 — 打造你的工具",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-您有想要开发的东西的想法吗？
-
-✅ 定制交易机器人
-✅ 个人指标
-✅ 自动交易系统
-✅ 信号工具
-✅ 任何交易工具
-
-💎 我们根据您的需求构建！
-
-工作原理：
-1️⃣ 在下方发送您的想法
-2️⃣ 我们的团队将与您联系
-3️⃣ 我们一起构建
-4️⃣ 完成后您将获得服务！
-
-👇 *立即写下您的想法：*",
-        "idealab_ack": "🎉 *感谢您的想法！*
-
-我们的团队将审查并很快与您联系。
-
-💎 我们很乐意帮助您构建：
-• 您独特的机器人
-• 您的自定义指标
-• 您的交易系统
-
-🚀 您的想法可能成为帮助数千名交易者的产品！",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\n您有想要开发的东西的想法吗？\n\n✅ 定制交易机器人\n✅ 个人指标\n✅ 自动交易系统\n✅ 信号工具\n✅ 任何交易工具\n\n💎 我们根据您的需求构建！\n\n工作原理：\n1️⃣ 在下方发送您的想法\n2️⃣ 我们的团队将与您联系\n3️⃣ 我们一起构建\n4️⃣ 完成后您将获得服务！\n\n👇 *立即写下您的想法：*",
+        "idealab_ack": "🎉 *感谢您的想法！*\n\n我们的团队将审查并很快与您联系。\n\n💎 我们很乐意帮助您构建：\n• 您独特的机器人\n• 您的自定义指标\n• 您的交易系统\n\n🚀 您的想法可能成为帮助数千名交易者的产品！",
     },
     "hi": {
         "welcome": "👋 स्वागत है, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — जहाँ विजेता व्यापार करते हैं!\n\nआप क्या जानना चाहते हैं? 👇",
@@ -3358,35 +3250,8 @@ Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
         "join_service_msg": "⚠️ *कृपया पहले हमारे चैनल से जुड़ें!*\n\nआपने *{service}* चुना — अभी जुड़ें और एक्सेस पाएं! 👇",
         "session_ended": "👋 *सहायता चैट समाप्त हो गई।*\n\nहमसे संपर्क करने के लिए धन्यवाद! 🙏",
         "btn_idealab": "💡 आइडिया लैब — अपना टूल बनाएं",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-क्या आपके पास कुछ बनवाने का विचार है?
-
-✅ कस्टम ट्रेडिंग बॉट
-✅ पर्सनल इंडिकेटर
-✅ ऑटो ट्रेडिंग सिस्टम
-✅ सिग्नल टूल
-✅ कोई भी ट्रेडिंग टूल
-
-💎 हम आपकी जरूरतों के अनुसार बनाते हैं!
-
-यह कैसे काम करता है:
-1️⃣ नीचे अपना विचार भेजें
-2️⃣ हमारी टीम आपसे संपर्क करेगी
-3️⃣ हम मिलकर बनाते हैं
-4️⃣ पूरा होने पर आपको सेवा मिलती है!
-
-👇 *अभी अपना विचार लिखें:*",
-        "idealab_ack": "🎉 *आपके आइडिया के लिए धन्यवाद!*
-
-हमारी टीम इसकी समीक्षा करेगी और जल्द ही आपसे संपर्क करेगी।
-
-💎 हम आपकी मदद करने में खुश हैं:
-• आपका अनोखा बॉट
-• आपका कस्टम इंडिकेटर
-• आपका ट्रेडिंग सिस्टम
-
-🚀 आपका आइडिया हजारों ट्रेडर्स की मदद करने वाला प्रोडक्ट बन सकता है!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nक्या आपके पास कुछ बनवाने का विचार है?\n\n✅ कस्टम ट्रेडिंग बॉट\n✅ पर्सनल इंडिकेटर\n✅ ऑटो ट्रेडिंग सिस्टम\n✅ सिग्नल टूल\n✅ कोई भी ट्रेडिंग टूल\n\n💎 हम आपकी जरूरतों के अनुसार बनाते हैं!\n\nयह कैसे काम करता है:\n1️⃣ नीचे अपना विचार भेजें\n2️⃣ हमारी टीम आपसे संपर्क करेगी\n3️⃣ हम मिलकर बनाते हैं\n4️⃣ पूरा होने पर आपको सेवा मिलती है!\n\n👇 *अभी अपना विचार लिखें:*",
+        "idealab_ack": "🎉 *आपके आइडिया के लिए धन्यवाद!*\n\nहमारी टीम इसकी समीक्षा करेगी और जल्द ही आपसे संपर्क करेगी।\n\n💎 हम आपकी मदद करने में खुश हैं:\n• आपका अनोखा बॉट\n• आपका कस्टम इंडिकेटर\n• आपका ट्रेडिंग सिस्टम\n\n🚀 आपका आइडिया हजारों ट्रेडर्स की मदद करने वाला प्रोडक्ट बन सकता है!",
     },
     "ru": {
         "welcome": "👋 Добро пожаловать, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Где торгуют победители!\n\nЧто вы хотите узнать? 👇",
@@ -3446,35 +3311,8 @@ Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
         "join_service_msg": "⚠️ *Сначала присоединитесь к нашему каналу!*\n\nВы выбрали *{service}* — вступите сейчас, чтобы получить доступ! 👇",
         "session_ended": "👋 *Чат поддержки завершен.*\n\nСпасибо за обращение! 🙏",
         "btn_idealab": "💡 Лаборатория идей — создай свой инструмент",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Есть идея, что вы хотели бы создать?
-
-✅ Индивидуальный торговый бот
-✅ Персональный индикатор
-✅ Автоматическая торговая система
-✅ Инструмент сигналов
-✅ Любой торговый инструмент
-
-💎 Строим по вашим потребностям!
-
-Как это работает:
-1️⃣ Отправьте идею ниже
-2️⃣ Наша команда свяжется с вами
-3️⃣ Строим вместе
-4️⃣ Получаете сервис по завершении!
-
-👇 *Напишите вашу идею сейчас:*",
-        "idealab_ack": "🎉 *Спасибо за вашу идею!*
-
-Наша команда рассмотрит её и свяжется с вами в ближайшее время.
-
-💎 Мы рады помочь вам создать:
-• Ваш уникальный бот
-• Ваш индивидуальный индикатор
-• Вашу торговую систему
-
-🚀 Ваша идея может стать продуктом, помогающим тысячам трейдеров!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nЕсть идея, что вы хотели бы создать?\n\n✅ Индивидуальный торговый бот\n✅ Персональный индикатор\n✅ Автоматическая торговая система\n✅ Инструмент сигналов\n✅ Любой торговый инструмент\n\n💎 Строим по вашим потребностям!\n\nКак это работает:\n1️⃣ Отправьте идею ниже\n2️⃣ Наша команда свяжется с вами\n3️⃣ Строим вместе\n4️⃣ Получаете сервис по завершении!\n\n👇 *Напишите вашу идею сейчас:*",
+        "idealab_ack": "🎉 *Спасибо за вашу идею!*\n\nНаша команда рассмотрит её и свяжется с вами в ближайшее время.\n\n💎 Мы рады помочь вам создать:\n• Ваш уникальный бот\n• Ваш индивидуальный индикатор\n• Вашу торговую систему\n\n🚀 Ваша идея может стать продуктом, помогающим тысячам трейдеров!",
     },
     "es": {
         "welcome": "👋 Bienvenido, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — ¡Donde comercian los ganadores!\n\n¿Qué deseas explorar? 👇",
@@ -3534,35 +3372,8 @@ Timu yetu italiangalia na kuwasiliana nawe hivi karibuni.
         "join_service_msg": "⚠️ *¡Por favor únete a nuestro canal primero!*\n\nElegiste *{service}* — ¡Únete ahora para obtener acceso! 👇",
         "session_ended": "👋 *El chat de soporte ha finalizado.*\n\n¡Gracias por contactarnos! 🙏",
         "btn_idealab": "💡 Idea Lab — Crea tu herramienta",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-¿Tienes una idea de algo que te gustaría construir?
-
-✅ Bot de trading personalizado
-✅ Indicador personal
-✅ Sistema de trading automático
-✅ Herramienta de señales
-✅ Cualquier herramienta de trading
-
-💎 ¡Construimos según tus necesidades!
-
-Cómo funciona:
-1️⃣ Envía tu idea abajo
-2️⃣ Nuestro equipo te contactará
-3️⃣ Lo construimos juntos
-4️⃣ ¡Recibes tu servicio al completarse!
-
-👇 *Escribe tu idea ahora:*",
-        "idealab_ack": "🎉 *¡Gracias por tu idea!*
-
-Nuestro equipo la revisará y se pondrá en contacto contigo pronto.
-
-💎 Nos encanta ayudarte a construir:
-• Tu bot único
-• Tu indicador personalizado
-• Tu sistema de trading
-
-🚀 ¡Tu idea puede convertirse en un producto que ayude a miles de traders!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\n¿Tienes una idea de algo que te gustaría construir?\n\n✅ Bot de trading personalizado\n✅ Indicador personal\n✅ Sistema de trading automático\n✅ Herramienta de señales\n✅ Cualquier herramienta de trading\n\n💎 ¡Construimos según tus necesidades!\n\nCómo funciona:\n1️⃣ Envía tu idea abajo\n2️⃣ Nuestro equipo te contactará\n3️⃣ Lo construimos juntos\n4️⃣ ¡Recibes tu servicio al completarse!\n\n👇 *Escribe tu idea ahora:*",
+        "idealab_ack": "🎉 *¡Gracias por tu idea!*\n\nNuestro equipo la revisará y se pondrá en contacto contigo pronto.\n\n💎 Nos encanta ayudarte a construir:\n• Tu bot único\n• Tu indicador personalizado\n• Tu sistema de trading\n\n🚀 ¡Tu idea puede convertirse en un producto que ayude a miles de traders!",
     },
     "fr": {
         "welcome": "👋 Bienvenue, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Là où les gagnants tradent!\n\nQue voulez-vous explorer? 👇",
@@ -3622,35 +3433,8 @@ Nuestro equipo la revisará y se pondrá en contacto contigo pronto.
         "join_service_msg": "⚠️ *Veuillez d'abord rejoindre notre canal!*\n\nVous avez choisi *{service}* — Rejoignez maintenant pour obtenir l'accès! 👇",
         "session_ended": "👋 *Le chat de support est terminé.*\n\nMerci de nous avoir contactés! 🙏",
         "btn_idealab": "💡 Idea Lab — Créez votre outil",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Avez-vous une idée de quelque chose que vous aimeriez construire?
-
-✅ Bot de trading personnalisé
-✅ Indicateur personnel
-✅ Système de trading automatique
-✅ Outil de signaux
-✅ Tout outil de trading
-
-💎 Nous construisons selon vos besoins!
-
-Comment ça fonctionne:
-1️⃣ Envoyez votre idée ci-dessous
-2️⃣ Notre équipe vous contactera
-3️⃣ Nous construisons ensemble
-4️⃣ Vous recevez votre service à la fin!
-
-👇 *Écrivez votre idée maintenant:*",
-        "idealab_ack": "🎉 *Merci pour votre idée!*
-
-Notre équipe l'examinera et vous contactera bientôt.
-
-💎 Nous sommes ravis de vous aider à construire:
-• Votre bot unique
-• Votre indicateur personnalisé
-• Votre système de trading
-
-🚀 Votre idée peut devenir un produit aidant des milliers de traders!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nAvez-vous une idée de quelque chose que vous aimeriez construire?\n\n✅ Bot de trading personnalisé\n✅ Indicateur personnel\n✅ Système de trading automatique\n✅ Outil de signaux\n✅ Tout outil de trading\n\n💎 Nous construisons selon vos besoins!\n\nComment ça fonctionne:\n1️⃣ Envoyez votre idée ci-dessous\n2️⃣ Notre équipe vous contactera\n3️⃣ Nous construisons ensemble\n4️⃣ Vous recevez votre service à la fin!\n\n👇 *Écrivez votre idée maintenant:*",
+        "idealab_ack": "🎉 *Merci pour votre idée!*\n\nNotre équipe l'examinera et vous contactera bientôt.\n\n💎 Nous sommes ravis de vous aider à construire:\n• Votre bot unique\n• Votre indicateur personnalisé\n• Votre système de trading\n\n🚀 Votre idée peut devenir un produit aidant des milliers de traders!",
     },
     "pt": {
         "welcome": "👋 Bem-vindo, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Onde os vencedores negociam!\n\nO que você quer explorar? 👇",
@@ -3710,35 +3494,8 @@ Notre équipe l'examinera et vous contactera bientôt.
         "join_service_msg": "⚠️ *Por favor, junte-se ao nosso canal primeiro!*\n\nVocê escolheu *{service}* — Junte-se agora para obter acesso! 👇",
         "session_ended": "👋 *O chat de suporte foi encerrado.*\n\nObrigado por entrar em contato! 🙏",
         "btn_idealab": "💡 Idea Lab — Crie sua ferramenta",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Você tem uma ideia de algo que gostaria de construir?
-
-✅ Bot de trading personalizado
-✅ Indicador pessoal
-✅ Sistema de trading automático
-✅ Ferramenta de sinais
-✅ Qualquer ferramenta de trading
-
-💎 Construímos de acordo com suas necessidades!
-
-Como funciona:
-1️⃣ Envie sua ideia abaixo
-2️⃣ Nossa equipe entrará em contato
-3️⃣ Construímos juntos
-4️⃣ Você recebe seu serviço ao concluir!
-
-👇 *Escreva sua ideia agora:*",
-        "idealab_ack": "🎉 *Obrigado pela sua ideia!*
-
-Nossa equipe irá revisá-la e entrará em contato em breve.
-
-💎 Temos prazer em ajudá-lo a construir:
-• Seu bot exclusivo
-• Seu indicador personalizado
-• Seu sistema de trading
-
-🚀 Sua ideia pode se tornar um produto que ajuda milhares de traders!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nVocê tem uma ideia de algo que gostaria de construir?\n\n✅ Bot de trading personalizado\n✅ Indicador pessoal\n✅ Sistema de trading automático\n✅ Ferramenta de sinais\n✅ Qualquer ferramenta de trading\n\n💎 Construímos de acordo com suas necessidades!\n\nComo funciona:\n1️⃣ Envie sua ideia abaixo\n2️⃣ Nossa equipe entrará em contato\n3️⃣ Construímos juntos\n4️⃣ Você recebe seu serviço ao concluir!\n\n👇 *Escreva sua ideia agora:*",
+        "idealab_ack": "🎉 *Obrigado pela sua ideia!*\n\nNossa equipe irá revisá-la e entrará em contato em breve.\n\n💎 Temos prazer em ajudá-lo a construir:\n• Seu bot exclusivo\n• Seu indicador personalizado\n• Seu sistema de trading\n\n🚀 Sua ideia pode se tornar um produto que ajuda milhares de traders!",
     },
     "de": {
         "welcome": "👋 Willkommen, *{name}!*\n\n{urgency}\n\n🏆 *{business}* — Wo Gewinner handeln!\n\nWas möchten Sie erkunden? 👇",
@@ -3798,35 +3555,8 @@ Nossa equipe irá revisá-la e entrará em contato em breve.
         "join_service_msg": "⚠️ *Bitte treten Sie zuerst unserem Kanal bei!*\n\nSie haben *{service}* gewählt — Treten Sie jetzt bei, um Zugang zu erhalten! 👇",
         "session_ended": "👋 *Der Support-Chat wurde beendet.*\n\nDanke, dass Sie uns kontaktiert haben! 🙏",
         "btn_idealab": "💡 Idea Lab — Erstelle dein Tool",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Haben Sie eine Idee für etwas, das Sie gerne bauen lassen möchten?
-
-✅ Benutzerdefinierter Trading-Bot
-✅ Persönlicher Indikator
-✅ Automatisches Handelssystem
-✅ Signal-Tool
-✅ Jedes Trading-Tool
-
-💎 Wir bauen nach Ihren Bedürfnissen!
-
-So funktioniert es:
-1️⃣ Senden Sie Ihre Idee unten
-2️⃣ Unser Team wird Sie kontaktieren
-3️⃣ Wir bauen gemeinsam
-4️⃣ Sie erhalten Ihren Service nach Abschluss!
-
-👇 *Schreiben Sie Ihre Idee jetzt:*",
-        "idealab_ack": "🎉 *Danke für deine Idee!*
-
-Unser Team wird sie prüfen und sich bald bei dir melden.
-
-💎 Wir helfen dir gerne beim Aufbau:
-• Deinen einzigartigen Bot
-• Deinen benutzerdefinierten Indikator
-• Dein Handelssystem
-
-🚀 Deine Idee könnte ein Produkt werden, das Tausenden von Tradern hilft!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nHaben Sie eine Idee für etwas, das Sie gerne bauen lassen möchten?\n\n✅ Benutzerdefinierter Trading-Bot\n✅ Persönlicher Indikator\n✅ Automatisches Handelssystem\n✅ Signal-Tool\n✅ Jedes Trading-Tool\n\n💎 Wir bauen nach Ihren Bedürfnissen!\n\nSo funktioniert es:\n1️⃣ Senden Sie Ihre Idee unten\n2️⃣ Unser Team wird Sie kontaktieren\n3️⃣ Wir bauen gemeinsam\n4️⃣ Sie erhalten Ihren Service nach Abschluss!\n\n👇 *Schreiben Sie Ihre Idee jetzt:*",
+        "idealab_ack": "🎉 *Danke für deine Idee!*\n\nUnser Team wird sie prüfen und sich bald bei dir melden.\n\n💎 Wir helfen dir gerne beim Aufbau:\n• Deinen einzigartigen Bot\n• Deinen benutzerdefinierten Indikator\n• Dein Handelssystem\n\n🚀 Deine Idee könnte ein Produkt werden, das Tausenden von Tradern hilft!",
     },
     "ur": {
         "welcome": "👋 خوش آمدید، *{name}!*\n\n{urgency}\n\n🏆 *{business}* — جہاں فاتح تجارت کرتے ہیں!\n\nآپ کیا جاننا چاہتے ہیں؟ 👇",
@@ -3886,35 +3616,8 @@ Unser Team wird sie prüfen und sich bald bei dir melden.
         "join_service_msg": "⚠️ *براہ کرم پہلے ہمارے چینل میں شامل ہوں!*\n\nآپ نے *{service}* چنا — ابھی شامل ہوں اور رسائی حاصل کریں! 👇",
         "session_ended": "👋 *سپورٹ چیٹ ختم ہو گئی۔*\n\nہم سے رابطہ کرنے کا شکریہ! 🙏",
         "btn_idealab": "💡 آئیڈیا لیب — اپنا ٹول بنائیں",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-کیا آپ کے پاس کچھ بنوانے کا خیال ہے؟
-
-✅ کسٹم ٹریڈنگ بوٹ
-✅ ذاتی انڈیکیٹر
-✅ آٹو ٹریڈنگ سسٹم
-✅ سگنل ٹول
-✅ کوئی بھی ٹریڈنگ ٹول
-
-💎 ہم آپ کی ضروریات کے مطابق بناتے ہیں!
-
-یہ کیسے کام کرتا ہے:
-1️⃣ نیچے اپنا خیال بھیجیں
-2️⃣ ہماری ٹیم آپ سے رابطہ کرے گی
-3️⃣ ہم مل کر بناتے ہیں
-4️⃣ مکمل ہونے پر آپ کو سروس ملتی ہے!
-
-👇 *ابھی اپنا خیال لکھیں:*",
-        "idealab_ack": "🎉 *آپ کے آئیڈیے کا شکریہ!*
-
-ہماری ٹیم اس کا جائزہ لے گی اور جلد آپ سے رابطہ کرے گی۔
-
-💎 ہم آپ کی مدد کرنے میں خوش ہیں:
-• آپ کا منفرد بوٹ
-• آپ کا کسٹم انڈیکیٹر
-• آپ کا ٹریڈنگ سسٹم
-
-🚀 آپ کا آئیڈیا ہزاروں ٹریڈرز کی مدد کرنے والی پروڈکٹ بن سکتا ہے!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nکیا آپ کے پاس کچھ بنوانے کا خیال ہے؟\n\n✅ کسٹم ٹریڈنگ بوٹ\n✅ ذاتی انڈیکیٹر\n✅ آٹو ٹریڈنگ سسٹم\n✅ سگنل ٹول\n✅ کوئی بھی ٹریڈنگ ٹول\n\n💎 ہم آپ کی ضروریات کے مطابق بناتے ہیں!\n\nیہ کیسے کام کرتا ہے:\n1️⃣ نیچے اپنا خیال بھیجیں\n2️⃣ ہماری ٹیم آپ سے رابطہ کرے گی\n3️⃣ ہم مل کر بناتے ہیں\n4️⃣ مکمل ہونے پر آپ کو سروس ملتی ہے!\n\n👇 *ابھی اپنا خیال لکھیں:*",
+        "idealab_ack": "🎉 *آپ کے آئیڈیے کا شکریہ!*\n\nہماری ٹیم اس کا جائزہ لے گی اور جلد آپ سے رابطہ کرے گی۔\n\n💎 ہم آپ کی مدد کرنے میں خوش ہیں:\n• آپ کا منفرد بوٹ\n• آپ کا کسٹم انڈیکیٹر\n• آپ کا ٹریڈنگ سسٹم\n\n🚀 آپ کا آئیڈیا ہزاروں ٹریڈرز کی مدد کرنے والی پروڈکٹ بن سکتا ہے!",
     },
     "ja": {
         "welcome": "👋 ようこそ、*{name}!*\n\n{urgency}\n\n🏆 *{business}* — 勝者が取引する場所！\n\n何を探しますか？ 👇",
@@ -3974,35 +3677,8 @@ Unser Team wird sie prüfen und sich bald bei dir melden.
         "join_service_msg": "⚠️ *まず私たちのチャンネルに参加してください！*\n\n*{service}* を選びました — 今すぐ参加してアクセスを取得！ 👇",
         "session_ended": "👋 *サポートチャットが終了しました。*\n\nご連絡ありがとうございました！ 🙏",
         "btn_idealab": "💡 アイデアラボ — ツールを作ろう",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-作ってほしいものについてアイデアがありますか？
-
-✅ カスタムトレーディングボット
-✅ パーソナルインジケーター
-✅ 自動取引システム
-✅ シグナルツール
-✅ あらゆるトレーディングツール
-
-💎 あなたのニーズに合わせて構築します！
-
-仕組み：
-1️⃣ 以下にアイデアを送信
-2️⃣ チームが連絡します
-3️⃣ 一緒に作ります
-4️⃣ 完成後にサービスを受け取ります！
-
-👇 *今すぐアイデアを書いてください：*",
-        "idealab_ack": "🎉 *アイデアをありがとう！*
-
-チームが確認して、すぐにご連絡いたします。
-
-💎 以下を作るお手伝いをします：
-• あなただけのボット
-• カスタムインジケーター
-• あなたの取引システム
-
-🚀 あなたのアイデアが何千人ものトレーダーを助ける製品になるかもしれません！",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\n作ってほしいものについてアイデアがありますか？\n\n✅ カスタムトレーディングボット\n✅ パーソナルインジケーター\n✅ 自動取引システム\n✅ シグナルツール\n✅ あらゆるトレーディングツール\n\n💎 あなたのニーズに合わせて構築します！\n\n仕組み：\n1️⃣ 以下にアイデアを送信\n2️⃣ チームが連絡します\n3️⃣ 一緒に作ります\n4️⃣ 完成後にサービスを受け取ります！\n\n👇 *今すぐアイデアを書いてください：*",
+        "idealab_ack": "🎉 *アイデアをありがとう！*\n\nチームが確認して、すぐにご連絡いたします。\n\n💎 以下を作るお手伝いをします：\n• あなただけのボット\n• カスタムインジケーター\n• あなたの取引システム\n\n🚀 あなたのアイデアが何千人ものトレーダーを助ける製品になるかもしれません！",
     },
     "it": {
         "btn_signals": "\U0001f4ca Segnali VIP",
@@ -4062,35 +3738,8 @@ Unser Team wird sie prüfen und sich bald bei dir melden.
         "btn_poll_both": "✅ Entrambi",
         "welcome_video": "🎬 *Benvenuto in EVALON WINNERS!*\n\nGuarda questa introduzione! 🏆",
         "btn_idealab": "💡 Idea Lab — Crea il tuo strumento",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Hai un'idea per qualcosa che vorresti costruire?
-
-✅ Bot di trading personalizzato
-✅ Indicatore personale
-✅ Sistema di trading automatico
-✅ Strumento di segnali
-✅ Qualsiasi strumento di trading
-
-💎 Costruiamo secondo le tue esigenze!
-
-Come funziona:
-1️⃣ Invia la tua idea qui sotto
-2️⃣ Il nostro team ti contatterà
-3️⃣ Costruiamo insieme
-4️⃣ Ricevi il tuo servizio al completamento!
-
-👇 *Scrivi la tua idea ora:*",
-        "idealab_ack": "🎉 *Grazie per la tua idea!*
-
-Il nostro team la esaminerà e ti contatterà a breve.
-
-💎 Siamo felici di aiutarti a costruire:
-• Il tuo bot unico
-• Il tuo indicatore personalizzato
-• Il tuo sistema di trading
-
-🚀 La tua idea potrebbe diventare un prodotto che aiuta migliaia di trader!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nHai un'idea per qualcosa che vorresti costruire?\n\n✅ Bot di trading personalizzato\n✅ Indicatore personale\n✅ Sistema di trading automatico\n✅ Strumento di segnali\n✅ Qualsiasi strumento di trading\n\n💎 Costruiamo secondo le tue esigenze!\n\nCome funziona:\n1️⃣ Invia la tua idea qui sotto\n2️⃣ Il nostro team ti contatterà\n3️⃣ Costruiamo insieme\n4️⃣ Ricevi il tuo servizio al completamento!\n\n👇 *Scrivi la tua idea ora:*",
+        "idealab_ack": "🎉 *Grazie per la tua idea!*\n\nIl nostro team la esaminerà e ti contatterà a breve.\n\n💎 Siamo felici di aiutarti a costruire:\n• Il tuo bot unico\n• Il tuo indicatore personalizzato\n• Il tuo sistema di trading\n\n🚀 La tua idea potrebbe diventare un prodotto che aiuta migliaia di trader!",
     },
     "ko": {
         "btn_signals": "\U0001f4ca VIP \uc2e0\ud638",
@@ -4150,35 +3799,8 @@ Il nostro team la esaminerà e ti contatterà a breve.
         "btn_poll_both": "✅ 둘 다",
         "welcome_video": "🎬 *EVALON WINNERS에 오신 것을 환영합니다!*\n\n이 소개를 보세요! 🏆",
         "btn_idealab": "💡 아이디어 랩 — 도구를 만들어보세요",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-만들고 싶은 것에 대한 아이디어가 있으신가요?
-
-✅ 맞춤형 트레이딩 봇
-✅ 개인 인디케이터
-✅ 자동 거래 시스템
-✅ 신호 도구
-✅ 모든 트레이딩 도구
-
-💎 귀하의 필요에 맞게 구축합니다!
-
-작동 방식:
-1️⃣ 아래에 아이디어를 보내세요
-2️⃣ 팀이 연락할 것입니다
-3️⃣ 함께 만듭니다
-4️⃣ 완료 시 서비스를 받습니다!
-
-👇 *지금 아이디어를 적어보세요:*",
-        "idealab_ack": "🎉 *아이디어 감사합니다!*
-
-팀이 검토 후 곧 연락드리겠습니다.
-
-💎 다음을 만드는 데 도움드립니다:
-• 귀하만의 독특한 봇
-• 맞춤형 인디케이터
-• 귀하의 거래 시스템
-
-🚀 귀하의 아이디어가 수천 명의 트레이더를 돕는 제품이 될 수 있습니다!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\n만들고 싶은 것에 대한 아이디어가 있으신가요?\n\n✅ 맞춤형 트레이딩 봇\n✅ 개인 인디케이터\n✅ 자동 거래 시스템\n✅ 신호 도구\n✅ 모든 트레이딩 도구\n\n💎 귀하의 필요에 맞게 구축합니다!\n\n작동 방식:\n1️⃣ 아래에 아이디어를 보내세요\n2️⃣ 팀이 연락할 것입니다\n3️⃣ 함께 만듭니다\n4️⃣ 완료 시 서비스를 받습니다!\n\n👇 *지금 아이디어를 적어보세요:*",
+        "idealab_ack": "🎉 *아이디어 감사합니다!*\n\n팀이 검토 후 곧 연락드리겠습니다.\n\n💎 다음을 만드는 데 도움드립니다:\n• 귀하만의 독특한 봇\n• 맞춤형 인디케이터\n• 귀하의 거래 시스템\n\n🚀 귀하의 아이디어가 수천 명의 트레이더를 돕는 제품이 될 수 있습니다!",
     },
     "tr": {
         "btn_signals": "\U0001f4ca VIP Sinyaller",
@@ -4238,35 +3860,8 @@ Il nostro team la esaminerà e ti contatterà a breve.
         "btn_poll_both": "✅ Her Ikisi",
         "welcome_video": "🎬 *EVALON WINNERS'a Hosgeldiniz!*\n\nBu tanitimi izleyin! 🏆",
         "btn_idealab": "💡 Fikir Laboratuvarı — Aracını Yap",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Yapmak istediğiniz bir şey için fikriniz var mı?
-
-✅ Özel Trading Botu
-✅ Kişisel Gösterge
-✅ Otomatik İşlem Sistemi
-✅ Sinyal Aracı
-✅ Herhangi bir Trading Aracı
-
-💎 İhtiyaçlarınıza göre inşa ediyoruz!
-
-Nasıl çalışır:
-1️⃣ Fikrinizi aşağıya gönderin
-2️⃣ Ekibimiz sizinle iletişime geçecek
-3️⃣ Birlikte inşa ediyoruz
-4️⃣ Tamamlandığında hizmetinizi alırsınız!
-
-👇 *Fikrinizi şimdi yazın:*",
-        "idealab_ack": "🎉 *Fikrin için teşekkürler!*
-
-Ekibimiz inceleyecek ve yakında seninle iletişime geçecek.
-
-💎 Şunları inşa etmene yardımcı olmaktan mutluluk duyarız:
-• Eşsiz botun
-• Özel göstergen
-• İşlem sistemin
-
-🚀 Fikrin binlerce trader'a yardım eden bir ürün olabilir!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nYapmak istediğiniz bir şey için fikriniz var mı?\n\n✅ Özel Trading Botu\n✅ Kişisel Gösterge\n✅ Otomatik İşlem Sistemi\n✅ Sinyal Aracı\n✅ Herhangi bir Trading Aracı\n\n💎 İhtiyaçlarınıza göre inşa ediyoruz!\n\nNasıl çalışır:\n1️⃣ Fikrinizi aşağıya gönderin\n2️⃣ Ekibimiz sizinle iletişime geçecek\n3️⃣ Birlikte inşa ediyoruz\n4️⃣ Tamamlandığında hizmetinizi alırsınız!\n\n👇 *Fikrinizi şimdi yazın:*",
+        "idealab_ack": "🎉 *Fikrin için teşekkürler!*\n\nEkibimiz inceleyecek ve yakında seninle iletişime geçecek.\n\n💎 Şunları inşa etmene yardımcı olmaktan mutluluk duyarız:\n• Eşsiz botun\n• Özel göstergen\n• İşlem sistemin\n\n🚀 Fikrin binlerce trader'a yardım eden bir ürün olabilir!",
     },
     "fa": {
         "btn_signals": "\U0001f4ca \u0633\u06cc\u06af\u0646\u0627\u0644\u200c\u0647\u0627\u06cc VIP",
@@ -4326,35 +3921,8 @@ Ekibimiz inceleyecek ve yakında seninle iletişime geçecek.
         "btn_poll_both": "✅ هر دو",
         "welcome_video": "🎬 *به EVALON WINNERS خوش آمدید!*\n\nاین معرفی را تماشا کنید! 🏆",
         "btn_idealab": "💡 آزمایشگاه ایده — ابزار خود را بسازید",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-آیا ایده‌ای برای چیزی که می‌خواهید ساخته شود دارید؟
-
-✅ ربات معاملاتی سفارشی
-✅ اندیکاتور شخصی
-✅ سیستم معاملاتی خودکار
-✅ ابزار سیگنال
-✅ هر ابزار معاملاتی
-
-💎 بر اساس نیازهای شما می‌سازیم!
-
-نحوه کار:
-1️⃣ ایده خود را در زیر ارسال کنید
-2️⃣ تیم ما با شما تماس می‌گیرد
-3️⃣ با هم می‌سازیم
-4️⃣ پس از اتمام سرویس را دریافت می‌کنید!
-
-👇 *ایده خود را همین الان بنویسید:*",
-        "idealab_ack": "🎉 *از ایده شما متشکریم!*
-
-تیم ما آن را بررسی کرده و به زودی با شما تماس می‌گیرد.
-
-💎 خوشحال می‌شویم به شما در ساخت کمک کنیم:
-• ربات منحصربه‌فرد شما
-• اندیکاتور سفارشی شما
-• سیستم معاملاتی شما
-
-🚀 ایده شما می‌تواند محصولی شود که به هزاران معامله‌گر کمک کند!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nآیا ایده‌ای برای چیزی که می‌خواهید ساخته شود دارید؟\n\n✅ ربات معاملاتی سفارشی\n✅ اندیکاتور شخصی\n✅ سیستم معاملاتی خودکار\n✅ ابزار سیگنال\n✅ هر ابزار معاملاتی\n\n💎 بر اساس نیازهای شما می‌سازیم!\n\nنحوه کار:\n1️⃣ ایده خود را در زیر ارسال کنید\n2️⃣ تیم ما با شما تماس می‌گیرد\n3️⃣ با هم می‌سازیم\n4️⃣ پس از اتمام سرویس را دریافت می‌کنید!\n\n👇 *ایده خود را همین الان بنویسید:*",
+        "idealab_ack": "🎉 *از ایده شما متشکریم!*\n\nتیم ما آن را بررسی کرده و به زودی با شما تماس می‌گیرد.\n\n💎 خوشحال می‌شویم به شما در ساخت کمک کنیم:\n• ربات منحصربه‌فرد شما\n• اندیکاتور سفارشی شما\n• سیستم معاملاتی شما\n\n🚀 ایده شما می‌تواند محصولی شود که به هزاران معامله‌گر کمک کند!",
     },
     "pl": {
         "btn_signals": "\U0001f4ca Sygna\u0142y VIP",
@@ -4410,35 +3978,8 @@ Ekibimiz inceleyecek ve yakında seninle iletişime geçecek.
         "btn_why_evalon": "🤔 Why EVALON?",
         "btn_win_alert": "🔔 Win Alert",
         "btn_idealab": "💡 Laboratorium Pomysłów — Zbuduj narzędzie",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Masz pomysł na coś, co chciałbyś zbudować?
-
-✅ Niestandardowy bot tradingowy
-✅ Osobisty wskaźnik
-✅ Automatyczny system handlowy
-✅ Narzędzie sygnałów
-✅ Dowolne narzędzie tradingowe
-
-💎 Budujemy według Twoich potrzeb!
-
-Jak to działa:
-1️⃣ Wyślij swój pomysł poniżej
-2️⃣ Nasz zespół skontaktuje się z Tobą
-3️⃣ Budujemy razem
-4️⃣ Otrzymujesz usługę po ukończeniu!
-
-👇 *Napisz swój pomysł teraz:*",
-        "idealab_ack": "🎉 *Dziękujemy za Twój pomysł!*
-
-Nasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.
-
-💎 Chętnie pomożemy Ci zbudować:
-• Twój unikalny bot
-• Twój niestandardowy wskaźnik
-• Twój system handlowy
-
-🚀 Twój pomysł może stać się produktem pomagającym tysiącom traderów!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nMasz pomysł na coś, co chciałbyś zbudować?\n\n✅ Niestandardowy bot tradingowy\n✅ Osobisty wskaźnik\n✅ Automatyczny system handlowy\n✅ Narzędzie sygnałów\n✅ Dowolne narzędzie tradingowe\n\n💎 Budujemy według Twoich potrzeb!\n\nJak to działa:\n1️⃣ Wyślij swój pomysł poniżej\n2️⃣ Nasz zespół skontaktuje się z Tobą\n3️⃣ Budujemy razem\n4️⃣ Otrzymujesz usługę po ukończeniu!\n\n👇 *Napisz swój pomysł teraz:*",
+        "idealab_ack": "🎉 *Dziękujemy za Twój pomysł!*\n\nNasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.\n\n💎 Chętnie pomożemy Ci zbudować:\n• Twój unikalny bot\n• Twój niestandardowy wskaźnik\n• Twój system handlowy\n\n🚀 Twój pomysł może stać się produktem pomagającym tysiącom traderów!",
     },
     "uk": {
         "btn_signals": "\U0001f4ca VIP \u0421\u0438\u0433\u043d\u0430\u043b\u0438",
@@ -4494,35 +4035,8 @@ Nasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.
         "btn_why_evalon": "🤔 Why EVALON?",
         "btn_win_alert": "🔔 Win Alert",
         "btn_idealab": "💡 Лабораторія ідей — створи свій інструмент",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Є ідея для чогось, що ви хотіли б побудувати?
-
-✅ Індивідуальний торговий бот
-✅ Персональний індикатор
-✅ Автоматична торгова система
-✅ Інструмент сигналів
-✅ Будь-який торговий інструмент
-
-💎 Будуємо за вашими потребами!
-
-Як це працює:
-1️⃣ Надішліть ідею нижче
-2️⃣ Наша команда зв'яжеться з вами
-3️⃣ Будуємо разом
-4️⃣ Отримуєте сервіс після завершення!
-
-👇 *Напишіть вашу ідею зараз:*",
-        "idealab_ack": "🎉 *Дякуємо за вашу ідею!*
-
-Наша команда розгляне її і зв'яжеться з вами найближчим часом.
-
-💎 Ми раді допомогти вам створити:
-• Ваш унікальний бот
-• Ваш індивідуальний індикатор
-• Вашу торгову систему
-
-🚀 Ваша ідея може стати продуктом, що допомагає тисячам трейдерів!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nЄ ідея для чогось, що ви хотіли б побудувати?\n\n✅ Індивідуальний торговий бот\n✅ Персональний індикатор\n✅ Автоматична торгова система\n✅ Інструмент сигналів\n✅ Будь-який торговий інструмент\n\n💎 Будуємо за вашими потребами!\n\nЯк це працює:\n1️⃣ Надішліть ідею нижче\n2️⃣ Наша команда зв'яжеться з вами\n3️⃣ Будуємо разом\n4️⃣ Отримуєте сервіс після завершення!\n\n👇 *Напишіть вашу ідею зараз:*",
+        "idealab_ack": "🎉 *Дякуємо за вашу ідею!*\n\nНаша команда розгляне її і зв'яжеться з вами найближчим часом.\n\n💎 Ми раді допомогти вам створити:\n• Ваш унікальний бот\n• Ваш індивідуальний індикатор\n• Вашу торгову систему\n\n🚀 Ваша ідея може стати продуктом, що допомагає тисячам трейдерів!",
     },
     "kk": {
         "btn_signals": "\U0001f4ca VIP \u0421\u0438\u0433\u043d\u0430\u043b\u0434\u0430\u0440",
@@ -4578,35 +4092,8 @@ Nasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.
         "btn_why_evalon": "🤔 Why EVALON?",
         "btn_win_alert": "🔔 Win Alert",
         "btn_idealab": "💡 Идея Зертханасы — Өз құралыңды жасаңыз",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Жасағыңыз келетін нәрсе туралы идеяңыз бар ма?
-
-✅ Арнайы сауда боты
-✅ Жеке индикатор
-✅ Автоматты сауда жүйесі
-✅ Сигнал құралы
-✅ Кез келген сауда құралы
-
-💎 Сіздің қажеттіліктеріңізге сай жасаймыз!
-
-Қалай жұмыс істейді:
-1️⃣ Идеяңызды төменде жіберіңіз
-2️⃣ Командамыз сізбен байланысады
-3️⃣ Бірге жасаймыз
-4️⃣ Аяқталғаннан кейін қызметті аласыз!
-
-👇 *Идеяңызды қазір жазыңыз:*",
-        "idealab_ack": "🎉 *Идеяңыз үшін рахмет!*
-
-Командамыз оны қарап, жақында сізбен байланысады.
-
-💎 Мыналарды жасауға көмектесуге қуаныштымыз:
-• Сіздің бірегей ботыңыз
-• Сіздің арнайы индикаторыңыз
-• Сіздің сауда жүйеңіз
-
-🚀 Сіздің идеяңыз мыңдаған трейдерлерге көмектесетін өнімге айналуы мүмкін!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nЖасағыңыз келетін нәрсе туралы идеяңыз бар ма?\n\n✅ Арнайы сауда боты\n✅ Жеке индикатор\n✅ Автоматты сауда жүйесі\n✅ Сигнал құралы\n✅ Кез келген сауда құралы\n\n💎 Сіздің қажеттіліктеріңізге сай жасаймыз!\n\nҚалай жұмыс істейді:\n1️⃣ Идеяңызды төменде жіберіңіз\n2️⃣ Командамыз сізбен байланысады\n3️⃣ Бірге жасаймыз\n4️⃣ Аяқталғаннан кейін қызметті аласыз!\n\n👇 *Идеяңызды қазір жазыңыз:*",
+        "idealab_ack": "🎉 *Идеяңыз үшін рахмет!*\n\nКомандамыз оны қарап, жақында сізбен байланысады.\n\n💎 Мыналарды жасауға көмектесуге қуаныштымыз:\n• Сіздің бірегей ботыңыз\n• Сіздің арнайы индикаторыңыз\n• Сіздің сауда жүйеңіз\n\n🚀 Сіздің идеяңыз мыңдаған трейдерлерге көмектесетін өнімге айналуы мүмкін!",
     },
     "cs": {
         "btn_signals": "\U0001f4ca VIP Sign\u00e1ly",
@@ -4662,35 +4149,8 @@ Nasz zespół go przejrzy i wkrótce się z Tobą skontaktuje.
         "btn_why_evalon": "🤔 Why EVALON?",
         "btn_win_alert": "🔔 Win Alert",
         "btn_idealab": "💡 Idea Lab — Vytvořte svůj nástroj",
-        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀
-
-Máte nápad na něco, co byste rádi vytvořili?
-
-✅ Vlastní obchodní bot
-✅ Osobní indikátor
-✅ Automatický obchodní systém
-✅ Nástroj signálů
-✅ Jakýkoliv obchodní nástroj
-
-💎 Stavíme podle vašich potřeb!
-
-Jak to funguje:
-1️⃣ Pošlete svůj nápad níže
-2️⃣ Náš tým vás bude kontaktovat
-3️⃣ Stavíme společně
-4️⃣ Po dokončení obdržíte svou službu!
-
-👇 *Napište svůj nápad nyní:*",
-        "idealab_ack": "🎉 *Děkujeme za váš nápad!*
-
-Náš tým ho zkontroluje a brzy vás bude kontaktovat.
-
-💎 Rádi vám pomůžeme vytvořit:
-• Váš jedinečný bot
-• Váš vlastní indikátor
-• Váš obchodní systém
-
-🚀 Váš nápad by se mohl stát produktem pomáhajícím tisícům obchodníků!",
+        "idealab_prompt": "💡 *EVALON IDEA LAB* 🚀\n\nMáte nápad na něco, co byste rádi vytvořili?\n\n✅ Vlastní obchodní bot\n✅ Osobní indikátor\n✅ Automatický obchodní systém\n✅ Nástroj signálů\n✅ Jakýkoliv obchodní nástroj\n\n💎 Stavíme podle vašich potřeb!\n\nJak to funguje:\n1️⃣ Pošlete svůj nápad níže\n2️⃣ Náš tým vás bude kontaktovat\n3️⃣ Stavíme společně\n4️⃣ Po dokončení obdržíte svou službu!\n\n👇 *Napište svůj nápad nyní:*",
+        "idealab_ack": "🎉 *Děkujeme za váš nápad!*\n\nNáš tým ho zkontroluje a brzy vás bude kontaktovat.\n\n💎 Rádi vám pomůžeme vytvořit:\n• Váš jedinečný bot\n• Váš vlastní indikátor\n• Váš obchodní systém\n\n🚀 Váš nápad by se mohl stát produktem pomáhajícím tisícům obchodníků!",
     },
 }
 # ══════════════════════════════════════════════════════════════
