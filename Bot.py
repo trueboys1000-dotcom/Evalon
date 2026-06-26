@@ -5194,16 +5194,27 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         "chat_id": chat.id, "chat_title": chat.title,
         "user": user, "time": now,
     }
-    # NOTE: No admin notification here — admin uses separate bot for approvals
+
     lang = context.user_data.get("lang", "en")
+
+    # Try to send message — if Forbidden, user has blocked the bot
     try:
         await context.bot.send_message(
             chat_id=user.id,
             text=ui("join_pending", lang),
             parse_mode="Markdown",
             protect_content=True)
-    except:
-        pass
+    except Exception as e:
+        err = str(e).lower()
+        if "forbidden" in err or "blocked" in err or "deactivated" in err:
+            # User has blocked the bot — decline their join request
+            try:
+                await context.bot.decline_chat_join_request(
+                    chat_id=chat.id, user_id=user.id)
+                pending_requests.pop(user.id, None)
+                logger.info(f"Declined join request from {user.id} — bot is blocked")
+            except Exception as de:
+                logger.warning(f"Could not decline join request: {de}")
 
 # ══════════════════════════════════════════════════════════════
 #  /start
@@ -6910,67 +6921,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             f"✅ Ended all *{count}* sessions.", parse_mode="Markdown")
 
-    elif data.startswith("approve_"):
-        uid = int(data[8:])
-        req = pending_requests.get(uid)
-        if req:
-            try:
-                await context.bot.approve_chat_join_request(
-                    chat_id=req["chat_id"], user_id=uid)
-                pending_requests.pop(uid, None)
-                safe_name = escape_md(req['user'].full_name)
-                await query.message.edit_text(
-                    f"✅ *Approved!*\n👤 {safe_name}",
-                    parse_mode="Markdown")
-                try:
-                    _user_lang = get_user_info(uid).get("lang", "en")
-                    _approved_msg = {
-                        "en": "🎉 You have been *approved!* Welcome! 🚀",
-                        "sw": "🎉 Umeidhibitiwa! *Karibu!* 🚀",
-                        "ar": "🎉 تمت *الموافقة* عليك! مرحباً! 🚀",
-                        "zh": "🎉 您已被*批准*！欢迎！🚀",
-                        "hi": "🎉 आपको *स्वीकृत* कर लिया गया! स्वागत है! 🚀",
-                        "ru": "🎉 Вы *одобрены!* Добро пожаловать! 🚀",
-                        "es": "🎉 ¡Has sido *aprobado!* ¡Bienvenido! 🚀",
-                        "fr": "🎉 Vous avez été *approuvé!* Bienvenue! 🚀",
-                        "pt": "🎉 Você foi *aprovado!* Bem-vindo! 🚀",
-                        "de": "🎉 Sie wurden *genehmigt!* Willkommen! 🚀",
-                        "ur": "🎉 آپ کو *منظور* کر لیا گیا! خوش آمدید! 🚀",
-                        "ja": "🎉 *承認されました！* ようこそ！🚀",
-                        "it": "🎉 Sei stato *approvato!* Benvenuto! 🚀",
-                        "ko": "🎉 *승인되었습니다!* 환영합니다! 🚀",
-                        "tr": "🎉 *Onaylandınız!* Hoş geldiniz! 🚀",
-                        "fa": "🎉 شما *تأیید شدید!* خوش آمدید! 🚀",
-                        "pl": "🎉 Zostałeś *zatwierdzony!* Witamy! 🚀",
-                        "uk": "🎉 Вас *схвалено!* Ласкаво просимо! 🚀",
-                        "kk": "🎉 Сіз *бекітілдіңіз!* Қош келдіңіз! 🚀",
-                        "cs": "🎉 Byl jste *schválen!* Vítejte! 🚀",
-                    }
-                    await context.bot.send_message(
-                        chat_id=uid,
-                        text=_approved_msg.get(_user_lang, _approved_msg["en"]),
-                        parse_mode="Markdown",
-                        protect_content=True)
-                except:
-                    pass
-            except TelegramError as e:
-                await query.message.reply_text(f"❌ Error: {e}")
-        else:
-            await query.answer("⚠️ Request not found.", show_alert=True)
-
-    elif data.startswith("decline_"):
-        uid = int(data[8:])
-        req = pending_requests.get(uid)
-        if req:
-            try:
-                await context.bot.decline_chat_join_request(
-                    chat_id=req["chat_id"], user_id=uid)
-                pending_requests.pop(uid, None)
-                await query.message.edit_text("❌ *Declined.*", parse_mode="Markdown")
-            except TelegramError as e:
-                await query.message.reply_text(f"❌ Error: {e}")
-        else:
-            await query.answer("⚠️ Request not found.", show_alert=True)
 
     # ── GIVESPIN QUICK BUTTON from /spinners ──────────────────
     elif data.startswith("givespin_btn:"):
