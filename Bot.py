@@ -5196,15 +5196,14 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
         "user": user, "time": now,
     }
 
-    lang = context.user_data.get("lang", "en")
+    lang = get_lang(context, user.id) or "en"
 
-    # Try to send message — if Forbidden, user has blocked the bot
+    # Try to send welcome menu directly — no waiting for approval
     try:
-        await context.bot.send_message(
-            chat_id=user.id,
-            text=ui("join_pending", lang),
-            parse_mode="Markdown",
-            protect_content=True)
+        register_user(user, lang=lang)
+        welcome_text = build_welcome_text(lang, user.first_name, 1)
+        await send_welcome_media(
+            context, user.id, welcome_text, main_menu(lang, user_id=user.id))
     except Exception as e:
         err = str(e).lower()
         if "forbidden" in err or "blocked" in err or "deactivated" in err:
@@ -5216,6 +5215,8 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
                 logger.info(f"Declined join request from {user.id} — bot is blocked")
             except Exception as de:
                 logger.warning(f"Could not decline join request: {de}")
+        else:
+            logger.warning(f"handle_join_request send failed: {e}")
 
 # ══════════════════════════════════════════════════════════════
 #  /start
@@ -7465,7 +7466,6 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     /preview        — Preview current bot flow (English)
     /preview sw     — Preview in Swahili
-    Works for all 20 supported languages.
     """
     if not is_admin(update.effective_user.id):
         return
@@ -7473,7 +7473,6 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     cid  = update.effective_chat.id
 
-    # Parse language arg
     lang = "en"
     if context.args:
         arg = context.args[0].lower().strip()
@@ -7481,115 +7480,77 @@ async def preview_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lang = arg
 
     await update.message.reply_text(
-        f"👁 *PREVIEW MODE*\n\n"
-        f"🌍 Language: `{lang}`\n"
-        f"📱 Showing full bot flow (6 steps)...\n\n"
-        f"_This is exactly what new users see_",
+        f"👁 *PREVIEW MODE* — `{lang}`\n_Showing exactly what user sees..._",
         parse_mode="Markdown")
 
-    await asyncio.sleep(0.8)
+    await asyncio.sleep(0.5)
 
     # ── STEP 1: Language selector ──────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1: Language Selector*\n_(First visit only)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 1 — Language Selector*\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.3)
     await context.bot.send_message(
         chat_id=cid,
         text="🏆 *EVALON WINNERS TRADER* 🏆\n\nChoose your language / Chagua lugha yako:",
         parse_mode="Markdown",
         reply_markup=lang_keyboard())
-    await asyncio.sleep(1.2)
+    await asyncio.sleep(1.0)
 
-    # ── STEP 2: Channel Join Gate ──────────────────────────────
+    # ── STEP 2: Services menu (non-member) ────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2: Channel Join Gate*\n_(User must join channel before continuing)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 2 — Services Menu*\n_(akichagua lugha → anaona hii)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.4)
+    await asyncio.sleep(0.3)
     await context.bot.send_message(
         chat_id=cid,
-        text=ui("join_msg", lang),
+        text=ui("choose_service", lang),
         parse_mode="Markdown",
-        reply_markup=join_keyboard(lang))
-    await asyncio.sleep(1.2)
+        reply_markup=new_user_service_keyboard())
+    await asyncio.sleep(1.0)
 
-    # ── STEP 3: Welcome video + main menu ─────────────────────
+    # ── STEP 3: Join gate ─────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3: Welcome Screen + Main Menu*\n_(Shown after joining channel)_\n━━━━━━━━━━━━━━━━━━",
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 3 — Join Gate*\n_(akibonyeza service yoyote → anaona hii)_\n━━━━━━━━━━━━━━━━━━",
         parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    welcome_text = build_welcome_text(lang, user.first_name)
+    await asyncio.sleep(0.3)
+    _join_svc_text = ui("join_service_msg", lang).format(service="💎 VIP Non-Martingale Signals")
+    await context.bot.send_message(
+        chat_id=cid,
+        text=_join_svc_text,
+        parse_mode="Markdown",
+        reply_markup=join_keyboard_with_service(lang, "💎 VIP Non-Martingale Signals"))
+    await asyncio.sleep(1.0)
+
+    # ── STEP 4: After join request ────────────────────────────
+    await context.bot.send_message(
+        chat_id=cid,
+        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4 — Baada ya Join Request*\n_(akibonyeza Join Channel na kutuma request → bot inamtumia hii MOJA KWA MOJA bila kubonyeza kitu)_\n━━━━━━━━━━━━━━━━━━",
+        parse_mode="Markdown")
+    await asyncio.sleep(0.3)
+    welcome_text = build_welcome_text(lang, user.first_name, 1)
     try:
         await send_welcome_media(context, cid, welcome_text, main_menu(lang, user_id=cid))
-    except Exception as e:
+    except:
         await context.bot.send_message(
             chat_id=cid, text=welcome_text,
             parse_mode="Markdown", reply_markup=main_menu(lang, user_id=cid))
-    await asyncio.sleep(1.2)
+    await asyncio.sleep(1.0)
 
-    # ── STEP 4: Services menu ──────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 4: Services Menu*\n_(When user taps Services button)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=ui("services_msg", lang),
-        parse_mode="Markdown",
-        reply_markup=services_menu(lang))
-    await asyncio.sleep(1.2)
-
-    # ── STEP 5: Free Bot menu ──────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 5: Free Bot Menu*\n_(When user taps Free Bot button)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    _freebot_txt = ui("freebot_msg", lang) if "freebot_msg" in UI.get(lang, {}) else (
-        "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nPata bot yetu ya BURE!\n\n✅ Mawakala WOTE\n✅ Rahisi kutumia\n\nChagua broker yako 👇" if lang == "sw"
-        else "🆓 *FREE MANUAL BOT — EVALON* 🤖\n\nGet our FREE trading bot!\n\n✅ Works on ALL brokers\n✅ Easy to use\n\nChoose your broker 👇"
-    )
-    await context.bot.send_message(
-        chat_id=cid,
-        text=_freebot_txt,
-        parse_mode="Markdown",
-        reply_markup=freebot_menu(lang))
-    await asyncio.sleep(1.2)
-
-    # ── STEP 6: Lucky Spin ─────────────────────────────────────
-    await context.bot.send_message(
-        chat_id=cid,
-        text="━━━━━━━━━━━━━━━━━━\n📍 *STEP 6: Lucky Spin Wheel*\n_(1x per day — 5% win chance)_\n━━━━━━━━━━━━━━━━━━",
-        parse_mode="Markdown")
-    await asyncio.sleep(0.4)
-    await context.bot.send_message(
-        chat_id=cid,
-        text=SPIN_WHEEL_VISUAL + "      ✨ Spinning... ✨",
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔄 Spin Again Tomorrow 🕐", callback_data="noop"),
-        ]]))
-    await asyncio.sleep(0.8)
-
-    # ── DONE ───────────────────────────────────────────────────
+    # ── DONE ──────────────────────────────────────────────────
     await context.bot.send_message(
         chat_id=cid,
         text=(
             "━━━━━━━━━━━━━━━━━━\n"
             "✅ *PREVIEW COMPLETE!*\n"
             "━━━━━━━━━━━━━━━━━━\n\n"
-            f"🌍 Language: `{lang}` | 6 steps shown\n\n"
-            "📌 Other languages:\n"
+            f"🌍 Language: `{lang}`\n\n"
             "• `/preview sw` — Swahili\n"
             "• `/preview ar` — Arabic\n"
-            "• `/preview hi` — Hindi\n"
-            "• `/preview fr` — French\n"
-            "• Works for all 20 languages\n\n"
-            "🗑 Delete these messages when done."
+            "• `/preview fr` — French"
         ),
         parse_mode="Markdown")
 
