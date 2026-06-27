@@ -243,6 +243,7 @@ def init_db():
     init_spin_db()
     init_autobot_db()
     init_ideas_db()
+    init_broadcast_msgs_db()
     init_dynamic_db()
     init_feedback_db()
     init_media_db()
@@ -2472,6 +2473,33 @@ def get_celebration_message(days, lang):
         }
         return msgs.get(lang, msgs["en"])
     return None
+
+# ══════════════════════════════════════════════════════════════
+#  REFERRAL MILESTONE DISCOUNT MESSAGES — all 20 languages
+# ══════════════════════════════════════════════════════════════
+
+REFERRAL_DISCOUNT_MSG = {
+    "en": "🎉 *WOW {name}! You've referred {count} friends!*\n\n🏆 As a thank you, here's your *{discount}% DISCOUNT* on any EVALON service!\n\n👇 Tap below to claim your reward:",
+    "sw": "🎉 *WOW {name}! Umewaalika marafiki {count}!*\n\n🏆 Kama shukrani, hapa kuna *Punguzo la {discount}%* kwenye huduma yoyote ya EVALON!\n\n👇 Bonyeza hapa chini kudai tuzo yako:",
+    "ar": "🎉 *واو {name}! لقد أحلت {count} أصدقاء!*\n\n🏆 شكراً لك، إليك *خصم {discount}%* على أي خدمة EVALON!\n\n👇 اضغط أدناه للمطالبة بمكافأتك:",
+    "zh": "🎉 *哇 {name}！您已推荐了 {count} 位朋友！*\n\n🏆 作为感谢，这里有 *{discount}% 折扣* 适用于任何 EVALON 服务！\n\n👇 点击下方领取您的奖励：",
+    "hi": "🎉 *वाह {name}! आपने {count} दोस्तों को रेफर किया!*\n\n🏆 धन्यवाद के रूप में, यहाँ किसी भी EVALON सेवा पर *{discount}% छूट* है!\n\n👇 अपना पुरस्कार पाने के लिए नीचे टैप करें:",
+    "ru": "🎉 *Вау {name}! Вы пригласили {count} друзей!*\n\n🏆 В знак благодарности, вот ваша *скидка {discount}%* на любую услугу EVALON!\n\n👇 Нажмите ниже, чтобы получить награду:",
+    "es": "🎉 *¡Wow {name}! ¡Has referido {count} amigos!*\n\n🏆 Como agradecimiento, ¡aquí tienes un *{discount}% de DESCUENTO* en cualquier servicio EVALON!\n\n👇 Toca abajo para reclamar tu recompensa:",
+    "fr": "🎉 *Wow {name}! Vous avez référé {count} amis!*\n\n🏆 En guise de remerciement, voici votre *{discount}% de RÉDUCTION* sur n'importe quel service EVALON!\n\n👇 Appuyez ci-dessous pour réclamer votre récompense:",
+    "pt": "🎉 *Uau {name}! Você indicou {count} amigos!*\n\n🏆 Como agradecimento, aqui está seu *{discount}% de DESCONTO* em qualquer serviço EVALON!\n\n👇 Toque abaixo para reivindicar sua recompensa:",
+    "de": "🎉 *Wow {name}! Du hast {count} Freunde empfohlen!*\n\n🏆 Als Dankeschön, hier ist dein *{discount}% RABATT* auf jeden EVALON-Dienst!\n\n👇 Tippe unten, um deine Belohnung zu beanspruchen:",
+    "ur": "🎉 *واہ {name}! آپ نے {count} دوستوں کو ریفر کیا!*\n\n🏆 شکریہ کے طور پر، یہاں کسی بھی EVALON سروس پر *{discount}% ڈسکاؤنٹ* ہے!\n\n👇 اپنا انعام حاصل کرنے کے لیے نیچے دبائیں:",
+    "ja": "🎉 *すごい {name}! {count}人の友達を紹介しました!*\n\n🏆 感謝として、どのEVALONサービスでも *{discount}% 割引* があります！\n\n👇 下をタップして報酬を請求してください：",
+    "it": "🎉 *Wow {name}! Hai riferito {count} amici!*\n\n🏆 Come ringraziamento, ecco il tuo *{discount}% di SCONTO* su qualsiasi servizio EVALON!\n\n👇 Tocca sotto per riscattare la tua ricompensa:",
+    "ko": "🎉 *와우 {name}! {count}명의 친구를 추천했습니다!*\n\n🏆 감사의 표시로, 모든 EVALON 서비스에 *{discount}% 할인*이 있습니다!\n\n👇 아래를 탭하여 보상을 받으세요:",
+    "tr": "🎉 *Vay {name}! {count} arkadaş davet ettiniz!*\n\n🏆 Teşekkür olarak, herhangi bir EVALON hizmetinde *{discount}% İNDİRİM* kazandınız!\n\n👇 Ödülünüzü almak için aşağıya dokunun:",
+    "fa": "🎉 *واو {name}! شما {count} دوست معرفی کردید!*\n\n🏆 به عنوان تشکر، اینجا *{discount}% تخفیف* برای هر سرویس EVALON دارید!\n\n👇 برای دریافت جایزه‌تان در زیر ضربه بزنید:",
+    "pl": "🎉 *Wow {name}! Poleciłeś {count} znajomych!*\n\n🏆 W podziękowaniu, oto twoje *{discount}% RABATU* na dowolną usługę EVALON!\n\n👇 Dotknij poniżej, aby odebrać nagrodę:",
+    "uk": "🎉 *Вау {name}! Ви запросили {count} друзів!*\n\n🏆 На знак подяки, ось ваша *знижка {discount}%* на будь-яку послугу EVALON!\n\n👇 Натисніть нижче, щоб отримати нагороду:",
+    "kk": "🎉 *Уау {name}! Сіз {count} досыңызды шақырдыңыз!*\n\n🏆 Рахмет ретінде кез келген EVALON қызметіне *{discount}% ЖЕҢІЛДІК* аласыз!\n\n👇 Сыйлықты алу үшін төменді басыңыз:",
+    "cs": "🎉 *Wow {name}! Doporučili jste {count} přátel!*\n\n🏆 Jako poděkování, zde je vaše *{discount}% SLEVA* na jakoukoli službu EVALON!\n\n👇 Klepněte níže pro uplatnění odměny:",
+}
 
 # ══════════════════════════════════════════════════════════════
 #  SMART COMEBACK — week 1, 2, 3
@@ -5201,6 +5229,7 @@ async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE
     # Try to send welcome menu directly — no waiting for approval
     try:
         register_user(user, lang=lang)
+        await delete_all_bot_msgs(context, user.id)  # futa join gate msg
         welcome_text = build_welcome_text(lang, user.first_name, 1)
         await send_welcome_media(
             context, user.id, welcome_text, main_menu(lang, user_id=user.id))
@@ -5333,6 +5362,20 @@ async def _handle_referral_milestone(context, user, referred_by):
 #  BROADCAST
 # ══════════════════════════════════════════════════════════════
 
+async def auto_delete_broadcast_msgs(context: ContextTypes.DEFAULT_TYPE):
+    """Job: runs every hour, deletes broadcast messages older than 24h"""
+    expired = get_expired_broadcast_msgs()
+    deleted = 0
+    for record_id, user_id, message_id in expired:
+        try:
+            await context.bot.delete_message(chat_id=user_id, message_id=message_id)
+            deleted += 1
+        except:
+            pass  # already deleted or bot blocked
+        delete_broadcast_msg_record(record_id)
+    if deleted:
+        logger.info(f"Auto-deleted {deleted} expired broadcast messages")
+
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         return
@@ -5385,42 +5428,46 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     # Video with caption → buttons; video only → no buttons
                     has_caption = bool(replied_msg.caption and replied_msg.caption.strip())
                     kb = broadcast_keyboard(user_lang) if has_caption else None
-                    await context.bot.copy_message(
+                    sent_bc = await context.bot.copy_message(
                         chat_id=uid,
                         from_chat_id=src_chat,
                         message_id=replied_msg.message_id,
                         protect_content=True,
                         reply_markup=kb)
+                    save_broadcast_msg(uid, sent_bc.message_id)
                 elif replied_msg.photo or replied_msg.document or replied_msg.audio \
                         or replied_msg.animation or replied_msg.voice or replied_msg.sticker:
                     # All other media: protect + buttons (localized per user)
                     kb = broadcast_keyboard(user_lang)
-                    await context.bot.copy_message(
+                    sent_bc = await context.bot.copy_message(
                         chat_id=uid,
                         from_chat_id=src_chat,
                         message_id=replied_msg.message_id,
                         protect_content=True,
                         reply_markup=kb)
+                    save_broadcast_msg(uid, sent_bc.message_id)
                 elif replied_msg.text:
                     # Text reply: protect + buttons
                     kb = broadcast_keyboard(user_lang)
-                    await context.bot.copy_message(
+                    sent_bc = await context.bot.copy_message(
                         chat_id=uid,
                         from_chat_id=src_chat,
                         message_id=replied_msg.message_id,
                         protect_content=True,
                         reply_markup=kb)
+                    save_broadcast_msg(uid, sent_bc.message_id)
             elif text_to_send:
                 # Direct text — preserve formatting with Markdown
                 text_kb = InlineKeyboardMarkup([
                     [InlineKeyboardButton(ui("btn_services", user_lang), callback_data="menu_services"),
                      InlineKeyboardButton(ui("btn_support", user_lang), callback_data="do_support")],
                 ])
-                await context.bot.send_message(
+                sent_bc = await context.bot.send_message(
                     chat_id=uid,
                     text=text_to_send,
                     parse_mode="Markdown",
                     reply_markup=text_kb)
+                save_broadcast_msg(uid, sent_bc.message_id)
 
             sent += 1
 
@@ -5656,7 +5703,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not await is_member(context, user.id):
             msg = await send_protected_text(
-                context, cid, ui("join_msg", new_lang), join_keyboard(new_lang))
+                context, cid, ui("choose_service", new_lang), new_user_service_keyboard())
             context.user_data["last_bot_msg_id"] = msg.message_id
             track_msg(cid, msg.message_id)
             return
@@ -5665,7 +5712,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         welcome_text = build_welcome_text(new_lang, user.first_name, visit_count)
         update_streak(user.id)
         msg = await send_welcome_media(
-            context, cid, welcome_text, main_menu(new_lang))
+            context, cid, welcome_text, main_menu(new_lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -7311,7 +7358,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         track_msg(cid, msg.message_id)
         return
 
-    # FIX: Check support session FIRST — before deleting anything
+    # Check support session FIRST — do NOT delete anything during active chat
     if active_support.get(user.id):
         track_support_msg(cid, message.message_id)
         await forward_to_admin(context, user, message)
@@ -7672,6 +7719,126 @@ async def givespin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"*{service_display}*\n\n"
             f"这是您作为我们最活跃成员之一的奖励！ 🏆\n\n"
             f"👇 点击下方立即领取您的奖品："
+        ),
+        "hi": (
+            f"🎉 *बधाई हो! आपने जीत लिया!* 🎉\n\n"
+            f"🎰 हमारी टीम ने आपकी Lucky Spin गतिविधि की समीक्षा की और *आपको विजेता के रूप में चुना!*\n\n"
+            f"🎁 आपने *{discount}% छूट* अर्जित की है:\n"
+            f"*{service_display}*\n\n"
+            f"यह हमारे सबसे सक्रिय सदस्यों में से एक होने का आपका पुरस्कार है! 🏆\n\n"
+            f"👇 अभी अपना पुरस्कार प्राप्त करें:"
+        ),
+        "es": (
+            f"🎉 *¡Felicidades! ¡Ganaste!* 🎉\n\n"
+            f"🎰 Nuestro equipo revisó tu actividad de Lucky Spin y *¡te seleccionó como ganador!*\n\n"
+            f"🎁 Has ganado un *{discount}% de DESCUENTO* en:\n"
+            f"*{service_display}*\n\n"
+            f"¡Esta es tu recompensa por ser uno de nuestros miembros más activos! 🏆\n\n"
+            f"👇 Toca abajo para reclamar tu premio ahora:"
+        ),
+        "fr": (
+            f"🎉 *Félicitations! Vous avez gagné!* 🎉\n\n"
+            f"🎰 Notre équipe a examiné votre activité Lucky Spin et *vous a sélectionné comme gagnant!*\n\n"
+            f"🎁 Vous avez gagné une *{discount}% de RÉDUCTION* sur:\n"
+            f"*{service_display}*\n\n"
+            f"C'est votre récompense pour être l'un de nos membres les plus actifs! 🏆\n\n"
+            f"👇 Appuyez ci-dessous pour réclamer votre prix maintenant:"
+        ),
+        "pt": (
+            f"🎉 *Parabéns! Você ganhou!* 🎉\n\n"
+            f"🎰 Nossa equipe revisou sua atividade no Lucky Spin e *selecionou você como vencedor!*\n\n"
+            f"🎁 Você ganhou um *{discount}% de DESCONTO* em:\n"
+            f"*{service_display}*\n\n"
+            f"Esta é sua recompensa por ser um dos nossos membros mais ativos! 🏆\n\n"
+            f"👇 Toque abaixo para reivindicar seu prêmio agora:"
+        ),
+        "de": (
+            f"🎉 *Herzlichen Glückwunsch! Du hast gewonnen!* 🎉\n\n"
+            f"🎰 Unser Team überprüfte deine Lucky Spin Aktivität und *wählte dich als Gewinner aus!*\n\n"
+            f"🎁 Du hast einen *{discount}% RABATT* verdient auf:\n"
+            f"*{service_display}*\n\n"
+            f"Das ist deine Belohnung dafür, eines unserer aktivsten Mitglieder zu sein! 🏆\n\n"
+            f"👇 Tippe unten, um deinen Preis jetzt zu beanspruchen:"
+        ),
+        "ur": (
+            f"🎉 *مبارک ہو! آپ نے جیت لیا!* 🎉\n\n"
+            f"🎰 ہماری ٹیم نے آپ کی Lucky Spin سرگرمی کا جائزہ لیا اور *آپ کو فاتح کے طور پر منتخب کیا!*\n\n"
+            f"🎁 آپ نے *{discount}% ڈسکاؤنٹ* حاصل کیا ہے:\n"
+            f"*{service_display}*\n\n"
+            f"یہ ہمارے سب سے فعال اراکین میں سے ایک ہونے کا آپ کا انعام ہے! 🏆\n\n"
+            f"👇 ابھی اپنا انعام حاصل کرنے کے لیے نیچے دبائیں:"
+        ),
+        "ja": (
+            f"🎉 *おめでとうございます！あなたが勝ちました！* 🎉\n\n"
+            f"🎰 私たちのチームはあなたのLucky Spin活動を確認し、*あなたを勝者として選びました！*\n\n"
+            f"🎁 あなたは *{discount}% 割引* を獲得しました：\n"
+            f"*{service_display}*\n\n"
+            f"これはあなたが私たちの最もアクティブなメンバーの一人であることへの報酬です！ 🏆\n\n"
+            f"👇 下をタップして今すぐ賞品を受け取ってください："
+        ),
+        "it": (
+            f"🎉 *Congratulazioni! Hai vinto!* 🎉\n\n"
+            f"🎰 Il nostro team ha esaminato la tua attività Lucky Spin e *ti ha selezionato come vincitore!*\n\n"
+            f"🎁 Hai guadagnato uno *sconto del {discount}%* su:\n"
+            f"*{service_display}*\n\n"
+            f"Questa è la tua ricompensa per essere uno dei nostri membri più attivi! 🏆\n\n"
+            f"👇 Tocca sotto per riscattare il tuo premio ora:"
+        ),
+        "ko": (
+            f"🎉 *축하합니다! 당신이 이겼습니다!* 🎉\n\n"
+            f"🎰 저희 팀이 Lucky Spin 활동을 검토하여 *당신을 우승자로 선정했습니다!*\n\n"
+            f"🎁 *{discount}% 할인*을 획득했습니다:\n"
+            f"*{service_display}*\n\n"
+            f"이것은 가장 활동적인 회원 중 한 명인 당신에 대한 보상입니다! 🏆\n\n"
+            f"👇 아래를 탭하여 지금 상품을 수령하세요:"
+        ),
+        "tr": (
+            f"🎉 *Tebrikler! Kazandınız!* 🎉\n\n"
+            f"🎰 Ekibimiz Lucky Spin aktivitenizi inceledi ve *sizi kazanan olarak seçti!*\n\n"
+            f"🎁 *{discount}% İNDİRİM* kazandınız:\n"
+            f"*{service_display}*\n\n"
+            f"Bu, en aktif üyelerimizden biri olmanızın ödülüdür! 🏆\n\n"
+            f"👇 Ödülünüzü hemen almak için aşağıya dokunun:"
+        ),
+        "fa": (
+            f"🎉 *تبریک! شما بردید!* 🎉\n\n"
+            f"🎰 تیم ما فعالیت Lucky Spin شما را بررسی کرد و *شما را به عنوان برنده انتخاب کرد!*\n\n"
+            f"🎁 *{discount}% تخفیف* به دست آوردید:\n"
+            f"*{service_display}*\n\n"
+            f"این پاداش شما برای بودن یکی از فعال‌ترین اعضای ماست! 🏆\n\n"
+            f"👇 برای دریافت جایزه‌تان همین حالا در زیر ضربه بزنید:"
+        ),
+        "pl": (
+            f"🎉 *Gratulacje! Wygrałeś!* 🎉\n\n"
+            f"🎰 Nasz zespół przejrzał twoją aktywność Lucky Spin i *wybrał cię jako zwycięzcę!*\n\n"
+            f"🎁 Zdobyłeś *{discount}% RABATU* na:\n"
+            f"*{service_display}*\n\n"
+            f"To twoja nagroda za bycie jednym z naszych najbardziej aktywnych członków! 🏆\n\n"
+            f"👇 Dotknij poniżej, aby teraz odebrać nagrodę:"
+        ),
+        "uk": (
+            f"🎉 *Вітаємо! Ви виграли!* 🎉\n\n"
+            f"🎰 Наша команда переглянула вашу активність Lucky Spin і *обрала вас переможцем!*\n\n"
+            f"🎁 Ви заробили *знижку {discount}%* на:\n"
+            f"*{service_display}*\n\n"
+            f"Це ваша нагорода за те, що ви один з наших найактивніших учасників! 🏆\n\n"
+            f"👇 Натисніть нижче, щоб отримати приз зараз:"
+        ),
+        "kk": (
+            f"🎉 *Құттықтаймыз! Сіз ұттыңыз!* 🎉\n\n"
+            f"🎰 Біздің команда сіздің Lucky Spin белсенділігіңізді тексерді және *сізді жеңімпаз ретінде таңдады!*\n\n"
+            f"🎁 Сіз *{discount}% ЖЕҢІЛДІК* жеңіп алдыңыз:\n"
+            f"*{service_display}*\n\n"
+            f"Бұл біздің ең белсенді мүшелеріміздің бірі болғаныңыз үшін сыйлығыңыз! 🏆\n\n"
+            f"👇 Жүлдеңізді қазір алу үшін төменді басыңыз:"
+        ),
+        "cs": (
+            f"🎉 *Gratulujeme! Vyhráli jste!* 🎉\n\n"
+            f"🎰 Náš tým zkontroloval vaši aktivitu Lucky Spin a *vybral vás jako vítěze!*\n\n"
+            f"🎁 Získali jste *{discount}% SLEVU* na:\n"
+            f"*{service_display}*\n\n"
+            f"Toto je vaše odměna za to, že jste jedním z našich nejaktivnějších členů! 🏆\n\n"
+            f"👇 Klepněte níže a získejte svou cenu nyní:"
         ),
     }
     win_msg = win_texts.get(ulang, win_texts["en"])
@@ -8259,6 +8426,63 @@ def get_new_ideas_count():
         return count
     except:
         return 0
+
+def init_broadcast_msgs_db():
+    """Store broadcast message IDs for auto-delete after 24h"""
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS broadcast_msgs (
+            id          SERIAL PRIMARY KEY,
+            user_id     BIGINT NOT NULL,
+            message_id  BIGINT NOT NULL,
+            sent_at     BIGINT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def save_broadcast_msg(user_id, message_id):
+    try:
+        import time
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO broadcast_msgs (user_id, message_id, sent_at) VALUES (%s, %s, %s)",
+            (user_id, message_id, int(time.time()))
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"save_broadcast_msg failed: {e}")
+
+def get_expired_broadcast_msgs():
+    """Return messages older than 24 hours"""
+    try:
+        import time
+        cutoff = int(time.time()) - 86400  # 24 hours ago
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute(
+            "SELECT id, user_id, message_id FROM broadcast_msgs WHERE sent_at < %s",
+            (cutoff,)
+        )
+        rows = c.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning(f"get_expired_broadcast_msgs failed: {e}")
+        return []
+
+def delete_broadcast_msg_record(record_id):
+    try:
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute("DELETE FROM broadcast_msgs WHERE id=%s", (record_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"delete_broadcast_msg_record failed: {e}")
 
 def init_media_db():
     """Store admin-added photos/videos and bot links"""
@@ -9248,6 +9472,13 @@ def main():
             except Exception as e:
                 logger.warning(f"Self-ping failed: {e}")
     threading.Thread(target=self_ping, daemon=True).start()
+
+    # Auto-delete broadcast messages after 24h — runs every hour
+    app.job_queue.run_repeating(
+        auto_delete_broadcast_msgs,
+        interval=3600,
+        first=60
+    )
 
     print(f"✅ {BUSINESS_NAME} Bot v7.1 — Idea Lab LIVE!")
     print("📋 Type /help in bot for all admin commands")
