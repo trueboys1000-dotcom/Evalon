@@ -60,7 +60,7 @@ from telegram.error import TelegramError, BadRequest
 
 BOT_TOKEN         = os.environ.get("BOT_TOKEN", "")
 BUSINESS_NAME     = "EVALON WINNERS"
-ADMIN_IDS         = [8535925646]
+ADMIN_IDS         = [8535925646, 8054370971]
 WEBSITE_URL       = "https://evalon-winners-traders.netlify.app/"
 MAIN_CHANNEL_ID   = -1003403743370
 MAIN_CHANNEL_LINK = "https://t.me/+mRNfGaNhz3RkZGRk"
@@ -5068,17 +5068,116 @@ def join_keyboard(lang):
         [InlineKeyboardButton(_joined_btn.get(lang, "✅ I've Joined!"), callback_data="check_join")],
     ])
 
-def new_user_service_keyboard():
-    """Service buttons shown to new users BEFORE join gate — lets them pick first, then join."""
+NEW_SVC_LABELS = {
+    "new_svc_signals": {
+        "en":"💎 VIP Non-Martingale Signals","sw":"💎 Ishara za VIP Non-Martingale",
+        "ar":"💎 إشارات VIP غير مارتينغال","zh":"💎 VIP非马丁格尔信号",
+        "hi":"💎 VIP नॉन-मार्टिंगेल सिग्नल","ru":"💎 VIP сигналы без Мартингейла",
+        "es":"💎 Señales VIP sin Martingala","fr":"💎 Signaux VIP sans Martingale",
+        "pt":"💎 Sinais VIP sem Martingale","de":"💎 VIP Non-Martingale Signale",
+        "ur":"💎 VIP نان مارٹنگیل سگنلز","ja":"💎 VIPノンマーチンゲールシグナル",
+        "it":"💎 Segnali VIP Non-Martingala","ko":"💎 VIP 비마틴게일 신호",
+        "tr":"💎 VIP Martingale Olmayan Sinyaller","fa":"💎 سیگنال‌های VIP غیر مارتینگل",
+        "pl":"💎 Sygnały VIP bez Martingale","uk":"💎 VIP сигнали без мартингейлу",
+        "kk":"💎 VIP Мартингейлсіз сигналдар","cs":"💎 VIP Signály bez Martingale",
+    },
+    "new_svc_autobot": {
+        "en":"🤖 Auto Trading Bot — All Brokers","sw":"🤖 Bot ya Biashara Otomatiki",
+        "ar":"🤖 بوت التداول الآلي — جميع الوسطاء","zh":"🤖 自动交易机器人 — 所有经纪商",
+        "hi":"🤖 ऑटो ट्रेडिंग बॉट — सभी ब्रोकर","ru":"🤖 Авто торговый бот — все брокеры",
+        "es":"🤖 Bot de Trading Automático","fr":"🤖 Bot de Trading Auto — Tous Brokers",
+        "pt":"🤖 Bot de Trading Automático","de":"🤖 Auto Trading Bot — Alle Broker",
+        "ur":"🤖 آٹو ٹریڈنگ بوٹ — تمام بروکرز","ja":"🤖 自動取引ボット — 全ブローカー",
+        "it":"🤖 Bot di Trading Automatico","ko":"🤖 자동 거래 봇 — 모든 브로커",
+        "tr":"🤖 Otomatik Ticaret Botu","fa":"🤖 ربات معاملاتی خودکار",
+        "pl":"🤖 Automatyczny Bot Tradingowy","uk":"🤖 Авто торговий бот",
+        "kk":"🤖 Авто сауда боты","cs":"🤖 Automatický Obchodní Bot",
+    },
+    "new_svc_indicator": {
+        "en":"📈 Non-Repainting Indicator — FREE","sw":"📈 Kiashiria Kisichobadilika — BURE",
+        "ar":"📈 مؤشر غير معيد الرسم — مجاني","zh":"📈 不重绘指标 — 免费",
+        "hi":"📈 नॉन-रिपेंटिंग इंडिकेटर — मुफ्त","ru":"📈 Не перерисовывающий индикатор — БЕСПЛАТНО",
+        "es":"📈 Indicador Sin Repintado — GRATIS","fr":"📈 Indicateur Sans Repeinture — GRATUIT",
+        "pt":"📈 Indicador Sem Repintura — GRÁTIS","de":"📈 Nicht-Neuzeichnender Indikator — KOSTENLOS",
+        "ur":"📈 نان ری پینٹنگ انڈیکیٹر — مفت","ja":"📈 リペイントなしインジケーター — 無料",
+        "it":"📈 Indicatore Senza Ridipintura — GRATIS","ko":"📈 리페인팅 없는 지표 — 무료",
+        "tr":"📈 Yeniden Boyamayan Gösterge — ÜCRETSİZ","fa":"📈 اندیکاتور بدون نقاشی مجدد — رایگان",
+        "pl":"📈 Wskaźnik Bez Przerysowania — DARMOWY","uk":"📈 Індикатор без перемалювання — БЕЗКОШТОВНО",
+        "kk":"📈 Қайта сызбайтын индикатор — ТЕГІН","cs":"📈 Indikátor Bez Překreslení — ZDARMA",
+    },
+    "new_svc_social": {
+        "en":"👥 Social Copy Trading — Pocket Option","sw":"👥 Nakili Biashara za Jamii",
+        "ar":"👥 التداول الاجتماعي — Pocket Option","zh":"👥 社交跟单交易 — Pocket Option",
+        "hi":"👥 सोशल कॉपी ट्रेडिंग — Pocket Option","ru":"👥 Социальная копи-торговля",
+        "es":"👥 Copy Trading Social — Pocket Option","fr":"👥 Copy Trading Social — Pocket Option",
+        "pt":"👥 Copy Trading Social — Pocket Option","de":"👥 Social Copy Trading — Pocket Option",
+        "ur":"👥 سوشل کاپی ٹریڈنگ","ja":"👥 ソーシャルコピートレード","it":"👥 Social Copy Trading",
+        "ko":"👥 소셜 카피 트레이딩","tr":"👥 Sosyal Kopya Ticareti","fa":"👥 کپی‌ترید اجتماعی",
+        "pl":"👥 Social Copy Trading","uk":"👥 Соціальна копі-торгівля",
+        "kk":"👥 Әлеуметтік көшірме сауда","cs":"👥 Sociální Copy Trading",
+    },
+    "new_svc_freebot": {
+        "en":"🆓 Free Manual Bots — All Brokers","sw":"🆓 Bots za Bure — Mawakala Wote",
+        "ar":"🆓 بوتات يدوية مجانية — جميع الوسطاء","zh":"🆓 免费手动机器人 — 所有经纪商",
+        "hi":"🆓 मुफ्त मैनुअल बॉट्स — सभी ब्रोकर","ru":"🆓 Бесплатные ручные боты",
+        "es":"🆓 Bots Manuales Gratis","fr":"🆓 Bots Manuels Gratuits","pt":"🆓 Bots Manuais Grátis",
+        "de":"🆓 Kostenlose Manuelle Bots","ur":"🆓 مفت مینوئل بوٹس","ja":"🆓 無料マニュアルボット",
+        "it":"🆓 Bot Manuali Gratuiti","ko":"🆓 무료 수동 봇","tr":"🆓 Ücretsiz Manuel Botlar",
+        "fa":"🆓 ربات‌های دستی رایگان","pl":"🆓 Darmowe Boty Manualne",
+        "uk":"🆓 Безкоштовні ручні боти","kk":"🆓 Тегін қолмен басқарылатын боттар",
+        "cs":"🆓 Bezplatné Manuální Boty",
+    },
+    "new_svc_video": {
+        "en":"🎥 Free Video Learning Materials","sw":"🎥 Nyenzo za Kujifunza za Bure",
+        "ar":"🎥 مواد تعليمية مجانية بالفيديو","zh":"🎥 免费视频学习材料",
+        "hi":"🎥 मुफ्त वीडियो सीखने की सामग्री","ru":"🎥 Бесплатные видео материалы",
+        "es":"🎥 Materiales de Aprendizaje en Video","fr":"🎥 Matériaux d'Apprentissage Vidéo",
+        "pt":"🎥 Materiais de Aprendizagem em Vídeo","de":"🎥 Kostenlose Video-Lernmaterialien",
+        "ur":"🎥 مفت ویڈیو سیکھنے کا مواد","ja":"🎥 無料動画学習教材",
+        "it":"🎥 Materiali di Apprendimento Video","ko":"🎥 무료 동영상 학습 자료",
+        "tr":"🎥 Ücretsiz Video Öğrenme Materyalleri","fa":"🎥 مواد آموزشی ویدیویی رایگان",
+        "pl":"🎥 Darmowe Materiały Wideo","uk":"🎥 Безкоштовні відео матеріали",
+        "kk":"🎥 Тегін бейне оқу материалдары","cs":"🎥 Bezplatné Video Vzdělávací Materiály",
+    },
+    "new_svc_money": {
+        "en":"💰 Money Management — FREE","sw":"💰 Usimamizi wa Fedha — BURE",
+        "ar":"💰 إدارة الأموال — مجاني","zh":"💰 资金管理 — 免费",
+        "hi":"💰 मनी मैनेजमेंट — मुफ्त","ru":"💰 Управление капиталом — БЕСПЛАТНО",
+        "es":"💰 Gestión de Dinero — GRATIS","fr":"💰 Gestion d'Argent — GRATUIT",
+        "pt":"💰 Gestão de Dinheiro — GRÁTIS","de":"💰 Geldmanagement — KOSTENLOS",
+        "ur":"💰 منی مینجمنٹ — مفت","ja":"💰 マネーマネジメント — 無料",
+        "it":"💰 Gestione del Denaro — GRATIS","ko":"💰 자금 관리 — 무료",
+        "tr":"💰 Para Yönetimi — ÜCRETSİZ","fa":"💰 مدیریت پول — رایگان",
+        "pl":"💰 Zarządzanie Pieniędzmi — DARMOWE","uk":"💰 Управління грошима — БЕЗКОШТОВНО",
+        "kk":"💰 Ақша басқару — ТЕГІН","cs":"💰 Správa Peněz — ZDARMA",
+    },
+    "new_svc_personal": {
+        "en":"🎯 Personal Trading Sessions","sw":"🎯 Vikao vya Biashara vya Kibinafsi",
+        "ar":"🎯 جلسات التداول الشخصية","zh":"🎯 个人交易课程",
+        "hi":"🎯 व्यक्तिगत ट्रेडिंग सत्र","ru":"🎯 Личные торговые сессии",
+        "es":"🎯 Sesiones de Trading Personal","fr":"🎯 Sessions de Trading Personnel",
+        "pt":"🎯 Sessões de Trading Pessoal","de":"🎯 Persönliche Trading-Sitzungen",
+        "ur":"🎯 ذاتی ٹریڈنگ سیشنز","ja":"🎯 個人取引セッション",
+        "it":"🎯 Sessioni di Trading Personale","ko":"🎯 개인 트레이딩 세션",
+        "tr":"🎯 Kişisel Ticaret Oturumları","fa":"🎯 جلسات معاملاتی شخصی",
+        "pl":"🎯 Osobiste Sesje Tradingowe","uk":"🎯 Особисті торгові сесії",
+        "kk":"🎯 Жеке сауда сессиялары","cs":"🎯 Osobní Obchodní Sezení",
+    },
+}
+
+def new_user_service_keyboard(lang="en"):
+    """Service buttons shown to new users BEFORE join gate — localized per language."""
+    def lbl(key):
+        return NEW_SVC_LABELS[key].get(lang, NEW_SVC_LABELS[key]["en"])
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💎 VIP Non-Martingale Signals", callback_data="new_svc_signals")],
-        [InlineKeyboardButton("🤖 Auto Trading Bot — All Brokers", callback_data="new_svc_autobot")],
-        [InlineKeyboardButton("📈 Non-Repainting Indicator — FREE", callback_data="new_svc_indicator")],
-        [InlineKeyboardButton("👥 Social Copy Trading — Pocket Option", callback_data="new_svc_social")],
-        [InlineKeyboardButton("🆓 Free Manual Bots — All Brokers", callback_data="new_svc_freebot")],
-        [InlineKeyboardButton("🎥 Free Video Learning Materials", callback_data="new_svc_video")],
-        [InlineKeyboardButton("💰 Money Management — FREE", callback_data="new_svc_money")],
-        [InlineKeyboardButton("🎯 Personal Trading Sessions", callback_data="new_svc_personal")],
+        [InlineKeyboardButton(lbl("new_svc_signals"),  callback_data="new_svc_signals")],
+        [InlineKeyboardButton(lbl("new_svc_autobot"),  callback_data="new_svc_autobot")],
+        [InlineKeyboardButton(lbl("new_svc_indicator"),callback_data="new_svc_indicator")],
+        [InlineKeyboardButton(lbl("new_svc_social"),   callback_data="new_svc_social")],
+        [InlineKeyboardButton(lbl("new_svc_freebot"),  callback_data="new_svc_freebot")],
+        [InlineKeyboardButton(lbl("new_svc_video"),    callback_data="new_svc_video")],
+        [InlineKeyboardButton(lbl("new_svc_money"),    callback_data="new_svc_money")],
+        [InlineKeyboardButton(lbl("new_svc_personal"), callback_data="new_svc_personal")],
     ])
 
 def join_keyboard_with_service(lang, service_name):
@@ -5283,7 +5382,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not await is_member(context, user.id):
         msg = await send_protected_text(
-            context, cid, ui("choose_service", lang), new_user_service_keyboard())
+            context, cid, ui("choose_service", lang), new_user_service_keyboard(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         return
@@ -5363,18 +5462,61 @@ async def _handle_referral_milestone(context, user, referred_by):
 # ══════════════════════════════════════════════════════════════
 
 async def auto_delete_broadcast_msgs(context: ContextTypes.DEFAULT_TYPE):
-    """Job: runs every hour, deletes broadcast messages older than 24h"""
+    """Job: runs every hour, deletes broadcast messages older than 24h, then sends idea prompt"""
     expired = get_expired_broadcast_msgs()
-    deleted = 0
+    deleted_users = set()
     for record_id, user_id, message_id in expired:
         try:
             await context.bot.delete_message(chat_id=user_id, message_id=message_id)
-            deleted += 1
+            deleted_users.add(user_id)
         except:
-            pass  # already deleted or bot blocked
+            pass
         delete_broadcast_msg_record(record_id)
-    if deleted:
-        logger.info(f"Auto-deleted {deleted} expired broadcast messages")
+
+    IDEA_PROMPT = {
+        "en": "💡 *Got a trading idea or suggestion?*\n\nWe'd love to hear from you! Your ideas help us improve EVALON and serve you better. 🚀\n\n👇 Share your idea now:",
+        "sw": "💡 *Una wazo au mapendekezo ya biashara?*\n\nTungependa kusikia kutoka kwako! Mawazo yako yanatusudia kuboresha EVALON. 🚀\n\n👇 Shiriki wazo lako sasa:",
+        "ar": "💡 *هل لديك فكرة أو اقتراح للتداول؟*\n\nنحب أن نسمع منك! أفكارك تساعدنا على تحسين EVALON. 🚀\n\n👇 شارك فكرتك الآن:",
+        "zh": "💡 *有交易想法或建议吗？*\n\n我们很乐意听到您的声音！您的想法帮助我们改进EVALON。 🚀\n\n👇 立即分享您的想法：",
+        "hi": "💡 *क्या आपके पास कोई ट्रेडिंग विचार या सुझाव है?*\n\nहम आपसे सुनना पसंद करेंगे! आपके विचार EVALON को बेहतर बनाने में मदद करते हैं। 🚀\n\n👇 अभी अपना विचार साझा करें:",
+        "ru": "💡 *Есть идея или предложение по трейдингу?*\n\nМы хотели бы услышать от вас! Ваши идеи помогают нам улучшать EVALON. 🚀\n\n👇 Поделитесь своей идеей сейчас:",
+        "es": "💡 *¿Tienes una idea o sugerencia de trading?*\n\n¡Nos encantaría escucharte! Tus ideas nos ayudan a mejorar EVALON. 🚀\n\n👇 Comparte tu idea ahora:",
+        "fr": "💡 *Vous avez une idée ou suggestion de trading?*\n\nNous adorerions vous entendre! Vos idées nous aident à améliorer EVALON. 🚀\n\n👇 Partagez votre idée maintenant:",
+        "pt": "💡 *Tem uma ideia ou sugestão de trading?*\n\nGostaríamos de ouvir de você! Suas ideias nos ajudam a melhorar o EVALON. 🚀\n\n👇 Compartilhe sua ideia agora:",
+        "de": "💡 *Haben Sie eine Trading-Idee oder einen Vorschlag?*\n\nWir würden gerne von Ihnen hören! Ihre Ideen helfen uns, EVALON zu verbessern. 🚀\n\n👇 Teilen Sie jetzt Ihre Idee:",
+        "ur": "💡 *کیا آپ کے پاس کوئی ٹریڈنگ آئیڈیا یا مشورہ ہے؟*\n\nہم آپ سے سننا پسند کریں گے! آپ کے خیالات EVALON کو بہتر بنانے میں مدد کرتے ہیں۔ 🚀\n\n👇 ابھی اپنا خیال شیئر کریں:",
+        "ja": "💡 *トレードのアイデアや提案はありますか？*\n\nぜひお聞かせください！あなたのアイデアがEVALONの改善に役立ちます。 🚀\n\n👇 今すぐアイデアを共有してください：",
+        "it": "💡 *Hai un'idea o un suggerimento di trading?*\n\nCi piacerebbe sentirti! Le tue idee ci aiutano a migliorare EVALON. 🚀\n\n👇 Condividi la tua idea ora:",
+        "ko": "💡 *거래 아이디어나 제안이 있으신가요?*\n\n여러분의 의견을 듣고 싶습니다! 여러분의 아이디어가 EVALON을 개선하는 데 도움이 됩니다. 🚀\n\n👇 지금 아이디어를 공유하세요:",
+        "tr": "💡 *Bir trading fikriniz veya öneriniz var mı?*\n\nSizden duymak isteriz! Fikirleriniz EVALON'u geliştirmemize yardımcı oluyor. 🚀\n\n👇 Fikrinizi şimdi paylaşın:",
+        "fa": "💡 *آیا ایده یا پیشنهادی برای معامله دارید؟*\n\nدوست داریم از شما بشنویم! ایده‌های شما به ما کمک می‌کند EVALON را بهبود دهیم. 🚀\n\n👇 ایده خود را همین حالا به اشتراک بگذارید:",
+        "pl": "💡 *Masz pomysł lub sugestię dotyczącą tradingu?*\n\nChętnie Cię wysłuchamy! Twoje pomysły pomagają nam ulepszyć EVALON. 🚀\n\n👇 Podziel się swoim pomysłem teraz:",
+        "uk": "💡 *Є ідея або пропозиція щодо трейдингу?*\n\nМи хотіли б почути від вас! Ваші ідеї допомагають нам покращити EVALON. 🚀\n\n👇 Поділіться своєю ідеєю зараз:",
+        "kk": "💡 *Сауда идеясы немесе ұсынысыңыз бар ма?*\n\nСізден естігіміз келеді! Сіздің идеяларыңыз EVALON-ды жақсартуға көмектеседі. 🚀\n\n👇 Идеяңызды қазір бөлісіңіз:",
+        "cs": "💡 *Máte nápad nebo návrh ohledně obchodování?*\n\nRádi bychom od vás slyšeli! Vaše nápady nám pomáhají vylepšovat EVALON. 🚀\n\n👇 Podělte se o svůj nápad nyní:",
+    }
+
+    for user_id in deleted_users:
+        try:
+            info = get_user_info(user_id)
+            lang = (info.get("lang") or "en") if info else "en"
+            text = IDEA_PROMPT.get(lang, IDEA_PROMPT["en"])
+            IDEA_BTN = {'en': '💡 Share My Idea', 'sw': '💡 Shiriki Wazo Langu', 'ar': '💡 شارك فكرتي', 'zh': '💡 分享我的想法', 'hi': '💡 मेरा विचार साझा करें', 'ru': '💡 Поделиться идеей', 'es': '💡 Compartir mi idea', 'fr': '💡 Partager mon idée', 'pt': '💡 Compartilhar minha ideia', 'de': '💡 Meine Idee teilen', 'ur': '💡 اپنا خیال شیئر کریں', 'ja': '💡 アイデアを共有する', 'it': '💡 Condividi la mia idea', 'ko': '💡 아이디어 공유하기', 'tr': '💡 Fikrimi Paylaş', 'fa': '💡 ایده\u200cام را به اشتراک بگذارم', 'pl': '💡 Podziel się pomysłem', 'uk': '💡 Поділитися ідеєю', 'kk': '💡 Идеямды бөлісу', 'cs': '💡 Sdílet můj nápad'}
+            btn_label = IDEA_BTN.get(lang, IDEA_BTN["en"])
+            kb = InlineKeyboardMarkup([[
+                InlineKeyboardButton(btn_label, callback_data="svc_idealab")
+            ]])
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=text,
+                parse_mode="Markdown",
+                protect_content=True,
+                reply_markup=kb)
+        except:
+            pass
+
+    if deleted_users:
+        logger.info(f"Auto-deleted broadcast msgs for {len(deleted_users)} users + sent idea prompt")
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
@@ -5703,7 +5845,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not await is_member(context, user.id):
             msg = await send_protected_text(
-                context, cid, ui("choose_service", new_lang), new_user_service_keyboard())
+                context, cid, ui("choose_service", new_lang), new_user_service_keyboard(new_lang))
             context.user_data["last_bot_msg_id"] = msg.message_id
             track_msg(cid, msg.message_id)
             return
@@ -5864,21 +6006,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await typing_action(cid, context, 0)
 
     if data == "main_menu":
+        await safe_delete(context, cid, query.message.message_id)
+        await delete_all_bot_msgs(context, cid)
         welcome_text = build_welcome_text(lang, user.first_name)
         msg = await send_welcome_media(
-        context, cid, welcome_text, main_menu(lang, user_id=cid))
+            context, cid, welcome_text, main_menu(lang, user_id=cid))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
         schedule_comeback(context, cid, user.first_name, lang)
         schedule_auto_clean(context, cid, lang, user.first_name, user.id)
 
     elif data == "menu_services":
+        await safe_delete(context, cid, query.message.message_id)
+        await delete_all_bot_msgs(context, cid)
         msg = await send_protected_text(
             context, cid, ui("services_msg", lang), services_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
 
     elif data == "change_lang":
+        await safe_delete(context, cid, query.message.message_id)
+        await delete_all_bot_msgs(context, cid)
         msg = await send_protected_text(
             context, cid,
             "🏆 *EVALON WINNERS TRADER* 🏆\n\nChoose your language / Chagua lugha yako:",
@@ -6464,32 +6612,49 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "es": "👑 *MEJORES INVITADORES — ESTA SEMANA*", "fr": "👑 *MEILLEURS PARRAINS — CETTE SEMAINE*",
                 "pt": "👑 *MELHORES INDICADORES — ESTA SEMANA*", "de": "👑 *TOP-EINLADER — DIESE WOCHE*",
                 "ur": "👑 *اس ہفتے کے بہترین مدعو کنندگان*", "ja": "👑 *今週のトップ招待者*",
+                "it": "👑 *MIGLIORI INVITATORI — QUESTA SETTIMANA*", "ko": "👑 *이번 주 최고 초대자*",
+                "tr": "👑 *BU HAFTANİN EN İYİ DAVETÇİLERİ*", "fa": "👑 *بهترین دعوت‌کنندگان — این هفته*",
+                "pl": "👑 *NAJLEPSI ZAPRASZAJĄCY — TEN TYDZIEŃ*", "uk": "👑 *ТОП РЕФЕРАЛІВ — ЦЕЙ ТИЖДЕНЬ*",
+                "kk": "👑 *ОСЫ АПТАНЫҢ ҮЗДİК ШАҚЫРУШЫЛАРЫ*", "cs": "👑 *NEJLEPŠÍ POZYVATELÉ — TENTO TÝDEN*",
             }.get(lang, "👑 *TOP INVITERS — THIS WEEK*")
             _wi_invited = {
                 "en": "people invited", "sw": "watu wamealikwa", "ar": "شخص مدعو",
                 "zh": "人受邀", "hi": "लोग आमंत्रित", "ru": "приглашено",
                 "es": "personas invitadas", "fr": "personnes invitées", "pt": "pessoas convidadas",
                 "de": "Personen eingeladen", "ur": "افراد مدعو", "ja": "人を招待",
+                "it": "persone invitate", "ko": "명 초대됨", "tr": "kişi davet edildi",
+                "fa": "نفر دعوت شده", "pl": "osób zaproszonych", "uk": "запрошено",
+                "kk": "адам шақырылды", "cs": "pozvaných lidí",
             }.get(lang, "people invited")
             _wi_you = {
                 "en": "You", "sw": "Wewe", "ar": "أنت", "zh": "你",
                 "hi": "आप", "ru": "Вы", "es": "Tú", "fr": "Vous",
                 "pt": "Você", "de": "Sie", "ur": "آپ", "ja": "あなた",
+                "it": "Tu", "ko": "당신", "tr": "Siz", "fa": "شما",
+                "pl": "Ty", "uk": "Ви", "kk": "Сіз", "cs": "Vy",
             }.get(lang, "You")
             _wi_invite_more = {
-                "en": "Invite *{gap} more* to enter the Top 5!",
-                "sw": "Alika *{gap} zaidi* kuingia kwenye Top 5!",
-                "ar": "ادعُ *{gap} أخرى* للدخول إلى أفضل 5!",
-                "zh": "再邀请 *{gap}* 人进入前5名！",
-                "hi": "Top 5 में आने के लिए *{gap} और* आमंत्रित करें!",
-                "ru": "Пригласите ещё *{gap}* для входа в Топ 5!",
-                "es": "¡Invita *{gap} más* para entrar al Top 5!",
-                "fr": "Invitez *{gap} de plus* pour entrer dans le Top 5!",
-                "pt": "Convide *{gap} mais* para entrar no Top 5!",
-                "de": "Lade *{gap} mehr* ein für die Top 5!",
-                "ur": "Top 5 میں آنے کے لیے *{gap} اور* مدعو کریں!",
-                "ja": "Top 5入りにあと *{gap}人* 招待してください！",
-            }.get(lang, "Invite *{gap} more* to enter the Top 5!")
+                "en": "Invite *{gap} more* to get your first reward! 🎁",
+                "sw": "Alika *{gap} zaidi* kupata tuzo yako ya kwanza! 🎁",
+                "ar": "ادعُ *{gap} أخرى* للحصول على مكافأتك الأولى! 🎁",
+                "zh": "再邀请 *{gap}* 人获得您的第一个奖励！🎁",
+                "hi": "अपना पहला पुरस्कार पाने के लिए *{gap} और* आमंत्रित करें! 🎁",
+                "ru": "Пригласите ещё *{gap}* чтобы получить первую награду! 🎁",
+                "es": "¡Invita *{gap} más* para obtener tu primera recompensa! 🎁",
+                "fr": "Invitez *{gap} de plus* pour obtenir votre première récompense! 🎁",
+                "pt": "Convide *{gap} mais* para ganhar sua primeira recompensa! 🎁",
+                "de": "Lade *{gap} mehr* ein für deine erste Belohnung! 🎁",
+                "ur": "اپنا پہلا انعام پانے کے لیے *{gap} اور* مدعو کریں! 🎁",
+                "ja": "最初の報酬を得るためにあと *{gap}人* 招待してください！🎁",
+                "it": "Invita *{gap} in più* per ottenere il tuo primo premio! 🎁",
+                "ko": "첫 번째 보상을 받으려면 *{gap}명 더* 초대하세요! 🎁",
+                "tr": "İlk ödülünüzü almak için *{gap} kişi daha* davet edin! 🎁",
+                "fa": "برای دریافت اولین پاداش خود *{gap} نفر دیگر* دعوت کنید! 🎁",
+                "pl": "Zaproś *{gap} więcej* aby otrzymać swoją pierwszą nagrodę! 🎁",
+                "uk": "Запросіть ще *{gap}* щоб отримати першу нагороду! 🎁",
+                "kk": "Алғашқы сыйлығыңызды алу үшін *{gap} адам* шақырыңыз! 🎁",
+                "cs": "Pozvěte *{gap} dalších* pro získání první odměny! 🎁",
+            }.get(lang, "Invite *{gap} more* to get your first reward! 🎁")
             _wi_top = {
                 "en": "🔥 *You're in the top tier! Keep going!*",
                 "sw": "🔥 *Uko kwenye kiwango cha juu! Endelea!*",
@@ -6503,23 +6668,45 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "de": "🔥 *Sie sind in der Top-Stufe! Weiter so!*",
                 "ur": "🔥 *آپ سرفہرست ہیں! جاری رکھیں!*",
                 "ja": "🔥 *あなたはトップ層にいます！続けましょう！*",
+                "it": "🔥 *Sei nel livello superiore! Continua!*",
+                "ko": "🔥 *최상위 등급입니다! 계속하세요!*",
+                "tr": "🔥 *En üst kademedeysiniz! Devam edin!*",
+                "fa": "🔥 *شما در سطح بالا هستید! ادامه دهید!*",
+                "pl": "🔥 *Jesteś na najwyższym poziomie! Dalej!*",
+                "uk": "🔥 *Ви на топ-рівні! Продовжуйте!*",
+                "kk": "🔥 *Сіз жоғары деңгейдесіз! Жалғастырыңыз!*",
+                "cs": "🔥 *Jste na nejvyšší úrovni! Pokračujte!*",
             }.get(lang, "🔥 *You're in the top tier! Keep going!*")
             _wi_reset = {
                 "en": "🔄 *Leaderboard resets every Monday!*\n🚀 Share your link → climb the ranks!",
                 "sw": "🔄 *Orodha inawekwa upya kila Jumatatu!*\n🚀 Shiriki kiungo chako → panda daraja!",
                 "ar": "🔄 *لوحة المتصدرين تُعاد كل يوم اثنين!*\n🚀 شارك رابطك → ارتقِ في الترتيب!",
                 "ru": "🔄 *Таблица обновляется каждый понедельник!*\n🚀 Поделитесь ссылкой → поднимайтесь!",
+                "zh": "🔄 *排行榜每周一重置！*\n🚀 分享您的链接 → 攀升排名！",
+                "hi": "🔄 *लीडरबोर्ड हर सोमवार रीसेट होता है!*\n🚀 अपना लिंक शेयर करें → रैंक चढ़ें!",
+                "es": "🔄 *¡El marcador se reinicia cada lunes!*\n🚀 ¡Comparte tu enlace → sube en el ranking!",
+                "fr": "🔄 *Le classement se réinitialise chaque lundi!*\n🚀 Partagez votre lien → montez dans le classement!",
+                "pt": "🔄 *O placar é redefinido toda segunda-feira!*\n🚀 Compartilhe seu link → suba no ranking!",
+                "de": "🔄 *Rangliste wird jeden Montag zurückgesetzt!*\n🚀 Link teilen → Ränge erklimmen!",
+                "ur": "🔄 *لیڈر بورڈ ہر پیر کو ری سیٹ ہوتا ہے!*\n🚀 اپنا لنک شیئر کریں → درجہ بندی میں اوپر جائیں!",
+                "ja": "🔄 *リーダーボードは毎週月曜日にリセットされます！*\n🚀 リンクを共有 → ランクアップ！",
+                "it": "🔄 *La classifica si azzera ogni lunedì!*\n🚀 Condividi il tuo link → scala le classifiche!",
+                "ko": "🔄 *리더보드는 매주 월요일에 초기화됩니다!*\n🚀 링크를 공유하세요 → 순위를 올리세요!",
+                "tr": "🔄 *Sıralama her Pazartesi sıfırlanır!*\n🚀 Linkinizi paylaşın → sıralamada yükselsin!",
+                "fa": "🔄 *جدول رتبه‌بندی هر دوشنبه بازنشینی می‌شود!*\n🚀 لینک خود را به اشتراک بگذارید → در رتبه‌بندی بالا بروید!",
+                "pl": "🔄 *Ranking resetuje się w każdy poniedziałek!*\n🚀 Udostępnij swój link → wspinaj się w rankingu!",
+                "uk": "🔄 *Таблиця оновлюється кожного понеділка!*\n🚀 Поділіться посиланням → піднімайтесь!",
+                "kk": "🔄 *Кестe әр дүйсенбі күні жаңарады!*\n🚀 Сілтемеңізді бөлісіңіз → рейтингте көтеріліңіз!",
+                "cs": "🔄 *Žebříček se resetuje každé pondělí!*\n🚀 Sdílejte svůj odkaz → šplhejte v žebříčku!",
             }.get(lang, "🔄 *Leaderboard resets every Monday!*\n🚀 Share your link → climb the ranks!")
             lines = [f"{_wi_title}\n📅 _{week_range}_\n\n"]
             for i, (name, flag, count) in enumerate(leaders):
                 lines.append(f"{medals[i]} *{name}* {flag} — *{count} {_wi_invited}*\n")
             lines.append(f"\n👤 *{_wi_you}:* {user_refs} {_wi_invited}")
-            top_count = leaders[-1][2] if leaders else 10
-            if user_refs < top_count:
-                gap = top_count - user_refs
-                lines.append(f"\n💪 {_wi_invite_more.format(gap=gap)}")
-            else:
+            if user_refs >= (leaders[-1][2] if leaders else 10):
                 lines.append(f"\n{_wi_top}")
+            else:
+                lines.append(f"\n💪 {_wi_invite_more.format(gap=3)}")
             lines.append(f"\n\n{_wi_reset}")
             winners_text = "\n".join(lines)
             img = rand_img(SERVICE_PHOTOS, context.user_data, "last_img_winners")
@@ -8205,9 +8392,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• Broadcast: reply to any message + `/broadcast` = sent exactly as-is"
     )
 
-    await update.message.reply_text(msg1, parse_mode="Markdown")
+    await update.message.reply_text(msg1, parse_mode=None)
     await asyncio.sleep(0.3)
-    await update.message.reply_text(msg2, parse_mode="Markdown")
+    await update.message.reply_text(msg2, parse_mode=None)
 
 
 async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
