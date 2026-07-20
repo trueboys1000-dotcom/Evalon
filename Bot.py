@@ -5202,6 +5202,26 @@ def support_keyboard(lang):
         [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
     ])
 
+def broadcast_text_to_safe_html(text):
+    """
+    Convert admin-typed *bold* markdown into safe HTML and escape everything else.
+    This avoids Telegram's legacy 'Markdown' parser breaking on stray/unmatched
+    underscores (e.g. referral links like ref_8535925646), which previously caused
+    ALL broadcast sends to fail with 'Can't parse entities'.
+    """
+    # 1) Escape HTML special chars first so user text can't inject tags
+    escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # 2) Convert *bold* pairs into <b>bold</b>
+    escaped = re.sub(r'\*(.+?)\*', r'<b>\1</b>', escaped)
+    # 3) Convert _italic_ pairs into <i>italic</i> — but ONLY when the underscore
+    #    is not glued to a letter/digit/underscore on either side. This keeps
+    #    underscores inside links/IDs (e.g. ref_8535925646) completely untouched,
+    #    since a "word-char + _" never matches the boundary lookaround below.
+    escaped = re.sub(r'(?<![\w])_([^_\n]+?)_(?![\w])', r'<i>\1</i>', escaped)
+    # 4) Convert ||spoiler|| pairs into a real tappable Telegram spoiler
+    escaped = re.sub(r'\|\|(.+?)\|\|', r'<tg-spoiler>\1</tg-spoiler>', escaped)
+    return escaped
+
 def broadcast_keyboard(lang):
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
@@ -5606,8 +5626,8 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ])
                 sent_bc = await context.bot.send_message(
                     chat_id=uid,
-                    text=text_to_send,
-                    parse_mode="Markdown",
+                    text=broadcast_text_to_safe_html(text_to_send),
+                    parse_mode="HTML",
                     reply_markup=text_kb)
                 save_broadcast_msg(uid, sent_bc.message_id)
 
