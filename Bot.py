@@ -2986,7 +2986,9 @@ UI = {
         "btn_autobot": "🤖 Auto Bot",
         "btn_freebot": "🆓 Free Manual Bot",
         "btn_website": "🌐 Website",
-        "btn_support": "💬 Contact Support",
+        "btn_support": "☎️ Human Support",
+        "btn_ai_support": "🤖 AI Chat Support",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Back",
         "btn_restart": "🚀 Tap to Start",
         "btn_free_indicator": "📲 Get FREE Indicator",
@@ -3053,7 +3055,9 @@ UI = {
         "btn_autobot": "🤖 Auto Bot",
         "btn_freebot": "🆓 Free Manual Bot",
         "btn_website": "🌐 Website & Bei",
-        "btn_support": "💬 Wasiliana na Support",
+        "btn_support": "☎️ Msaada wa Binadamu",
+        "btn_ai_support": "🤖 Msaada wa AI Chat",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Rudi",
         "btn_restart": "🚀 Bonyeza Kuanza",
         "btn_free_indicator": "📲 Pata Indicator BURE",
@@ -3114,7 +3118,9 @@ UI = {
         "btn_autobot": "🤖 بوت تلقائي",
         "btn_freebot": "🆓 بوت يدوي مجاني",
         "btn_website": "🌐 الموقع",
-        "btn_support": "💬 التواصل مع الدعم",
+        "btn_support": "☎️ دعم بشري",
+        "btn_ai_support": "🤖 دعم الدردشة الذكي",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ رجوع",
         "btn_restart": "🚀 اضغط للبدء",
         "btn_free_indicator": "📲 احصل على المؤشر المجاني",
@@ -3175,7 +3181,9 @@ UI = {
         "btn_autobot": "🤖 自动机器人",
         "btn_freebot": "🆓 免费手动机器人",
         "btn_website": "🌐 网站",
-        "btn_support": "💬 联系支持",
+        "btn_support": "☎️ 人工客服",
+        "btn_ai_support": "🤖 AI聊天支持",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ 返回",
         "btn_restart": "🚀 点击开始",
         "btn_free_indicator": "📲 获取免费指标",
@@ -3236,7 +3244,9 @@ UI = {
         "btn_autobot": "🤖 ऑटो बॉट",
         "btn_freebot": "🆓 मुफ्त मैनुअल बॉट",
         "btn_website": "🌐 वेबसाइट",
-        "btn_support": "💬 सहायता से संपर्क करें",
+        "btn_support": "☎️ मानव सहायता",
+        "btn_ai_support": "🤖 AI चैट सहायता",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ वापस",
         "btn_restart": "🚀 शुरू करने के लिए टैप करें",
         "btn_free_indicator": "📲 मुफ्त इंडिकेटर पाएं",
@@ -3297,7 +3307,9 @@ UI = {
         "btn_autobot": "🤖 Авто бот",
         "btn_freebot": "🆓 Бесплатный ручной бот",
         "btn_website": "🌐 Сайт",
-        "btn_support": "💬 Связаться с поддержкой",
+        "btn_support": "☎️ Поддержка человека",
+        "btn_ai_support": "🤖 ИИ Чат Поддержка",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Назад",
         "btn_restart": "🚀 Нажмите для начала",
         "btn_free_indicator": "📲 Получить бесплатный индикатор",
@@ -3355,7 +3367,9 @@ UI = {
         "btn_autobot": "🤖 Bot Automático",
         "btn_freebot": "🆓 Bot Manual Gratis",
         "btn_website": "🌐 Sitio Web",
-        "btn_support": "💬 Contactar Soporte",
+        "btn_support": "☎️ Soporte Humano",
+        "btn_ai_support": "🤖 Soporte AI Chat",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Atrás",
         "btn_restart": "🚀 Toca para Comenzar",
         "btn_free_indicator": "📲 Obtener Indicador GRATIS",
@@ -3416,7 +3430,9 @@ UI = {
         "btn_autobot": "🤖 Bot Automatique",
         "btn_freebot": "🆓 Bot Manuel Gratuit",
         "btn_website": "🌐 Site Web",
-        "btn_support": "💬 Contacter le Support",
+        "btn_support": "☎️ Support Humain",
+        "btn_ai_support": "🤖 Support Chat IA",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Retour",
         "btn_restart": "🚀 Appuyez pour Commencer",
         "btn_free_indicator": "📲 Obtenir l'Indicateur GRATUIT",
@@ -3477,7 +3493,9 @@ UI = {
         "btn_autobot": "🤖 Bot Automático",
         "btn_freebot": "🆓 Bot Manual Grátis",
         "btn_website": "🌐 Site",
-        "btn_support": "💬 Contatar Suporte",
+        "btn_support": "☎️ Suporte Humano",
+        "btn_ai_support": "🤖 Suporte Chat IA",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Voltar",
         "btn_restart": "🚀 Toque para Começar",
         "btn_free_indicator": "📲 Obter Indicador GRÁTIS",
@@ -3538,7 +3556,9 @@ UI = {
         "btn_autobot": "🤖 Auto Bot",
         "btn_freebot": "🆓 Kostenloser manueller Bot",
         "btn_website": "🌐 Website",
-        "btn_support": "💬 Support kontaktieren",
+        "btn_support": "☎️ Menschlicher Support",
+        "btn_ai_support": "🤖 KI-Chat-Support",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ Zurück",
         "btn_restart": "🚀 Tippen zum Starten",
         "btn_free_indicator": "📲 Kostenlosen Indikator holen",
@@ -3599,7 +3619,9 @@ UI = {
         "btn_autobot": "🤖 آٹو بوٹ",
         "btn_freebot": "🆓 مفت مینوئل بوٹ",
         "btn_website": "🌐 ویب سائٹ",
-        "btn_support": "💬 سپورٹ سے رابطہ",
+        "btn_support": "☎️ انسانی سپورٹ",
+        "btn_ai_support": "🤖 اے آئی چیٹ سپورٹ",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ واپس",
         "btn_restart": "🚀 شروع کرنے کے لیے ٹیپ کریں",
         "btn_free_indicator": "📲 مفت انڈیکیٹر حاصل کریں",
@@ -3660,7 +3682,9 @@ UI = {
         "btn_autobot": "🤖 自動ボット",
         "btn_freebot": "🆓 無料マニュアルボット",
         "btn_website": "🌐 ウェブサイト",
-        "btn_support": "💬 サポートに連絡",
+        "btn_support": "☎️ 人間サポート",
+        "btn_ai_support": "🤖 AIチャットサポート",
+        "btn_vip": "💎 VIP",
         "btn_back": "⬅️ 戻る",
         "btn_restart": "🚀 タップして開始",
         "btn_free_indicator": "📲 無料インジケーターを入手",
@@ -3715,7 +3739,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 Indicatore Gratuito",
         "btn_autobot": "\U0001f916 Auto Bot",
         "btn_freebot": "\U0001f193 Bot Manuale Gratuito",
-        "btn_support": "\U0001f4ac Contatta Supporto",
+        "btn_support": "☎️ Supporto Umano",
+        "btn_ai_support": "🤖 Supporto Chat AI",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f Indietro",
         "btn_restart": "\U0001f680 Tocca per Iniziare",
         "btn_free_indicator": "\U0001f4f2 Ottieni Indicatore GRATUITO",
@@ -3776,7 +3802,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 \ubb34\ub8cc \uc778\ub514\ucf00\uc774\ud130",
         "btn_autobot": "\U0001f916 \uc790\ub3d9 \ubd07",
         "btn_freebot": "\U0001f193 \ubb34\ub8cc \uc218\ub3d9 \ubd07",
-        "btn_support": "\U0001f4ac \uc9c0\uc6d0 \ubb38\uc758",
+        "btn_support": "☎️ 상담원 지원",
+        "btn_ai_support": "🤖 AI 채팅 지원",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f \ub4a4\ub85c",
         "btn_restart": "\U0001f680 \uc2dc\uc791\ud558\ub824\uba74 \ud0ed\ud558\uc138\uc694",
         "btn_free_indicator": "\U0001f4f2 \ubb34\ub8cc \uc778\ub514\ucf00\uc774\ud130 \ubc1b\uae30",
@@ -3837,7 +3865,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 Ucretsiz Gosterge",
         "btn_autobot": "\U0001f916 Otomatik Bot",
         "btn_freebot": "\U0001f193 Ucretsiz Manuel Bot",
-        "btn_support": "\U0001f4ac Destek Ile Iletisim",
+        "btn_support": "☎️ İnsan Desteği",
+        "btn_ai_support": "🤖 AI Sohbet Destek",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f Geri",
         "btn_restart": "\U0001f680 Baslamak Icin Dokun",
         "btn_free_indicator": "\U0001f4f2 UCRETSIZ Gosterge Al",
@@ -3898,7 +3928,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 \u0627\u0646\u062f\u06cc\u06a9\u0627\u062a\u0648\u0631 \u0631\u0627\u06cc\u06af\u0627\u0646",
         "btn_autobot": "\U0001f916 \u0631\u0628\u0627\u062a \u062e\u0648\u062f\u06a9\u0627\u0631",
         "btn_freebot": "\U0001f193 \u0631\u0628\u0627\u062a \u062f\u0633\u062a\u06cc \u0631\u0627\u06cc\u06af\u0627\u0646",
-        "btn_support": "\U0001f4ac \u062a\u0645\u0627\u0633 \u0628\u0627 \u067e\u0634\u062a\u06cc\u0628\u0627\u0646\u06cc",
+        "btn_support": "☎️ پشتیبانی انسانی",
+        "btn_ai_support": "🤖 پشتیبانی چت هوش مصنوعی",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f \u0628\u0627\u0632\u06af\u0634\u062a",
         "btn_restart": "\U0001f680 \u0628\u0631\u0627\u06cc \u0634\u0631\u0648\u0639 \u0644\u0645\u0633 \u06a9\u0646\u06cc\u062f",
         "btn_free_indicator": "\U0001f4f2 \u062f\u0631\u06cc\u0627\u0641\u062a \u0627\u0646\u062f\u06cc\u06a9\u0627\u062a\u0648\u0631 \u0631\u0627\u06cc\u06af\u0627\u0646",
@@ -3959,7 +3991,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 Darmowy Wska\u017anik",
         "btn_autobot": "\U0001f916 Automatyczny Bot",
         "btn_freebot": "\U0001f193 Darmowy Bot Manualny",
-        "btn_support": "\U0001f4ac Kontakt z Pomoc\u0105",
+        "btn_support": "☎️ Wsparcie Człowieka",
+        "btn_ai_support": "🤖 Wsparcie Czatu AI",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f Wr\u00f3\u0107",
         "btn_restart": "\U0001f680 Dotknij aby Zacz\u0105\u0107",
         "btn_free_indicator": "\U0001f4f2 Pobierz DARMOWY Wska\u017anik",
@@ -4016,7 +4050,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 \u0411\u0435\u0437\u043a\u043e\u0448\u0442\u043e\u0432\u043d\u0438\u0439 \u0406\u043d\u0434\u0438\u043a\u0430\u0442\u043e\u0440",
         "btn_autobot": "\U0001f916 \u0410\u0432\u0442\u043e \u0411\u043e\u0442",
         "btn_freebot": "\U0001f193 \u0411\u0435\u0437\u043a\u043e\u0448\u0442\u043e\u0432\u043d\u0438\u0439 \u0420\u0443\u0447\u043d\u0438\u0439 \u0411\u043e\u0442",
-        "btn_support": "\U0001f4ac \u0417\u0432'\u044f\u0437\u0430\u0442\u0438\u0441\u044f \u0437 \u041f\u0456\u0434\u0442\u0440\u0438\u043c\u043a\u043e\u044e",
+        "btn_support": "☎️ Підтримка людини",
+        "btn_ai_support": "🤖 AI Чат Підтримка",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f \u041d\u0430\u0437\u0430\u0434",
         "btn_restart": "\U0001f680 \u041d\u0430\u0442\u0438\u0441\u043d\u0456\u0442\u044c \u0434\u043b\u044f \u041f\u043e\u0447\u0430\u0442\u043a\u0443",
         "btn_free_indicator": "\U0001f4f2 \u041e\u0442\u0440\u0438\u043c\u0430\u0442\u0438 \u0411\u0415\u0417\u041a\u041e\u0428\u0422\u041e\u0412\u041d\u0418\u0419 \u0406\u043d\u0434\u0438\u043a\u0430\u0442\u043e\u0440",
@@ -4073,7 +4109,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 \u0422\u0435\u0433\u0456\u043d \u0418\u043d\u0434\u0438\u043a\u0430\u0442\u043e\u0440",
         "btn_autobot": "\U0001f916 \u0410\u0432\u0442\u043e \u0411\u043e\u0442",
         "btn_freebot": "\U0001f193 \u0422\u0435\u0433\u0456\u043d \u049a\u043e\u043b\u043c\u0435\u043d \u0411\u043e\u0442",
-        "btn_support": "\U0001f4ac \u049a\u043e\u043b\u0434\u0430\u0443\u043c\u0435\u043d \u0411\u0430\u0439\u043b\u0430\u043d\u044b\u0441",
+        "btn_support": "☎️ Адами қолдау",
+        "btn_ai_support": "🤖 AI Чат қолдауы",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f \u0410\u0440\u0442\u049b\u0430",
         "btn_restart": "\U0001f680 \u0411\u0430\u0441\u0442\u0430\u0443 \u04af\u0448\u0456\u043d \u0411\u0430\u0441\u044b\u04a3\u044b\u0437",
         "btn_free_indicator": "\U0001f4f2 \u0422\u0415\u0413\u0406\u041d \u0418\u043d\u0434\u0438\u043a\u0430\u0442\u043e\u0440 \u0410\u043b\u044b\u04a3\u044b\u0437",
@@ -4130,7 +4168,9 @@ UI = {
         "btn_indicator": "\U0001f4c8 Bezplatn\u00fd Indik\u00e1tor",
         "btn_autobot": "\U0001f916 Automatick\u00fd Bot",
         "btn_freebot": "\U0001f193 Bezplatn\u00fd Manu\u00e1ln\u00ed Bot",
-        "btn_support": "\U0001f4ac Kontaktovat Podporu",
+        "btn_support": "☎️ Lidská Podpora",
+        "btn_ai_support": "🤖 AI Chat Podpora",
+        "btn_vip": "💎 VIP",
         "btn_back": "\u2b05\ufe0f Zp\u011bt",
         "btn_restart": "\U0001f680 Klepn\u011bte pro Za\u010d\u00e1tek",
         "btn_free_indicator": "\U0001f4f2 Z\u00edskat BEZPLATN\u00dd Indik\u00e1tor",
@@ -4867,9 +4907,7 @@ async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
                     [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
                      InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
                     [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
-                    [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
-                     InlineKeyboardButton(ui("btn_spin", lang)[:20], callback_data="do_spin")],
-                    [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services"),
+                    [InlineKeyboardButton(ui("btn_ai_support", lang), url="https://t.me/evalonvipbot"),
                      InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
                 ]))
         except:
@@ -4881,9 +4919,8 @@ async def send_comeback_reminder(context: ContextTypes.DEFAULT_TYPE):
                     [InlineKeyboardButton(ui("btn_signals", lang), callback_data="svc_signals"),
                      InlineKeyboardButton(ui("btn_autobot", lang), callback_data="svc_autobot")],
                     [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
-                    [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"),
-                     InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
-                    [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
+                    [InlineKeyboardButton(ui("btn_ai_support", lang), url="https://t.me/evalonvipbot"),
+                     InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
                 ]))
         track_msg(chat_id, msg.message_id)
     except Exception as e:
@@ -4929,19 +4966,35 @@ def lang_keyboard():
          InlineKeyboardButton("🇨🇿 Čeština", callback_data="lang_cs")],
     ])
 
+# ══════════════════════════════════════════════════════════════
+#  MAIN MENU BUTTON TOGGLES — set back to True to show again
+# ══════════════════════════════════════════════════════════════
+SHOW_BTN_REFERRAL        = False   # Invite & Earn
+SHOW_BTN_VIP_RESULTS     = False   # Today VIP Result
+SHOW_BTN_TIP             = False   # Daily Tips
+SHOW_BTN_QUIZ            = False   # Quiz
+SHOW_BTN_WINNERS         = False   # Winners of the Week
+SHOW_BTN_RESULTS_HISTORY = False   # Past Result
+SHOW_BTN_SPIN            = False   # Try Your Free Access
+SHOW_BTN_MY_STREAK       = False   # My Daily Streak
+SHOW_BTN_SERVICES        = False   # Our Service
+
 def main_menu(lang, user_id=None):
     # Referral row — add Stories button only if admin has posted stories
-    ref_row = [InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral")]
+    ref_row = []
+    if SHOW_BTN_REFERRAL:
+        ref_row.append(InlineKeyboardButton(ui("btn_referral", lang), callback_data="do_referral"))
     try:
         if has_stories():
             ref_row.append(InlineKeyboardButton(ui("btn_stories", lang), callback_data="do_stories"))
     except:
         pass
-    rows = [
-        [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
-        ref_row,
-        [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
-    ]
+    rows = []
+    if SHOW_BTN_SERVICES:
+        rows.append([InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")])
+    if ref_row:
+        rows.append(ref_row)
+    rows.append([InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")])
     # Admin button — visible to admins only
     if user_id and is_admin(user_id):
         rows.insert(0, [InlineKeyboardButton("⚙️ Admin Panel", callback_data="admin_panel")])
@@ -4963,20 +5016,46 @@ def main_menu(lang, user_id=None):
             rows.append([InlineKeyboardButton(_autobot_btn.get(lang, _autobot_btn["en"]), callback_data="do_autobot_promo")])
     except:
         pass
-    rows += [
-        [InlineKeyboardButton(ui("btn_whats_new", lang), callback_data="do_whats_new"),
-         InlineKeyboardButton(ui("btn_vip_results", lang), callback_data="do_vip_results")],
-        [InlineKeyboardButton(ui("btn_tip", lang), callback_data="do_tip"),
-         InlineKeyboardButton(ui("btn_quiz", lang), callback_data="do_quiz")],
-        [InlineKeyboardButton(ui("btn_winners", lang), callback_data="do_winners"),
-         InlineKeyboardButton(ui("btn_my_streak", lang), callback_data="do_streak")],
-        [InlineKeyboardButton(ui("btn_results_history", lang), callback_data="do_results_history"),
-         InlineKeyboardButton(ui("btn_profile", lang), callback_data="do_profile")],
-        [InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")],
-        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
-        [InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)],
-        [InlineKeyboardButton(ui("btn_language", lang), callback_data="change_lang")],
-    ]
+    # What's New + VIP Results row (VIP Results hidden via toggle)
+    _row_new_vip = [InlineKeyboardButton(ui("btn_whats_new", lang), callback_data="do_whats_new")]
+    if SHOW_BTN_VIP_RESULTS:
+        _row_new_vip.append(InlineKeyboardButton(ui("btn_vip_results", lang), callback_data="do_vip_results"))
+    rows.append(_row_new_vip)
+
+    # Daily Tip + Quiz row (both hidden via toggle)
+    _row_tip_quiz = []
+    if SHOW_BTN_TIP:
+        _row_tip_quiz.append(InlineKeyboardButton(ui("btn_tip", lang), callback_data="do_tip"))
+    if SHOW_BTN_QUIZ:
+        _row_tip_quiz.append(InlineKeyboardButton(ui("btn_quiz", lang), callback_data="do_quiz"))
+    if _row_tip_quiz:
+        rows.append(_row_tip_quiz)
+
+    # Winners + My Streak row (both hidden via toggle)
+    _row_win_streak = []
+    if SHOW_BTN_WINNERS:
+        _row_win_streak.append(InlineKeyboardButton(ui("btn_winners", lang), callback_data="do_winners"))
+    if SHOW_BTN_MY_STREAK:
+        _row_win_streak.append(InlineKeyboardButton(ui("btn_my_streak", lang), callback_data="do_streak"))
+    if _row_win_streak:
+        rows.append(_row_win_streak)
+
+    # Past Results + Profile row (Past Results hidden via toggle)
+    _row_hist_profile = []
+    if SHOW_BTN_RESULTS_HISTORY:
+        _row_hist_profile.append(InlineKeyboardButton(ui("btn_results_history", lang), callback_data="do_results_history"))
+    _row_hist_profile.append(InlineKeyboardButton(ui("btn_profile", lang), callback_data="do_profile"))
+    rows.append(_row_hist_profile)
+
+    # Spin row (hidden via toggle)
+    if SHOW_BTN_SPIN:
+        rows.append([InlineKeyboardButton(ui("btn_spin", lang), callback_data="do_spin")])
+
+    rows.append([InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")])
+    rows.append([InlineKeyboardButton(ui("btn_website", lang), url=WEBSITE_URL)])
+    rows.append([InlineKeyboardButton(ui("btn_ai_support", lang), url=f"https://t.me/evalonvipbot")])
+    rows.append([InlineKeyboardButton(ui("btn_vip", lang), url=f"https://t.me/kentehsharevvipbot")])
+    rows.append([InlineKeyboardButton(ui("btn_language", lang), callback_data="change_lang")])
     return InlineKeyboardMarkup(rows)
 
 def services_menu(lang):
@@ -5224,9 +5303,8 @@ def broadcast_text_to_safe_html(text):
 
 def broadcast_keyboard(lang):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(ui("btn_idealab", lang), callback_data="svc_idealab")],
-        [InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
-        [InlineKeyboardButton(ui("btn_services", lang), callback_data="menu_services")],
+        [InlineKeyboardButton(ui("btn_ai_support", lang), url="https://t.me/evalonvipbot"),
+         InlineKeyboardButton(ui("btn_support", lang), callback_data="do_support")],
     ])
 
 def rating_keyboard():
@@ -5419,7 +5497,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     track_msg(cid, msg.message_id)
 
     schedule_comeback(context, cid, user.first_name, lang)
-    schedule_smart_comebacks(context, cid, user.first_name, lang)
+    # schedule_smart_comebacks(context, cid, user.first_name, lang)  # DISABLED per admin request
     schedule_auto_clean(context, cid, lang, user.first_name, user.id)
 
     # Background: notify admin + referral milestone (new users only)
@@ -6061,7 +6139,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context, cid, img, random.choice(replies), svc_keyboard(lang, signals=True))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_fomo(context, cid, lang, "VIP Signals")
+        # schedule_fomo(context, cid, lang, "VIP Signals")  # DISABLED per admin request
 
     elif data == "svc_social":
         replies = get_replies(SOCIAL_REPLIES, lang)
@@ -6070,7 +6148,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context, cid, img, random.choice(replies), svc_keyboard(lang, social=True))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_fomo(context, cid, lang, "Social Trading")
+        # schedule_fomo(context, cid, lang, "Social Trading")  # DISABLED per admin request
 
     elif data == "svc_indicator":
         replies = get_replies(INDICATOR_REPLIES, lang)
@@ -6080,7 +6158,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             svc_keyboard(lang, indicator=True))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_fomo(context, cid, lang, "Free Indicator")
+        # schedule_fomo(context, cid, lang, "Free Indicator")  # DISABLED per admin request
 
     elif data == "svc_autobot":
         replies = get_replies(AUTOBOT_REPLIES, lang)
@@ -6089,7 +6167,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context, cid, img, random.choice(replies), svc_keyboard(lang, autobot=True))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_fomo(context, cid, lang, "Auto Bot")
+        # schedule_fomo(context, cid, lang, "Auto Bot")  # DISABLED per admin request
 
     elif data == "svc_freebot":
         replies = get_replies(FREEBOT_REPLIES, lang)
@@ -6098,7 +6176,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context, cid, img, random.choice(replies), freebot_menu(lang))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
-        schedule_fomo(context, cid, lang, "Free Manual Bot")
+        # schedule_fomo(context, cid, lang, "Free Manual Bot")  # DISABLED per admin request
 
     elif data == "svc_idealab":
         # Show Idea Lab prompt and mark user as awaiting idea submission
