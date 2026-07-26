@@ -6185,7 +6185,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = await send_protected_text(
             context, cid, prompt,
             InlineKeyboardMarkup([
-                [InlineKeyboardButton(ui("btn_back", lang), callback_data="menu_services")],
+                [InlineKeyboardButton(ui("btn_back", lang), callback_data="main_menu")],
             ]))
         context.user_data["last_bot_msg_id"] = msg.message_id
         track_msg(cid, msg.message_id)
